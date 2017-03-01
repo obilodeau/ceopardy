@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Gameboard</title>
-    <!-- bootstrap meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Game Board{% endblock %}
+
+{% block content %}
     <div class="container-fluid">
         <h1>Welcome to Hacker Jeopardy!</h1>
 
@@ -22,10 +16,5 @@
 
         </div>
         {% endfor %}
-
-    <!-- jQuery first, then Tether, then Bootstrap JS. -->
-    <script src="/static/js/jquery-3.1.1.min.js"></script>
-    <script src="/static/js/tether.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-</body>
-</html>
+    </div>
+{% endblock %}
