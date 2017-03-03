@@ -7,6 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="/static/vendor/bootstrap/dist/css/bootstrap.min.css">
     <title>{% block title %}{% endblock %} - Hacker Jeopardy</title>
+    <style>
+    html, body, .container-fluid {
+        height: calc(100vh - 56px);
+    }
+    .gamerow {
+    {# TODO should be based on QUESTIONS_PER_CATEGORY #}
+        height: 20%;
+    }
+    </style>
     {% endblock %}
 
 </head>
