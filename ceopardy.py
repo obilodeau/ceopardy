@@ -1,15 +1,12 @@
 from flask import Flask, render_template
+from ceopardy.controller import Controller
 
 app = Flask(__name__)
 
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
-    return {
-        "CATEGORIES_PER_GAME": 5,
-        "QUESTIONS_PER_CATEGORY": 5
-    }
-
+    return Controller.get_gameboard_config()
 
 @app.route('/')
 def gameboard():
