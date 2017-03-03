@@ -1,2 +1,5 @@
 # IDE files
 /.idea/
+
+# dependencies managed by Bower
+/static/vendor/

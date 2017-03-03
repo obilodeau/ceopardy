@@ -1,7 +1,8 @@
 = README
 
-== Dependencies
+== First time deployment
 
-* jquery (v3.1.1)
-* tether (v.1.4.0)
-* bootstrap (v4.0.0 alpha 6)
+You need Python 3 and https://bower.io[Bower].
+
+    bower install
+    python3 ceopardy.py
