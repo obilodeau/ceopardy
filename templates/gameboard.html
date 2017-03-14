@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Game Board{% endblock %}
 
+{% block style %}
+<style>
+    html, body, .container-fluid {
+        height: calc(100vh - 56px);
+    }
+    .gamerow {
+    {# TODO should be based on QUESTIONS_PER_CATEGORY #}
+        height: 20%;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
     <div class="container-fluid">
         <h1>Welcome to Hacker Jeopardy!</h1>
