@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Game Board{% endblock %}
+
+{% block style %}
+<style>
+    html, body, .container-fluid {
+        height: calc(100vh - 56px);
+    }
+    .gamerow {
+    {# TODO should be based on QUESTIONS_PER_CATEGORY #}
+        height: 20%;
+    }
+    
+    .btn-selected {
+        background-color: red !important;
+    }
+    
+    .btn-ceopardy {
+        color: #ffffff;
+        background-color: #0275d8;
+        border-color: #0275d8;
+    }
+</style>
+{% endblock %}
+
+{% block alerts %}
+    <div class="modal fade" id="alert" tabindex="-1" role="dialog" aria-labelledby="Alerts" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="Alerts">Random Team Pick</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            Team X picked!
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Got it!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h1 style="text-align: center">Welcome to Hacker Jeopardy!</h1>
+
+        {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+        <div class="row gamerow" style="padding-bottom: 15px">
+
+            {% for _c in range(CATEGORIES_PER_GAME) %}
+            <div class="col">
+                <a id="c{{ _c }}q{{ _r }}" class="btn btn-ceopardy" href="#" role="button" style="width: 100%; height: 100%">{{ _r * 100 }}</a>
+            </div>
+            {% endfor %}
+
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block ui %}
+    <script>
+        
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        
+        socket.on('connect', function() {
+            //socket.emit('my event', {data: 'I\'m connected!'});
+        });
+        
+        socket.on('test', function(data) {
+            alert(data);
+        });
+        
+        
+        
+        $(document).keypress(function(e) {
+            if ( e.keyCode === 114 ) // r
+                $('#alert').modal()
+        });
+        
+        $(document).ready(function() {
+            $(".btn-ceopardy").on("click", function() {
+                if ($(this).hasClass("btn-selected")) {
+                    
+                }
+                else {
+                    $(".btn-ceopardy").removeClass("btn-selected");
+                    $(this).addClass("btn-selected");
+                    id = $(this).attr('id');
+                    socket.emit('click', {button: id});
+                }
+            });
+        });
+        
+        
+        
+        
+        
+        function ceo_click(button) {
+            console.log(button);
+        }
+        
+    </script>
+{% endblock %}
