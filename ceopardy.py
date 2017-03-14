@@ -23,9 +23,13 @@ app = Flask(__name__)
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
-    return Controller.get_gameboard_config()
+    return Controller.get_config()
 
 @app.route('/')
+def start():
+    return render_template("startup.html")
+
+@app.route('/game')
 def gameboard():
     return render_template("gameboard.html")
 

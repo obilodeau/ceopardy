@@ -20,7 +20,9 @@ from ceopardy.game import Game, GameBoard
 class Controller():
 
     @staticmethod
-    def get_gameboard_config():
+    def get_config():
+        g = Game()
         gb = GameBoard()
-        return gb.config
-
+        # merge various constants from model and return
+        g.config.update(gb.config)
+        return g.config

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sartup{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Welcome to Hacker Jeopardy!</h1>
+
+        <h2>Let's get this game started, shall we?</h2>
+
+        <form>
+            <h3>Please enter the name of the teams:</h3>
+            {% for i in range(1, NB_TEAMS + 1) %}
+                <div class="form-group">
+                    <label for="teamName{{ i }}">Team #{{ i }}'s Name</label>
+                    <input type="text" class="form-control" id="teamName{{ i }}" placeholder="Enter the name of the team">
+                </div>
+
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Game on!</button>
+        </form>
+    </div>
+{% endblock %}
