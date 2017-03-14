@@ -11,6 +11,8 @@
     {% endblock %}
 </head>
 <body>
+    {% block alerts %}{% endblock %}
+
     <div id="content">{% block content %}{% endblock %}</div>
 
     <div id="footer">
@@ -23,5 +25,7 @@
     <script src="/static/vendor/jquery/dist/jquery.min.js"></script>
     <script src="/static/vendor/tether/dist/js/tether.min.js"></script>
     <script src="/static/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+
+    {% block ui %}{% endblock %}
 </body>
 </html>

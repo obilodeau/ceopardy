@@ -13,6 +13,28 @@
 </style>
 {% endblock %}
 
+{% block alerts %}
+    <div class="modal fade" id="alert" tabindex="-1" role="dialog" aria-labelledby="Alerts" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="Alerts">Random Team Pick</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            Team X picked!
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Got it!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+
 {% block content %}
     <div class="container-fluid">
         <h1>Welcome to Hacker Jeopardy!</h1>
@@ -29,4 +51,13 @@
         </div>
         {% endfor %}
     </div>
+{% endblock %}
+
+{% block ui %}
+    <script>
+        $(document).keypress(function(e) {
+            if ( e.keyCode === 114 ) // r
+                $('#alert').modal()
+        });
+    </script>
 {% endblock %}
