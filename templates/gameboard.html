@@ -44,7 +44,7 @@
 
             {% for _c in range(CATEGORIES_PER_GAME) %}
             <div class="col">
-                <a class="btn btn-primary btn-lg" href="#" role="button">{{ _r * 100 }}</a>
+                <a id="c{{ _c }}q{{ _r }}" class="btn btn-primary btn-lg" href="#" role="button">{{ _r * 100 }}</a>
             </div>
             {% endfor %}
 
