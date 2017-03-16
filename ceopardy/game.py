@@ -15,15 +15,21 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+
+NB_TEAMS = 3
+CATEGORIES_PER_GAME = 5
+QUESTIONS_PER_CATEGORY = 5
+
 class Game():
     def __init__(self):
         self.config = {
-            'NB_TEAMS': 3
+            'NB_TEAMS': NB_TEAMS
         }
 
     # TODO randomly pick a team
     # TODO save a game in progress
     # TODO load a game in progress
+
 
 class Team():
     def __init__(self, name):
@@ -34,9 +40,33 @@ class Team():
 class GameBoard():
     def __init__(self):
         self.config = {
-            'CATEGORIES_PER_GAME': 5,
-            'QUESTIONS_PER_CATEGORY': 5
+            'CATEGORIES_PER_GAME': CATEGORIES_PER_GAME,
+            'QUESTIONS_PER_CATEGORY': QUESTIONS_PER_CATEGORY
         }
+        self.questions = []
+        for column in range(CATEGORIES_PER_GAME):
+            l = []
+            for row in range(QUESTIONS_PER_CATEGORY):
+                question = Question("Nothing!", (row + 1) * 100, [row + 1, column + 1])
+                l.append(question)
+            self.questions.append(l)
+        self.categories = []
+        for column in range(CATEGORIES_PER_GAME):
+            category = Category("This is C%d" % (column + 1), column + 1)
+            self.categories.append(category)
+
+
+class Category():
+    def __init__(self, value, column):
+        self.value = value
+        self.column = column
+
 
 class Question():
-    pass
+    def __init__(self, value, amount, coordinates):
+        self.value = value
+        self.amount = amount
+        self.coordinates = coordinates
+        self.solved = False
+
+

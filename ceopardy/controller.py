@@ -16,13 +16,39 @@
 # GNU General Public License for more details.
 #
 from ceopardy.game import Game, GameBoard
+#import json
+
 
 class Controller():
+    def __init__(self):
+        self.g = Game()
+        self.gb = GameBoard()
+        # Merge various constants from model
+        self.g.config.update(self.gb.config)
 
-    @staticmethod
-    def get_config():
-        g = Game()
-        gb = GameBoard()
-        # merge various constants from model and return
-        g.config.update(gb.config)
-        return g.config
+    def get_config(self):
+        return self.g.config
+
+    def get_nb_teams(self):
+        return self.g.config["NB_TEAMS"]
+
+    def get_question(self, column, row):
+        return self.gb.questions[row - 1][column - 1]
+    
+    def get_question_solved(self, column, row):
+        question = self.get_question(column, row)
+        return question.solved
+
+    def set_question_solved(self, column, row, value):
+        question = self.get_question(column, row)
+        question.solved = value
+
+    def dictionize_questions_solved(self):
+        questions = self.gb.questions
+        result = {}
+        for row in range(len(questions)):
+            for column in range(len(self.gb.questions[row])):
+                question = self.gb.questions[row][column]
+                name = "c{0}q{1}".format(column + 1, row + 1)
+                result[name] = question.solved
+        return result
