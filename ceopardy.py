@@ -77,7 +77,7 @@ def handle_click(data):
         controller.set_question_solved(column, row, True)
         state = controller.dictionize_questions_solved()
         emit("update-board", state, broadcast=True)
-        emit("show-overlay", "Test!", broadcast=True)
+        emit("show-overlay", "<p>Test!</p>", broadcast=True)
 
 @socketio.on('unclick')
 def handle_click(data):

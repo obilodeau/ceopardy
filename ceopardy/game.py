@@ -25,6 +25,7 @@ class Game():
         self.config = {
             'NB_TEAMS': NB_TEAMS
         }
+        self.started = False
 
     # TODO randomly pick a team
     # TODO save a game in progress

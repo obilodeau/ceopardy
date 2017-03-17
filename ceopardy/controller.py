@@ -38,6 +38,9 @@ class Controller():
         self.g.config.update(self.gb.config)
         self.lock = Lock()
 
+    def is_game_ready(self):
+        return self.g.started
+
     def get_config(self):
         return self.g.config
 
