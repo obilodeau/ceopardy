@@ -93,10 +93,10 @@
 
 {% block ui %}
     <script>
-        
+
         var socket = io.connect('http://' + document.domain + ':' + location.port);
         var rouletteId = null;
-        
+
         socket.on('connect', function() {
             socket.emit('refresh');
         });

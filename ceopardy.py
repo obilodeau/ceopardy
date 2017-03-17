@@ -38,33 +38,24 @@ def inject_config():
 @app.route('/')
 def start():
     if controller.is_game_ready():
-        return render_template("startup.html")
+        # TODO eventually viewer should just become /?
+        return render_template("viewer.html")
     else:
         return render_template('wait.html')
 
-@app.route('/game')
-def gameboard():
-    return render_template("gameboard.html")
-
 @app.route('/host')
 def host():
+    controller.start_game()
+    # namespaces... i have no idea what I've done but it worked!
+    # non-socketio contexts seems to require it
+    # FIXME still having problems where /host is redirected as well. doesn't make any sense
+    emit("start_game", namespace="/", broadcast=True)
     return render_template('host.html')
 
-@app.route('/player')
-def player():
-    return render_template('player.html')
-
+# TODO eventually viewer should just become /?
 @app.route('/viewer')
 def viewer():
     return render_template('viewer.html')
-
-@app.route('/comand', defaults={'path': 'debug'})
-@app.route('/comand/<path:path>', methods=['POST'])
-def command(path):
-    print(request.form, file=sys.stderr)
-    result = {}
-    result["result"] = "ok"
-    return flask.jsonify(**result)
 
 @socketio.on('click')
 def handle_click(data):
@@ -92,6 +83,7 @@ def handle_roulette():
         l.append("t" + str(i % nb + 1))
     l.append(team)
     emit("roulette-team", l, broadcast=True)
+
 
 @socketio.on('refresh')
 def handle_refresh():

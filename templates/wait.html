@@ -38,3 +38,13 @@
 
 {% endblock %}
 
+{% block ui %}
+    <script>
+
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('start_game', function(data) {
+            window.location.href = "http://" + document.domain + ':' + location.port + "/viewer";
+        });
+
+    </script>
+{% endblock %}

@@ -20,6 +20,8 @@ NB_TEAMS = 3
 CATEGORIES_PER_GAME = 5
 QUESTIONS_PER_CATEGORY = 5
 
+# TODO save a game in progress
+# TODO load a game in progress
 class Game():
     def __init__(self):
         self.config = {
@@ -27,9 +29,14 @@ class Game():
         }
         self.started = False
 
-    # TODO randomly pick a team
-    # TODO save a game in progress
-    # TODO load a game in progress
+
+    def start(self):
+        if not self.started:
+            self.started = True
+            return True
+        else:
+            raise("Trying to start an already started game")
+        # TODO randomly pick a team
 
 
 class Team():

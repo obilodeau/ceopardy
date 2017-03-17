@@ -41,6 +41,10 @@ class Controller():
     def is_game_ready(self):
         return self.g.started
 
+    @locked
+    def start_game(self):
+        return self.g.start()
+
     def get_config(self):
         return self.g.config
 
