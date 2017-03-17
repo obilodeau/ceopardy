@@ -18,7 +18,7 @@
 import flask
 from flask import Flask, render_template
 from flask_socketio import SocketIO, send, emit
-from ceopardy.controller import Controller
+from ceopardy.controller import controller
 from ceopardy.api import api
 import sys
 import re
@@ -30,17 +30,17 @@ app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 app.register_blueprint(api, url_prefix='/api')
 socketio = SocketIO(app)
 
-controller = Controller()
-
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
-    global controller
     return controller.get_config()
 
 @app.route('/')
 def start():
-    return render_template("startup.html")
+    if controller.is_game_ready():
+        return render_template("startup.html")
+    else:
+        return render_template('wait.html')
 
 @app.route('/game')
 def gameboard():
@@ -69,7 +69,6 @@ def command(path):
 @socketio.on('click')
 def handle_click(data):
     print('received data: ' + data["id"], file=sys.stderr)
-    global controller
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
         items = match.groups()
@@ -86,7 +85,6 @@ def handle_click(data):
 
 @socketio.on('roulette')
 def handle_roulette():
-    global controller
     nb = controller.get_nb_teams()
     l = []
     team = "t" + str(random.randrange(1, nb + 1))
@@ -97,7 +95,6 @@ def handle_roulette():
 
 @socketio.on('refresh')
 def handle_refresh():
-    global controller
     state = controller.dictionize_questions_solved()
     emit("update-board", state)
 
