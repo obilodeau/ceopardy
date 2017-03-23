@@ -1,0 +1,50 @@
+{# TODO refactor common components viewer #}
+{% extends "base.html" %}
+{% block title %}Game Board{% endblock %}
+
+{% block style %}
+<style>
+    body {
+        background-color: #603320;
+    }
+    
+    div#content {
+        height: 100%;
+    }
+
+    .container-overlay {
+        height: 76vh;
+        width: 100%;
+        position: absolute;
+        top: 2vh;
+        /* display: none; */
+    }
+
+    .container-results {
+        height: 20vh;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div id="overlay" class="container-fluid container-overlay">
+        <div class="black-box">
+            <div class="box-overlay">
+                <div id="overlay-content" class="box-ceopardy box-question">
+                    <p>Please wait while the game is getting setup...</p></div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block ui %}
+    <script>
+
+        var socket = io.connect('http://' + document.domain + ':' + location.port + '/wait');
+        socket.on('start_game', function(data) {
+            window.location.href = 'http://' + document.domain + ':' + location.port + '/viewer';
+        });
+
+    </script>
+{% endblock %}

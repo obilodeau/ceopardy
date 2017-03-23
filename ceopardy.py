@@ -18,7 +18,7 @@
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, send, emit, disconnect
 import flask_login
-import ceopardy.controller as controller
+from ceopardy.controller import controller
 import ceopardy.login as login
 from ceopardy.api import api
 import sys
@@ -35,7 +35,6 @@ app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
 app.register_blueprint(api, url_prefix='/api')
 socketio = SocketIO(app)
 login.init_app(app)
-controller.init()
 
 def authenticated_only(f):
     @functools.wraps(f)
@@ -46,31 +45,50 @@ def authenticated_only(f):
             return f(*args, **kwargs)
     return wrapped
 
+
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
-    return controller.get().get_config()
+    return controller.get_config()
+
 
 @app.route('/')
 def start():
-    return render_template("startup.html")
+    if controller.is_game_ready():
+        # TODO eventually viewer should just become /?
+        return render_template("viewer.html")
+    else:
+        return render_template('wait.html')
 
-@app.route('/game')
-def gameboard():
-    return render_template("gameboard.html")
-
+# TODO we must kill all client-side state on server load.
+# To reproduce: Not-reloading a host view and reloading server causes mismatch
+# between client and server states. Client is out of sync.
 @app.route('/host')
 #@flask_login.login_required
 def host():
+    # Start the game if it's not already started
+    if not controller.is_game_ready():
+        return render_template('setup.html')
+
     return render_template('host.html')
 
-@app.route('/player')
-def player():
-    return render_template('player.html')
 
+@app.route('/setup')
+def setup():
+
+    # TODO missing input validation (and form doesn't even submit here, lol)
+    controller.start_game()
+
+    # announce waiting room that game has started
+    emit("start_game", namespace="/wait", broadcast=True)
+    return render_template('host.html')
+
+
+# TODO eventually viewer should just become /?
 @app.route('/viewer')
 def viewer():
     return render_template('viewer.html')
+
 
 @socketio.on('click', namespace='/host')
 def handle_click(data):
@@ -80,8 +98,8 @@ def handle_click(data):
         items = match.groups()
         column = int(items[0])
         row = int(items[1])
-        controller.get().set_question_solved(column, row, True)
-        state = controller.get().dictionize_questions_solved()
+        controller.set_question_solved(column, row, True)
+        state = controller.dictionize_questions_solved()
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("show-overlay", "Test!", namespace='/viewer', broadcast=True)
 
@@ -89,10 +107,11 @@ def handle_click(data):
 def handle_click(data):
     emit("hide-overlay", namespace='/viewer', broadcast=True)
 
+
 @socketio.on('roulette', namespace='/host')
 #@authenticated_only
 def handle_roulette():
-    nb = controller.get().get_nb_teams()
+    nb = controller.get_nb_teams()
     l = []
     team = "t" + str(random.randrange(1, nb + 1))
     for i in range(12):
@@ -100,10 +119,12 @@ def handle_roulette():
     l.append(team)
     emit("roulette-team", l, namespace='/viewer', broadcast=True)
 
+
 @socketio.on('refresh', namespace='/viewer')
 def handle_refresh():
-    state = controller.get().dictionize_questions_solved()
+    state = controller.dictionize_questions_solved()
     emit("update-board", state)
+
 
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", debug=True)

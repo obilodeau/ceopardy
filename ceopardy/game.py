@@ -16,20 +16,36 @@
 # GNU General Public License for more details.
 #
 
+from enum import Enum
+
 NB_TEAMS = 3
 CATEGORIES_PER_GAME = 5
 QUESTIONS_PER_CATEGORY = 5
 
+# TODO save a game in progress
+# TODO load a game in progress
 class Game():
     def __init__(self):
         self.config = {
             'NB_TEAMS': NB_TEAMS
         }
+        self.state = GameState.uninitialized
+
+
+    def start(self):
+        if self.state is not GameState.started:
+            self.state = GameState.started
+            return True
+        else:
+            raise GameProblem("Trying to start an already started game")
 
     # TODO randomly pick a team
-    # TODO save a game in progress
-    # TODO load a game in progress
 
+
+class GameState(Enum):
+    uninitialized = 0
+    setup = 1
+    started = 2
 
 class Team():
     def __init__(self, name):
@@ -69,4 +85,7 @@ class Question():
         self.coordinates = coordinates
         self.solved = False
 
+
+class GameProblem(Exception):
+    pass
 

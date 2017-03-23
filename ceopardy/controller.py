@@ -15,14 +15,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-from ceopardy.game import Game, GameBoard
-from threading import Lock
 import functools
+from threading import Lock
 
+from ceopardy.game import Game, GameBoard, GameState
 
-def init():
-    global controller
-    controller = Controller()
 
 def get():
     return controller
@@ -42,6 +39,13 @@ class Controller():
         # Merge various constants from model
         self.g.config.update(self.gb.config)
         self.lock = Lock()
+
+    def is_game_ready(self):
+        return self.g.state is GameState.started
+
+    @locked
+    def start_game(self):
+        return self.g.start()
 
     def get_config(self):
         return self.g.config
@@ -70,3 +74,7 @@ class Controller():
                 name = "c{0}q{1}".format(column + 1, row + 1)
                 result[name] = question.solved
         return result
+
+# TODO: Change for a multiple import solution
+global controller
+controller = Controller()
