@@ -16,8 +16,24 @@
 # GNU General Public License for more details.
 #
 from ceopardy.game import Game, GameBoard
-#import json
+from threading import Lock
+import functools
 
+
+def init():
+    global controller
+    controller = Controller()
+
+def get():
+    return controller
+
+def locked(f):
+    @functools.wraps(f)
+    def wrapped(self, *args, **kwargs):
+        with self.lock:
+            result = f(self, *args, **kwargs)
+        return result
+    return wrapped
 
 class Controller():
     def __init__(self):
@@ -25,6 +41,7 @@ class Controller():
         self.gb = GameBoard()
         # Merge various constants from model
         self.g.config.update(self.gb.config)
+        self.lock = Lock()
 
     def get_config(self):
         return self.g.config
@@ -39,6 +56,7 @@ class Controller():
         question = self.get_question(column, row)
         return question.solved
 
+    @locked
     def set_question_solved(self, column, row, value):
         question = self.get_question(column, row)
         question.solved = value

@@ -3,124 +3,101 @@
 
 {% block style %}
 <style>
-    .container-all {
-        padding: 1vh;
-        background-color: #391f0c;
-    }
-    .container-top {
-        height: 70vh;
-        display: flex;
-    }
-    .container-collapsable {
-        flex-grow: 1;
-        flex-shrink: 1;
-        flex-basis: auto;
-        transition: all 0.5s;
-    }
-    .container-left {
-        background-color: #603320;
-    }
-    .container-left div {
-        border-left: 1vh solid #391f0c;
-        height: 100%;
-    }
-    .container-collapsed {
-        width: 0;
-        flex-grow: 0;
-        visibility: hidden;
-    }
-    .container-viewer {
-        width: 80%;
-        max-width: 800px;
-        max-height: 700px;
-        background-color: #391f0c;
-        padding-left: 1vh;
-        padding-right: 1vh;
-    }
-    .container-right {
-        background-color: #603320;
-    }
-    .container-right div {
-        border-right: 1vh solid #391f0c;
-        height: 100%;
-    }
-    .container-bottom {
-        height: 27vh;
-        background-color: #603320;
-        display: flex;
-    }
-    .iframe-viewer {
-        width: 100%;
-        height: 100%;
-        border-style: none;
-    }
-    .container-arrow {
-        flex-grow: 0;
-        background-color: #391f0c;
-        transition: background 0.5s ease-out;
-    }
-    .container-arrow:hover {
-        background-color: #573d2a;
-        transition: background 0.5s ease-out;
-    }
-    .container-control {
-        width: 40%;
-        min-width: 400px;
-        max-width: 600px;
-    }
-    .container-advanced {
-        flex-grow: 1;
-    }
+    
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid container-all">
-    <div class="container-top">
-        <div class="container-arrow" in="left" out="right">
-            <img src="/static/images/right.svg" style="height: 100%; width: 30px;">
-        </div>
-        <div class="container-left container-collapsable container-collapsed">
-            <div></div>
-        </div>
-        <div class="container-viewer">
-            <iframe class="iframe-viewer" src="/viewer"></iframe>
-        </div>
-        <div class="container-right container-collapsable">
-            <div>test</div>
-        </div>
-        <div class="container-arrow" in="right" out="left">
-            <img src="/static/images/left.svg" style="height: 100%; width: 30px;">
-        </div>
-    </div>
-    
-    <div style="height: 1vh;"></div>
-    
-    <div class="container-bottom">
-        <div class="container-control">
-            {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-            <div class="row-ceopardy" style="height: {{ 100 / QUESTIONS_PER_CATEGORY }}%;">
+<div class="container-host">
 
+    <div class="container-top container-all container-light" style="display: flex;">
+        
+        <div style="width: 50%;">
+            {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+            <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
                 {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
-                <div class="col-ceopardy">
-                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-control" href="#" role="button"><p>${{ _r * 100 }}</p></div>
+                <div class="col-ceopardy flex-horizontal-pad">
+                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button" style="color: white;">${{ _r * 100 }}</div>
                 </div>
                 {% endfor %}
-
             </div>
             {% endfor %}
         </div>
-        <div class="container-advanced">
+        <div style="width: 50%;">
             <button id="roulette" type="button">Roulette!</button>
         </div>
+        
+        
     </div>
+    
+    <div class="container-bottom container-all container-light">
+    
+    </div>
+    
+    <div class="container-footer flex-border container-light">
+    
+        <div class="container-arrow container-dark">
+            <!--Up Arrow-->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+                <polygon points="0,50 50,0 100,50 50,25 0,50"/>
+            </svg>
+        </div>
+        <div style="display: flex; width: 100%">
+            <div class="container-footer-control">
+            </div>
+            <div class="container-separator-v container-dark"></div>
+            <div class="container-footer-control">
+                <iframe class="iframe-viewer" src="/viewer"></iframe>
+            </div>
+        </div>
+    
+    
+    
+    
+    
+    </div>
+    
+    <!--<div class="container-arrow container-all container-light">
+        <img id="up" src="/static/images/up.svg">
+        <img id="down" src="/static/images/down.svg" style="display: none;">
+    </div>
+    
+    <div class="container-bottom container-all container-light" style="display: flex;">
+    
+    <div class="container-arrow">
+        <a href="#carouselExampleControls" role="button" data-slide="next">
+            <img id="left" src="/static/images/left.svg">
+        </a>
+    </div>
+    
+    <div id="carouselExampleControls" class="carousel slide" style="flex: 1;">
+        <div class="carousel-inner" role="listbox">
+        <div class="carousel-item active">
+        <img class="d-block img-fluid" src="..." alt="First slide">
+        </div>
+        <div class="carousel-item">
+        <img class="d-block img-fluid" src="..." alt="Second slide">
+        </div>
+        <div class="carousel-item">
+        <img class="d-block img-fluid" src="..." alt="Third slide">
+        </div>
+        </div>
+    </div>
+    
+    <div class="container-arrow">
+        <a href="#carouselExampleControls" role="button" data-slide="prev">
+            <img id="left" src="/static/images/right.svg">
+        </a>
+    </div>
+    </div>-->
+
 </div>
 {% endblock %}
 
 {% block ui %}
     <script>
         
-        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        var socket = io.connect('http://' + document.domain + ':' + location.port + '/host');
         
         socket.on('connect', function() {
             //socket.emit('my event', {data: 'I\'m connected!'});
@@ -147,25 +124,25 @@
                 }
             });
             
-            $(".container-arrow").on("click", function() {
-                var go_in = ".container-" + $(this).attr('in');
-                var go_out = ".container-" + $(this).attr('out');
-                
-                $(go_in).removeClass("container-collapsed");
-                $(go_out).addClass("container-collapsed");
-                
-            });
-            
             $("#roulette").on("click", function() {
-                //socket.emit('roulette');
-                $.post("/api/roulette", function(data) {
+                socket.emit('roulette');
+                /*$.post("/api/roulette", function(data) {
                     if (data.result != "ok") {
                         alert(data.result);
                     }
                     else {
                         
                     }
-                });
+                });*/
+            });
+            
+            $('.container-footer').click(function() {
+                if($('.container-footer').hasClass('slide-up')) {
+                    $('.container-footer').removeClass('slide-up'); 
+                }
+                else {
+                    $('.container-footer').addClass('slide-up');
+                }
             });
         });
         

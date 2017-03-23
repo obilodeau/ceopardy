@@ -15,28 +15,41 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-import flask
-from flask import Flask, render_template
-from flask_socketio import SocketIO, send, emit
-from ceopardy.controller import Controller
+from flask import Flask, render_template, jsonify
+from flask_socketio import SocketIO, send, emit, disconnect
+import flask_login
+import ceopardy.controller as controller
+import ceopardy.login as login
 from ceopardy.api import api
 import sys
 import re
 import random
+import functools
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
+app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
+app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
 # API - RESTful
 app.register_blueprint(api, url_prefix='/api')
 socketio = SocketIO(app)
+login.init_app(app)
+controller.init()
 
-controller = Controller()
+def authenticated_only(f):
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        if not flask_login.current_user.is_authenticated:
+            disconnect()
+        else:
+            return f(*args, **kwargs)
+    return wrapped
 
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
-    global controller
-    return controller.get_config()
+    return controller.get().get_config()
 
 @app.route('/')
 def start():
@@ -47,6 +60,7 @@ def gameboard():
     return render_template("gameboard.html")
 
 @app.route('/host')
+#@flask_login.login_required
 def host():
     return render_template('host.html')
 
@@ -58,48 +72,38 @@ def player():
 def viewer():
     return render_template('viewer.html')
 
-@app.route('/comand', defaults={'path': 'debug'})
-@app.route('/comand/<path:path>', methods=['POST'])
-def command(path):
-    print(request.form, file=sys.stderr)
-    result = {}
-    result["result"] = "ok"
-    return flask.jsonify(**result)
-
-@socketio.on('click')
+@socketio.on('click', namespace='/host')
 def handle_click(data):
     print('received data: ' + data["id"], file=sys.stderr)
-    global controller
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
         items = match.groups()
         column = int(items[0])
         row = int(items[1])
-        controller.set_question_solved(column, row, True)
-        state = controller.dictionize_questions_solved()
-        emit("update-board", state, broadcast=True)
-        emit("show-overlay", "Test!", broadcast=True)
+        controller.get().set_question_solved(column, row, True)
+        state = controller.get().dictionize_questions_solved()
+        emit("update-board", state, namespace='/viewer', broadcast=True)
+        emit("show-overlay", "Test!", namespace='/viewer', broadcast=True)
 
-@socketio.on('unclick')
+@socketio.on('unclick', namespace='/host')
 def handle_click(data):
-    emit("hide-overlay", broadcast=True)
+    emit("hide-overlay", namespace='/viewer', broadcast=True)
 
-@socketio.on('roulette')
+@socketio.on('roulette', namespace='/host')
+#@authenticated_only
 def handle_roulette():
-    global controller
-    nb = controller.get_nb_teams()
+    nb = controller.get().get_nb_teams()
     l = []
     team = "t" + str(random.randrange(1, nb + 1))
     for i in range(12):
         l.append("t" + str(i % nb + 1))
     l.append(team)
-    emit("roulette-team", l, broadcast=True)
+    emit("roulette-team", l, namespace='/viewer', broadcast=True)
 
-@socketio.on('refresh')
+@socketio.on('refresh', namespace='/viewer')
 def handle_refresh():
-    global controller
-    state = controller.dictionize_questions_solved()
+    state = controller.get().dictionize_questions_solved()
     emit("update-board", state)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host="0.0.0.0", debug=True)

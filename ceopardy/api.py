@@ -1,6 +1,7 @@
 import flask
 from flask import Blueprint, request
 from flask_socketio import SocketIO, send, emit
+import ceopardy.controller as controller
 import random
 #import flask_login
 
@@ -79,14 +80,14 @@ class Handlers:
             pass
         else:
             pass
-        #nb = controller.get_nb_teams()
-        nb = 3
+        nb = controller.get().get_nb_teams()
+        #nb = 3
         l = []
         team = "t" + str(random.randrange(1, nb + 1))
         for i in range(12):
             l.append("t" + str(i % nb + 1))
         l.append(team)
-        emit("roulette-team", l, broadcast=True, namespace="/")
+        emit("roulette-team", l, broadcast=True, namespace="/viewer")
         return True, {}
     '''
     # Not supported
