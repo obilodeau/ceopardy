@@ -35,7 +35,7 @@ class Game():
             self.started = True
             return True
         else:
-            raise("Trying to start an already started game")
+            raise GameProblem("Trying to start an already started game")
         # TODO randomly pick a team
 
 
@@ -77,4 +77,7 @@ class Question():
         self.coordinates = coordinates
         self.solved = False
 
+
+class GameProblem(Exception):
+    pass
 

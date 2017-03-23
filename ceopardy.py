@@ -35,6 +35,7 @@ def inject_config():
     """Injects ceopardy configuration for the template system"""
     return controller.get_config()
 
+
 @app.route('/')
 def start():
     if controller.is_game_ready():
@@ -43,14 +44,18 @@ def start():
     else:
         return render_template('wait.html')
 
+
 @app.route('/host')
 def host():
-    controller.start_game()
-    # namespaces... i have no idea what I've done but it worked!
-    # non-socketio contexts seems to require it
-    # FIXME still having problems where /host is redirected as well. doesn't make any sense
-    emit("start_game", namespace="/", broadcast=True)
+    # Start the game if it's not already started
+    if not controller.is_game_ready():
+        controller.start_game()
+
+        # announce waiting room that game has started
+        emit("start_game", namespace="/wait", broadcast=True)
+
     return render_template('host.html')
+
 
 # TODO eventually viewer should just become /?
 @app.route('/viewer')
