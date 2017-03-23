@@ -44,16 +44,25 @@ def start():
     else:
         return render_template('wait.html')
 
-
+# TODO we must kill all client-side state on server load.
+# To reproduce: Not-reloading a host view and reloading server causes mismatch
+# between client and server states. Client is out of sync.
 @app.route('/host')
 def host():
     # Start the game if it's not already started
     if not controller.is_game_ready():
-        controller.start_game()
+        return render_template('setup.html')
 
-        # announce waiting room that game has started
-        emit("start_game", namespace="/wait", broadcast=True)
+    return render_template('host.html')
 
+@app.route('/setup')
+def setup():
+
+    # TODO missing input validation (and form doesn't even submit here, lol)
+    controller.start_game()
+
+    # announce waiting room that game has started
+    emit("start_game", namespace="/wait", broadcast=True)
     return render_template('host.html')
 
 

@@ -15,9 +15,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-from ceopardy.game import Game, GameBoard
-from threading import Lock
 import functools
+from threading import Lock
+
+from ceopardy.game import Game, GameBoard, GameState
+
 
 def get():
     return controller
@@ -39,7 +41,7 @@ class Controller():
         self.lock = Lock()
 
     def is_game_ready(self):
-        return self.g.started
+        return self.g.state is GameState.started
 
     @locked
     def start_game(self):
