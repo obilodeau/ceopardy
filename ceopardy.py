@@ -28,6 +28,7 @@ from flask_socketio import SocketIO, emit, disconnect
 # authentication related: commented for now
 #import ceopardy.login as login
 from ceopardy.api import api
+from ceopardy.forms import TeamNamesForm
 from ceopardy.controller import controller
 
 app = Flask(__name__)
@@ -77,20 +78,26 @@ def start():
 def host():
     # Start the game if it's not already started
     if not controller.is_game_ready():
-        return render_template('setup.html')
+        form = TeamNamesForm()
+        return render_template('setup.html', form=form)
 
     return render_template('host.html')
 
 
-@app.route('/setup')
+@app.route('/setup', methods=["GET", "POST"])
 def setup():
+    form = TeamNamesForm()
+    if form.validate_on_submit():
 
-    # TODO missing input validation (and form doesn't even submit here, lol)
-    controller.start_game()
+        # TODO missing input validation (and form doesn't even submit here, lol)
+        controller.start_game()
 
-    # announce waiting room that game has started
-    emit("start_game", namespace="/wait", broadcast=True)
-    return render_template('host.html')
+        # announce waiting room that game has started
+        emit("start_game", namespace="/wait", broadcast=True)
+        return render_template('host.html')
+
+    # badly filled form
+    return render_template('setup.html', form=form)
 
 
 # TODO eventually viewer should just become /?

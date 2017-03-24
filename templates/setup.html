@@ -7,7 +7,8 @@
 
         <h2>Let's get this game started, shall we?</h2>
 
-        <form>
+        <form action="{{ url_for('setup') }}" method="post">
+            {{ form.csrf_token }}
             <h3>Please enter the name of the teams:</h3>
             {% for i in range(1, NB_TEAMS + 1) %}
                 <div class="form-group">
