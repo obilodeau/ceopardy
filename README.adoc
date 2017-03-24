@@ -4,5 +4,6 @@
 
 You need Python 3 and https://bower.io[Bower].
 
+    pip install -r requirements.txt
     bower install
     python3 ceopardy.py

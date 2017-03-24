@@ -20,22 +20,28 @@ import random
 import re
 import sys
 
+# authentication related: commented for now
 #import flask_login
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit, disconnect
 
-import ceopardy.login as login
+# authentication related: commented for now
+#import ceopardy.login as login
 from ceopardy.api import api
 from ceopardy.controller import controller
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
-app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
-app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
+
+# authentication related: commented for now
+#app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
+#app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
+
 # API - RESTful
 app.register_blueprint(api, url_prefix='/api')
 socketio = SocketIO(app)
-login.init_app(app)
+# authentication related: commented for now
+#login.init_app(app)
 
 def authenticated_only(f):
     @functools.wraps(f)
@@ -65,8 +71,9 @@ def start():
 # TODO we must kill all client-side state on server load.
 # To reproduce: Not-reloading a host view and reloading server causes mismatch
 # between client and server states. Client is out of sync.
-@app.route('/host')
+# authentication related: commented for now
 #@flask_login.login_required
+@app.route('/host')
 def host():
     # Start the game if it's not already started
     if not controller.is_game_ready():
@@ -103,7 +110,7 @@ def handle_click(data):
         controller.set_question_solved(column, row, True)
         state = controller.dictionize_questions_solved()
         emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("show-overlay", "Test!", namespace='/viewer', broadcast=True)
+        emit("show-overlay", "<p>Test!</p>", namespace='/viewer', broadcast=True)
 
 
 @socketio.on('unclick', namespace='/host')
@@ -112,6 +119,7 @@ def handle_click(data):
 
 
 @socketio.on('roulette', namespace='/host')
+# authentication related: commented for now
 #@authenticated_only
 def handle_roulette():
     nb = controller.get_nb_teams()
