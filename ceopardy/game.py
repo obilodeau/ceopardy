@@ -1,5 +1,5 @@
 # Ceopardy
-# <url>
+# https://github.com/obilodeau/ceopardy/
 #
 # Olivier Bilodeau <olivier@bottomlesspit.org>
 # Copyright (C) 2017 Olivier Bilodeau
@@ -15,7 +15,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-
 from enum import Enum
 
 NB_TEAMS = 3

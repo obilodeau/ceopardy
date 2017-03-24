@@ -1,5 +1,5 @@
 # Ceopardy
-# <url>
+# https://github.com/obilodeau/ceopardy/
 #
 # Olivier Bilodeau <olivier@bottomlesspit.org>
 # Copyright (C) 2017 Olivier Bilodeau
@@ -24,6 +24,7 @@ from ceopardy.game import Game, GameBoard, GameState
 def get():
     return controller
 
+
 def locked(f):
     @functools.wraps(f)
     def wrapped(self, *args, **kwargs):
@@ -31,6 +32,7 @@ def locked(f):
             result = f(self, *args, **kwargs)
         return result
     return wrapped
+
 
 class Controller():
     def __init__(self):
@@ -74,6 +76,7 @@ class Controller():
                 name = "c{0}q{1}".format(column + 1, row + 1)
                 result[name] = question.solved
         return result
+
 
 # TODO: Change for a multiple import solution
 global controller

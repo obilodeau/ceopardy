@@ -1,5 +1,5 @@
 # Ceopardy
-# <url>
+# https://github.com/obilodeau/ceopardy/
 #
 # Olivier Bilodeau <olivier@bottomlesspit.org>
 # Copyright (C) 2017 Olivier Bilodeau
@@ -15,17 +15,18 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-from flask import Flask, render_template, jsonify
-from flask_socketio import SocketIO, send, emit, disconnect
-import flask_login
-from ceopardy.controller import controller
+import functools
+import random
+import re
+import sys
+
+#import flask_login
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit, disconnect
+
 import ceopardy.login as login
 from ceopardy.api import api
-import sys
-import re
-import random
-import functools
-
+from ceopardy.controller import controller
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
@@ -59,6 +60,7 @@ def start():
         return render_template("viewer.html")
     else:
         return render_template('wait.html')
+
 
 # TODO we must kill all client-side state on server load.
 # To reproduce: Not-reloading a host view and reloading server causes mismatch
@@ -102,6 +104,7 @@ def handle_click(data):
         state = controller.dictionize_questions_solved()
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("show-overlay", "Test!", namespace='/viewer', broadcast=True)
+
 
 @socketio.on('unclick', namespace='/host')
 def handle_click(data):
