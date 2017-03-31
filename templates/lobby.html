@@ -2,32 +2,11 @@
 {% extends "base.html" %}
 {% block title %}Game Board{% endblock %}
 
-{% block style %}
-<style>
-    body {
-        background-color: #603320;
-    }
-    
-    div#content {
-        height: 100%;
-    }
-
-    .container-overlay {
-        height: 76vh;
-        width: 100%;
-        position: absolute;
-        top: 2vh;
-        /* display: none; */
-    }
-
-    .container-results {
-        height: 20vh;
-    }
-</style>
+{% block alerts %}
 {% endblock %}
 
 {% block content %}
-    <div id="overlay" class="container-fluid container-overlay">
+    <div id="overlay" class="container-game container-all">
         <div class="black-box">
             <div class="box-overlay">
                 <div id="overlay-content" class="box-ceopardy box-question">

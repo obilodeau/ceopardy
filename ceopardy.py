@@ -66,7 +66,7 @@ def start():
         # TODO eventually viewer should just become /?
         return render_template("viewer.html")
     else:
-        return render_template('wait.html')
+        return render_template('lobby.html')
 
 
 # TODO we must kill all client-side state on server load.
@@ -86,7 +86,7 @@ def host():
 
 @app.route('/setup', methods=["GET", "POST"])
 def setup():
-    form = TeamNamesForm()
+    form = TeamNamesForm(controller.get_config())
     if form.validate_on_submit():
 
         # TODO missing input validation (and form doesn't even submit here, lol)
