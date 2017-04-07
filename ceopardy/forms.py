@@ -19,5 +19,14 @@ from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.validators import DataRequired
 
-# There used to be something here. It might come back so I'm keeping this.
-# Delete this file if we played NorthSec 2017 and this file is still in the tree.
+from ceopardy.controller import controller
+
+# NOTE: Be careful with this form. team names input entries are dynamic based on the number of teams
+#       don't add a team<something> field or it will mangle with it.
+class TeamNamesForm(FlaskForm):
+    pass
+
+for _i in range(1, controller.get_nb_teams() + 1):
+    _i = str(_i)
+    setattr(TeamNamesForm, "team" + _i,
+            StringField(label="Team {}'s Name".format(_i), validators=[DataRequired()]))
