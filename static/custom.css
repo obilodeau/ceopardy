@@ -293,6 +293,18 @@ svg:hover polygon {
     background-color: #ffffff !important;
 }
 
+.box-center {
+    margin: 0 auto 0;
+    /* FIXME couldn't get height to be based on inside content :( */
+    height: 50%;
+}
+
+.box-white {
+    background-color: #ffffff;
+    padding: calc(0.3vh + 0.3vw);
+    border-radius: .50rem;
+}
+
 .black-box {
     background-color: #000000;
     padding: calc(0.3vh + 0.3vw);

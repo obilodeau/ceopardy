@@ -11,27 +11,7 @@
 <div class="container-host">
 
     <div class="container-top container-all container-light" style="display: flex;">
-        
-        <div style="width: 50%;">
-            {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-            <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
-                {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
-                <div class="col-ceopardy flex-horizontal-pad">
-                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button" style="color: white;">${{ _r * 100 }}</div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endfor %}
-        </div>
-        <div style="width: 50%;">
-            <button id="roulette" type="button">Roulette!</button>
-        </div>
-        
-        
-    </div>
-    
-    <div class="container-bottom container-all container-light">
-    
+        {% block main %}{% endblock %}
     </div>
     
     <div class="container-footer flex-border container-light">
@@ -44,6 +24,24 @@
         </div>
         <div style="display: flex; width: 100%">
             <div class="container-footer-control">
+                <div style="width: 50%;">
+                    {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+                        <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
+                            {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
+                                <div class="col-ceopardy flex-horizontal-pad">
+                                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button" style="color: white;">${{ _r * 100 }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div style="width: 50%;">
+                    <button id="roulette" type="button">Roulette!</button>
+                </div>
+            </div>
+
+            <div class="container-bottom container-all container-light">
+                <p>bottom</p>
             </div>
             <div class="container-separator-v container-dark"></div>
             <div class="container-footer-control">

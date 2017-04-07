@@ -79,7 +79,7 @@ def host():
     # Start the game if it's not already started
     if not controller.is_game_ready():
         form = TeamNamesForm()
-        return render_template('setup.html', form=form)
+        return render_template('host-setup.html', form=form)
 
     return render_template('host.html')
 
@@ -97,7 +97,7 @@ def setup():
         return render_template('host.html')
 
     # badly filled form
-    return render_template('setup.html', form=form)
+    return render_template('host.html', form=form)
 
 
 # TODO eventually viewer should just become /?
