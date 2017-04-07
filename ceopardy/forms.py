@@ -19,9 +19,5 @@ from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.validators import DataRequired
 
-class TeamNamesForm(FlaskForm):
-    # TODO align this with global NB_TEAMS
-    # http://wtforms.readthedocs.io/en/latest/specific_problems.html#dynamic-form-composition
-    team1 = StringField('TeamName1', validators=[DataRequired()])
-    team2 = StringField('TeamName2', validators=[DataRequired()])
-    team3 = StringField('TeamName3', validators=[DataRequired()])
+# There used to be something here. It might come back so I'm keeping this.
+# Delete this file if we played NorthSec 2017 and this file is still in the tree.

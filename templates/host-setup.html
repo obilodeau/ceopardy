@@ -7,11 +7,11 @@
             {{ form.csrf_token }}
             <h2>Let's get this game started, shall we?</h2>
             <h3>Please enter the name of the teams:</h3>
-            {% for i in range(1, NB_TEAMS + 1) %}
+            {# Dynamically generate proper amount of fields based on 'team??' fields in form #}
+            {% for name, field in form._fields.items() if name.startswith('team') %}
                 <div class="form-group">
-                    <label for="teamName{{ i }}">Team #{{ i }}'s Name</label>
-                    <!-- <input type="text" class="form-control" id="teamName{{ i }}" placeholder="Enter the name of the team"> -->
-                    {{ form.team1(class_="form-control", placeholder="Enter the name of the team") }}
+                    {{ field.label }}
+                    {{ field(class_="form-control", placeholder="Enter the name of the team") }}
                 </div>
             {% endfor %}
             <button type="submit" class="btn btn-primary">Ready!</button>

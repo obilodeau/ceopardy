@@ -21,15 +21,18 @@ import re
 import sys
 
 # authentication related: commented for now
-#import flask_login
+# import flask_login
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit, disconnect
+from flask_wtf import FlaskForm
+from wtforms import StringField
+from wtforms.validators import DataRequired
 
 # authentication related: commented for now
-#import ceopardy.login as login
+# import ceopardy.login as login
 from ceopardy.api import api
-from ceopardy.forms import TeamNamesForm
 from ceopardy.controller import controller
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
@@ -78,6 +81,16 @@ def start():
 def host():
     # Start the game if it's not already started
     if not controller.is_game_ready():
+        # NOTE: Be careful with this form. team names input entries are dynamic based on the number of teams
+        #       don't add a team<something> field or it will mangle with it.
+        class TeamNamesForm(FlaskForm):
+            pass
+
+        for _i in range(1, controller.get_nb_teams() + 1):
+            _i = str(_i)
+            setattr(TeamNamesForm, "team" + _i,
+                    StringField(label="Team {}'s Name".format(_i), validators=[DataRequired()]))
+
         form = TeamNamesForm()
         return render_template('host-setup.html', form=form)
 
