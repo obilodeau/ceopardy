@@ -3,11 +3,11 @@
 {% block main %}
     <div id="game-setup" class="box-center box-white">
         <h1>Hacker Jeopardy</h1>
-        <form action="{{ url_for('setup') }}" method="post">
+        <form action="{{ url_for('setup') }}" method="POST">
             {{ form.csrf_token }}
             <h2>Let's get this game started, shall we?</h2>
             <h3>Please enter the name of the teams:</h3>
-            {# Dynamically generate proper amount of fields based on 'team??' fields in form #}
+            {# Dynamically generate proper amount of fields based on 'team?' fields in form #}
             {% for name, field in form._fields.items() if name.startswith('team') %}
                 <div class="form-group">
                     {{ field.label }}
