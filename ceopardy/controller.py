@@ -18,6 +18,7 @@
 import functools
 from threading import Lock
 
+from flask import current_app as app
 from ceopardy.game import Game, GameBoard, GameState
 
 
@@ -46,7 +47,8 @@ class Controller():
         return self.g.state is GameState.started
 
     @locked
-    def start_game(self):
+    def start_game(self, teamnames):
+        app.logger.info("Game started with teams: {}".format(teamnames))
         return self.g.start()
 
     def get_config(self):

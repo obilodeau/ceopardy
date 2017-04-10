@@ -16,6 +16,7 @@
 # GNU General Public License for more details.
 #
 import functools
+import logging
 import random
 import re
 import sys
@@ -29,20 +30,10 @@ from flask_socketio import SocketIO, emit, disconnect
 # import ceopardy.login as login
 from ceopardy.api import api
 from ceopardy.controller import controller
-from ceopardy.forms import TeamNamesForm
+from ceopardy.forms import TeamNamesForm, TEAM_FIELD_ID
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Alex Trebek forever!'
-
-# authentication related: commented for now
-#app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
-#app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
-
-# API - RESTful
-app.register_blueprint(api, url_prefix='/api')
 socketio = SocketIO(app)
-# authentication related: commented for now
-#login.init_app(app)
 
 def authenticated_only(f):
     @functools.wraps(f)
@@ -84,13 +75,19 @@ def host():
     return render_template('host.html')
 
 
-# TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
+# TODO: kick-out if game is started
 @app.route('/setup', methods=["GET", "POST"])
 def setup():
     form = TeamNamesForm()
+    # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
     if form.validate_on_submit():
 
-        controller.start_game()
+        teamnames = []
+        for field in form:
+            if TEAM_FIELD_ID in field.flags:
+                teamnames.append(field.data)
+
+        controller.start_game(teamnames)
 
         # announce waiting room that game has started
         emit("start_game", namespace="/wait", broadcast=True)
@@ -144,4 +141,21 @@ def handle_refresh():
 
 
 if __name__ == '__main__':
+    app.config['SECRET_KEY'] = 'Alex Trebek forever!'
+
+    # logging
+    # TODO add datetime to default logging format
+    file_handler = logging.FileHandler('ceopardy.log')
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+
+    # authentication related: commented for now
+    #app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
+    #app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
+    #login.init_app(app)
+
+    # TODO considered for removal
+    # API - RESTful
+    app.register_blueprint(api, url_prefix='/api')
+
     socketio.run(app, host="0.0.0.0", debug=True)
