@@ -84,17 +84,12 @@ def host():
     return render_template('host.html')
 
 
-# FIXME: +next is here
-# TODO: error messages when missing team name
-# TODO: validate that team names are unique
 # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
 @app.route('/setup', methods=["GET", "POST"])
 def setup():
     form = TeamNamesForm()
     if form.validate_on_submit():
 
-        # TODO missing input validation (and form doesn't even submit here, lol)
-        #controller.validate_teamnames(form)
         controller.start_game()
 
         # announce waiting room that game has started

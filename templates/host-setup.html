@@ -7,11 +7,18 @@
             {{ form.csrf_token }}
             <h2>Let's get this game started, shall we?</h2>
             <h3>Please enter the name of the teams:</h3>
-            {# Dynamically generate proper amount of fields based on 'team?' fields in form #}
-            {% for name, field in form._fields.items() if name.startswith('team') %}
+            {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
+            {% for field in form if field.flags.teamname %}
                 <div class="form-group">
                     {{ field.label }}
                     {{ field(class_="form-control", placeholder="Enter the name of the team") }}
+                    {% if field.errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in field.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             {% endfor %}
             <button type="submit" class="btn btn-primary">Ready!</button>
