@@ -82,11 +82,7 @@ def setup():
     # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
     if form.validate_on_submit():
 
-        teamnames = []
-        for field in form:
-            if TEAM_FIELD_ID in field.flags:
-                teamnames.append(field.data)
-
+        teamnames = [field.data for field in form if TEAM_FIELD_ID in field.flags]
         controller.start_game(teamnames)
 
         # announce waiting room that game has started
@@ -99,7 +95,10 @@ def setup():
 # TODO eventually viewer should just become /?
 @app.route('/viewer')
 def viewer():
-    return render_template('viewer.html')
+    team_stats = controller.get_team_stats()
+    # FIXME crashes, need to store in global context?
+    # See: http://flask.pocoo.org/docs/0.12/appcontext/
+    return render_template('viewer.html', team_stats=team_stats)
 
 
 @socketio.on('click', namespace='/host')
@@ -144,9 +143,11 @@ if __name__ == '__main__':
     app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 
     # logging
-    # TODO add datetime to default logging format
     file_handler = logging.FileHandler('ceopardy.log')
-    file_handler.setLevel(logging.INFO)
+    #file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.DEBUG)
+    fmt = logging.Formatter('{asctime} - {levelname} - {message}', style='{')
+    file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
 
     # authentication related: commented for now

@@ -36,15 +36,15 @@
         <div class="container-separator-h"></div>
         
         <div class="container-results">
-                {% for _n in range(1, NB_TEAMS + 1) %}
+                {% for name, score in team_stats.items() %}
                 <div class="container-team">
                         <div id="t{{ _n }}" class="black-box" style="width: 80%; max-width:250px; margin: auto;">
                             <div class="col-player flex-horizontal-pad">
                                 <div class="row-player flex-vertical-pad" style="height: 30%;">
-                                    <div id="t{{ _n }}score" class="box-ceopardy box-score"><p>${{ 1000 * _n }}</p></div>
+                                    <div id="t{{ _n }}score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
                                 </div>
                                 <div class="row-player flex-vertical-pad" style="height: 70%;">
-                                    <div id="t{{ _n }}name" class="box-ceopardy box-team team-{{ _n }}"><p>Test Team!</p></div>
+                                    <div id="t{{ _n }}name" class="box-ceopardy box-team team-{{ _n }}"><p>{{ name }}</p></div>
                                 </div>
                             </div>
                         </div>

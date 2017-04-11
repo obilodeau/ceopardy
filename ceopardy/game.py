@@ -17,6 +17,8 @@
 #
 from enum import Enum
 
+from flask import current_app as app
+
 NB_TEAMS = 3
 CATEGORIES_PER_GAME = 5
 QUESTIONS_PER_CATEGORY = 5
@@ -24,19 +26,33 @@ QUESTIONS_PER_CATEGORY = 5
 # TODO save a game in progress
 # TODO load a game in progress
 class Game():
-    def __init__(self):
+    def __init__(self, app):
         self.config = {
             'NB_TEAMS': NB_TEAMS
         }
         self.state = GameState.uninitialized
+        self.teams = []
+
+
+    def setup(self, teamnames):
+        if self.state is GameState.uninitialized:
+            self.teams = [Team(team) for team in teamnames]
+            self.state = GameState.setup
+        else:
+            raise GameProblem("Trying to setup a game that is already started")
+
 
 
     def start(self):
-        if self.state is not GameState.started:
+        if self.state is GameState.setup:
             self.state = GameState.started
             return True
         else:
-            raise GameProblem("Trying to start an already started game")
+            raise GameProblem("Trying to start a game that isn't ready to start")
+
+
+    def get_team_stats(self):
+        return [{team.name: team.score} for team in self.teams]
 
     # TODO randomly pick a team
 
@@ -50,6 +66,8 @@ class Team():
     def __init__(self, name):
         self.score = 0
         self.name = name
+        app.logger.debug("Team created: name is {}, initial score is {}"
+                         .format(self.name, self.score))
 
 
 class GameBoard():

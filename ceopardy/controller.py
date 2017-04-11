@@ -19,6 +19,7 @@ import functools
 from threading import Lock
 
 from flask import current_app as app
+
 from ceopardy.game import Game, GameBoard, GameState
 
 
@@ -37,25 +38,32 @@ def locked(f):
 
 class Controller():
     def __init__(self):
-        self.g = Game()
+        self.game = Game(app)
         self.gb = GameBoard()
         # Merge various constants from model
-        self.g.config.update(self.gb.config)
+        self.game.config.update(self.gb.config)
         self.lock = Lock()
 
     def is_game_ready(self):
-        return self.g.state is GameState.started
+        return self.game.state is GameState.started
 
     @locked
     def start_game(self, teamnames):
-        app.logger.info("Game started with teams: {}".format(teamnames))
-        return self.g.start()
+        app.logger.info("Starting game with teams: {}".format(teamnames))
+        self.game.setup(teamnames)
+        return self.game.start()
 
     def get_config(self):
-        return self.g.config
+        return self.game.config
+
+    def get_team_stats(self):
+        if self.game.state is GameState.started:
+            return self.game.get_team_stats()
+        else:
+            return None
 
     def get_nb_teams(self):
-        return self.g.config["NB_TEAMS"]
+        return self.game.config["NB_TEAMS"]
 
     def get_question(self, column, row):
         return self.gb.questions[row - 1][column - 1]
