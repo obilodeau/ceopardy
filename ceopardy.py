@@ -21,15 +21,10 @@ import random
 import re
 import sys
 
-# authentication related: commented for now
-# import flask_login
 from flask import g, Flask, render_template, redirect
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
-# authentication related: commented for now
-# import ceopardy.login as login
-# from ceopardy.api import api
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
 app = Flask(__name__)
@@ -37,15 +32,6 @@ app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ceopardy.db'
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
-
-def authenticated_only(f):
-    @functools.wraps(f)
-    def wrapped(*args, **kwargs):
-        if not flask_login.current_user.is_authenticated:
-            disconnect()
-        else:
-            return f(*args, **kwargs)
-    return wrapped
 
 
 @app.context_processor
@@ -69,7 +55,6 @@ def start():
 # To reproduce: Not-reloading a host view and reloading server causes mismatch
 # between client and server states. Client is out of sync.
 # authentication related: commented for now
-#@flask_login.login_required
 @app.route('/host')
 def host():
     # Start the game if it's not already started
@@ -130,8 +115,6 @@ def handle_click(data):
 
 
 @socketio.on('roulette', namespace='/host')
-# authentication related: commented for now
-#@authenticated_only
 def handle_roulette():
     controller = get_controller()
     nb = controller.get_nb_teams()
@@ -160,15 +143,6 @@ if __name__ == '__main__':
         '{asctime} {levelname}: {message} [in {pathname}:{lineno}]', style='{')
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
-
-    # authentication related: commented for now
-    #app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
-    #app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
-    #login.init_app(app)
-
-    # TODO considered for removal
-    # API - RESTful
-    #app.register_blueprint(api, url_prefix='/api')
 
     with app.app_context():
 

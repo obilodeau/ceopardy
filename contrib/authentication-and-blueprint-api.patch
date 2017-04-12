@@ -1,0 +1,237 @@
+diff --git a/ceopardy.old/__init__.py b/ceopardy.old/__init__.py
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/ceopardy.old/api.py b/ceopardy.old/api.py
+deleted file mode 100644
+index 633a50f..0000000
+--- a/ceopardy.old/api.py
++++ /dev/null
+@@ -1,101 +0,0 @@
+-import random
+-
+-import flask
+-from flask import Blueprint, request
+-from flask_socketio import emit
+-
+-import controller as controller
+-
+-#import flask_login
+-
+-
+-api = Blueprint('api', __name__, url_prefix='/api')
+-
+-@api.route('/', defaults={'path': 'debug'})
+-@api.route('/<path:path>', methods=['GET', 'PUT', 'POST', 'DELETE'])
+-#@flask_login.login_required
+-def dispatcher(path):
+-    parts = path.split("/")
+-    handler = parts.pop(0)
+-    #if len(parts) > 0 and len(parts[-1]) == 0:
+-    #    parts.pop()
+-    if len(parts) == 0:
+-        # Request should have ended with a / but we fix it anyway...
+-        parts.append("")
+-    # Get rid of file inclusion and directory traversal crap right away!
+-    if "." in parts or ".." in parts:
+-        return flask.jsonify({"result": "Fuck off!"})
+-    method = request.method.lower()
+-    if request.method == "GET":
+-        data = request.args
+-    elif request.method == "POST" or request.method == "PUT": 
+-        data = request.form
+-    else:
+-        data = None
+-    function = None
+-    try:
+-        function = getattr(Handlers, method + "_" + handler)
+-    except AttributeError:
+-        # Fallback...for debug purposes!
+-        if handler == "debug":
+-            success, variable = Handlers.debug
+-    if function is not None:
+-        try:
+-            success, variable = function(parts, data)
+-        except:
+-            success = False
+-            result = {}
+-            variable = "Server-side failure!"
+-        if success is None:
+-            return variable
+-        if success:
+-            result = variable
+-            result["result"] = "ok"
+-        else:
+-            result = {}
+-            result["result"] = variable
+-    else:
+-        result = {}
+-        result["result"] = "Operation not supported!"
+-    return flask.jsonify(**result)
+-
+-
+-class Handlers:
+-    '''
+-    Operations handlers, REST style where a request like:
+-        VERB /operation/something/item
+-    Will end up calling the method verb_something(item, data) where item is the rest of the path 
+-    as a list split by "/" and data is the data that comes with the request.
+-    On success, methods return True with a dictionnary of results.
+-    On failure, methods return False with a message.
+-    '''
+-    def debug(parts, data):
+-        '''
+-        The name says it all...
+-        '''
+-        print("debug", file=sys.stderr)
+-        return True, {"debug": "debug"}
+-
+-    def post_roulette(parts, data):
+-        '''
+-        '''
+-        if len(parts[-1]) == 0:
+-            pass
+-        else:
+-            pass
+-        nb = controller.get().get_nb_teams()
+-        #nb = 3
+-        l = []
+-        team = "t" + str(random.randrange(1, nb + 1))
+-        for i in range(12):
+-            l.append("t" + str(i % nb + 1))
+-        l.append(team)
+-        emit("roulette-team", l, broadcast=True, namespace="/viewer")
+-        return True, {}
+-    '''
+-    # Not supported
+-    def post_roulette(parts, data):
+-    def put_roulette(parts, data):
+-    def delete_roulette(parts, data):
+-    '''
+-
+diff --git a/ceopardy.old/login.py b/ceopardy.old/login.py
+deleted file mode 100644
+index 28eb088..0000000
+--- a/ceopardy.old/login.py
++++ /dev/null
+@@ -1,52 +0,0 @@
+-from flask import Flask, render_template, request, redirect, url_for
+-import flask_login
+-
+-
+-login_manager = flask_login.LoginManager()
+-users = {'host': {'pw': 'trebek'}}
+-
+-def init_app(app):
+-    login_manager.init_app(app)
+-    login_manager.login_view = "/login"
+-
+-class User(flask_login.UserMixin):
+-    pass
+-
+-@login_manager.user_loader
+-def user_loader(username):
+-    if username not in users:
+-        return
+-    user = User()
+-    user.id = username
+-    return user
+-
+-@login_manager.request_loader
+-def request_loader(request):
+-    username = request.form.get('username')
+-    if username not in users:
+-        return
+-
+-    user = User()
+-    user.id = username
+-
+-    # DO NOT ever store passwords in plaintext and always compare password
+-    # hashes using constant-time comparison!
+-    user.is_authenticated = request.form['pw'] == users[username]['pw']
+-    return user
+-
+-def login():
+-    if request.method == 'GET':
+-        return render_template('login.html')
+-    username = request.form['username']
+-    if request.form['password'] == users[username]['pw']:
+-        user = User()
+-        user.id = username
+-        flask_login.login_user(user)
+-        return redirect(url_for('host'))
+-    return 'Bad login'
+-
+-def logout():
+-    flask_login.logout_user()
+-    return 'Logged out'
+-
+-
+diff --git a/ceopardy.py b/ceopardy.py
+index 2f32811..3052f26 100644
+--- a/ceopardy.py
++++ b/ceopardy.py
+@@ -21,15 +21,10 @@ import random
+ import re
+ import sys
+ 
+-# authentication related: commented for now
+-# import flask_login
+ from flask import g, Flask, render_template, redirect
+ from flask_socketio import SocketIO, emit, disconnect
+ from flask_sqlalchemy import SQLAlchemy
+ 
+-# authentication related: commented for now
+-# import ceopardy.login as login
+-# from ceopardy.api import api
+ from forms import TeamNamesForm, TEAM_FIELD_ID
+ 
+ app = Flask(__name__)
+@@ -38,15 +33,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ceopardy.db'
+ socketio = SocketIO(app)
+ db = SQLAlchemy(app)
+ 
+-def authenticated_only(f):
+-    @functools.wraps(f)
+-    def wrapped(*args, **kwargs):
+-        if not flask_login.current_user.is_authenticated:
+-            disconnect()
+-        else:
+-            return f(*args, **kwargs)
+-    return wrapped
+-
+ 
+ @app.context_processor
+ def inject_config():
+@@ -69,7 +55,6 @@ def start():
+ # To reproduce: Not-reloading a host view and reloading server causes mismatch
+ # between client and server states. Client is out of sync.
+ # authentication related: commented for now
+-#@flask_login.login_required
+ @app.route('/host')
+ def host():
+     # Start the game if it's not already started
+@@ -130,8 +115,6 @@ def handle_click(data):
+ 
+ 
+ @socketio.on('roulette', namespace='/host')
+-# authentication related: commented for now
+-#@authenticated_only
+ def handle_roulette():
+     controller = get_controller()
+     nb = controller.get_nb_teams()
+@@ -161,15 +144,6 @@ if __name__ == '__main__':
+     file_handler.setFormatter(fmt)
+     app.logger.addHandler(file_handler)
+ 
+-    # authentication related: commented for now
+-    #app.add_url_rule('/login', view_func=login.login, methods=['GET', 'POST'])
+-    #app.add_url_rule('/logout', view_func=login.logout, methods=['GET', 'POST'])
+-    #login.init_app(app)
+-
+-    # TODO considered for removal
+-    # API - RESTful
+-    #app.register_blueprint(api, url_prefix='/api')
+-
+     with app.app_context():
+ 
+         from controller import Controller
