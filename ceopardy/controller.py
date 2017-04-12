@@ -23,10 +23,6 @@ from flask import current_app as app
 from ceopardy.game import Game, GameBoard, GameState
 
 
-def get():
-    return controller
-
-
 def locked(f):
     @functools.wraps(f)
     def wrapped(self, *args, **kwargs):
@@ -38,7 +34,8 @@ def locked(f):
 
 class Controller():
     def __init__(self):
-        self.game = Game(app)
+        app.logger.debug("Controller initialized")
+        self.game = Game()
         self.gb = GameBoard()
         # Merge various constants from model
         self.game.config.update(self.gb.config)
@@ -88,6 +85,3 @@ class Controller():
         return result
 
 
-# TODO: Change for a multiple import solution
-global controller
-controller = Controller()

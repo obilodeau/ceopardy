@@ -23,13 +23,13 @@ import sys
 
 # authentication related: commented for now
 # import flask_login
-from flask import Flask, render_template, request, redirect, url_for
+from flask import g, Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, emit, disconnect
 
 # authentication related: commented for now
 # import ceopardy.login as login
-from ceopardy.api import api
-from ceopardy.controller import controller
+#from ceopardy.api import api
+from ceopardy.controller import Controller
 from ceopardy.forms import TeamNamesForm, TEAM_FIELD_ID
 
 app = Flask(__name__)
@@ -48,11 +48,13 @@ def authenticated_only(f):
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
+    controller = get_controller()
     return controller.get_config()
 
 
 @app.route('/')
 def start():
+    controller = get_controller()
     if controller.is_game_ready():
         # TODO eventually viewer should just become /?
         return render_template("viewer.html")
@@ -68,6 +70,7 @@ def start():
 @app.route('/host')
 def host():
     # Start the game if it's not already started
+    controller = get_controller()
     if not controller.is_game_ready():
         form = TeamNamesForm()
         return render_template('host-setup.html', form=form)
@@ -78,6 +81,7 @@ def host():
 # TODO: kick-out if game is started
 @app.route('/setup', methods=["GET", "POST"])
 def setup():
+    controller = get_controller()
     form = TeamNamesForm()
     # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
     if form.validate_on_submit():
@@ -95,6 +99,7 @@ def setup():
 # TODO eventually viewer should just become /?
 @app.route('/viewer')
 def viewer():
+    controller = get_controller()
     team_stats = controller.get_team_stats()
     # FIXME crashes, need to store in global context?
     # See: http://flask.pocoo.org/docs/0.12/appcontext/
@@ -103,6 +108,7 @@ def viewer():
 
 @socketio.on('click', namespace='/host')
 def handle_click(data):
+    controller = get_controller()
     print('received data: ' + data["id"], file=sys.stderr)
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
@@ -124,6 +130,7 @@ def handle_click(data):
 # authentication related: commented for now
 #@authenticated_only
 def handle_roulette():
+    controller = get_controller()
     nb = controller.get_nb_teams()
     l = []
     team = "t" + str(random.randrange(1, nb + 1))
@@ -135,6 +142,7 @@ def handle_roulette():
 
 @socketio.on('refresh', namespace='/viewer')
 def handle_refresh():
+    controller = get_controller()
     state = controller.dictionize_questions_solved()
     emit("update-board", state)
 
@@ -146,7 +154,8 @@ if __name__ == '__main__':
     file_handler = logging.FileHandler('ceopardy.log')
     #file_handler.setLevel(logging.INFO)
     file_handler.setLevel(logging.DEBUG)
-    fmt = logging.Formatter('{asctime} - {levelname} - {message}', style='{')
+    fmt = logging.Formatter(
+        '{asctime} {levelname}: {message} [in {pathname}:{lineno}]', style='{')
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
 
@@ -157,6 +166,21 @@ if __name__ == '__main__':
 
     # TODO considered for removal
     # API - RESTful
-    app.register_blueprint(api, url_prefix='/api')
+    #app.register_blueprint(api, url_prefix='/api')
+
+    with app.app_context():
+
+        def get_controller():
+            _ctl = getattr(g, '_ctl', None)
+            if _ctl is None:
+                _ctl = g._ctl = Controller()
+            return _ctl
+
+        @app.teardown_appcontext
+        def teardown_controller(exception):
+            app.logger.debug("Controller teardown requested")
+            _ctl = getattr(g, '_ctl', None)
+            if _ctl is not None:
+                _ctl = None
 
     socketio.run(app, host="0.0.0.0", debug=True)

@@ -26,7 +26,7 @@ QUESTIONS_PER_CATEGORY = 5
 # TODO save a game in progress
 # TODO load a game in progress
 class Game():
-    def __init__(self, app):
+    def __init__(self):
         self.config = {
             'NB_TEAMS': NB_TEAMS
         }

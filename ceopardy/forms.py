@@ -19,7 +19,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.validators import InputRequired, ValidationError
 
-from ceopardy.controller import controller
+from ceopardy.game import NB_TEAMS
 
 # this id is used to flag team name input entries so that we can dynamically
 # generate form because the number of team is configurable
@@ -41,7 +41,7 @@ class UniqueTeamName():
                 if field.data == otherfield.data:
                     raise ValidationError('Team name must be unique per game!')
 
-for _i in range(1, controller.get_nb_teams() + 1):
+for _i in range(1, NB_TEAMS + 1):
     _i = str(_i)
     setattr(TeamNamesForm, "team" + _i,
             StringField(label="Team {}'s Name".format(_i),
