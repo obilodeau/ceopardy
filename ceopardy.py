@@ -89,7 +89,7 @@ def setup():
 def viewer():
     controller = get_controller()
     team_stats = controller.get_team_stats()
-    # FIXME crashes, need to store in global context?
+    # FIXME crashes, needs a database
     # See: http://flask.pocoo.org/docs/0.12/appcontext/
     return render_template('viewer.html', team_stats=team_stats)
 
@@ -144,6 +144,8 @@ if __name__ == '__main__':
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
 
+    # cleaner controller access
+    # unsure if required once we have a db back-end
     with app.app_context():
 
         from controller import Controller
