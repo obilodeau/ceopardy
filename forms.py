@@ -19,7 +19,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.validators import InputRequired, ValidationError
 
-from ceopardy.game import NB_TEAMS
+from config import NB_TEAMS
 
 # this id is used to flag team name input entries so that we can dynamically
 # generate form because the number of team is configurable

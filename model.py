@@ -19,12 +19,12 @@ from enum import Enum
 
 from flask import current_app as app
 
-NB_TEAMS = 3
-CATEGORIES_PER_GAME = 5
-QUESTIONS_PER_CATEGORY = 5
+from ceopardy import db
+from config import NB_TEAMS, CATEGORIES_PER_GAME, QUESTIONS_PER_CATEGORY
 
 # TODO save a game in progress
 # TODO load a game in progress
+# TODO refactor to GameModel?
 class Game():
     def __init__(self):
         self.config = {
@@ -62,12 +62,20 @@ class GameState(Enum):
     setup = 1
     started = 2
 
-class Team():
-    def __init__(self, name):
-        self.score = 0
+
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    handicap = db.Column(db.Integer)
+
+    def __init__(self, name, handicap=0):
         self.name = name
-        app.logger.debug("Team created: name is {}, initial score is {}"
-                         .format(self.name, self.score))
+        self.handicap = handicap
+        app.logger.debug("Team created: name is {}, handicap is {}"
+                         .format(self.name, self.handicap))
+
+    def __repr__(self):
+        return '<Team %r>' % self.name
 
 
 class GameBoard():

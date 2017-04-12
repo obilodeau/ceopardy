@@ -1,8 +1,11 @@
+import random
+
 import flask
 from flask import Blueprint, request
-from flask_socketio import SocketIO, send, emit
-import ceopardy.controller as controller
-import random
+from flask_socketio import emit
+
+import controller as controller
+
 #import flask_login
 
 

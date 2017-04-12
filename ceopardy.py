@@ -23,17 +23,20 @@ import sys
 
 # authentication related: commented for now
 # import flask_login
-from flask import g, Flask, render_template, request, redirect, url_for
+from flask import g, Flask, render_template, redirect
 from flask_socketio import SocketIO, emit, disconnect
+from flask_sqlalchemy import SQLAlchemy
 
 # authentication related: commented for now
 # import ceopardy.login as login
-#from ceopardy.api import api
-from ceopardy.controller import Controller
-from ceopardy.forms import TeamNamesForm, TEAM_FIELD_ID
+# from ceopardy.api import api
+from forms import TeamNamesForm, TEAM_FIELD_ID
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'Alex Trebek forever!'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ceopardy.db'
 socketio = SocketIO(app)
+db = SQLAlchemy(app)
 
 def authenticated_only(f):
     @functools.wraps(f)
@@ -148,7 +151,6 @@ def handle_refresh():
 
 
 if __name__ == '__main__':
-    app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 
     # logging
     file_handler = logging.FileHandler('ceopardy.log')
@@ -170,6 +172,7 @@ if __name__ == '__main__':
 
     with app.app_context():
 
+        from controller import Controller
         def get_controller():
             _ctl = getattr(g, '_ctl', None)
             if _ctl is None:

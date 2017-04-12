@@ -20,7 +20,7 @@ from threading import Lock
 
 from flask import current_app as app
 
-from ceopardy.game import Game, GameBoard, GameState
+from model import Game, GameBoard, GameState
 
 
 def locked(f):
