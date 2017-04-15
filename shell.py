@@ -15,8 +15,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-config = {
-    'NB_TEAMS': 3,
-    'CATEGORIES_PER_GAME': 5,
-    'QUESTIONS_PER_CATEGORY': 5
-}
+from ceopardy import db
+import model
+
+# creates all tables from model
+db.create_all()

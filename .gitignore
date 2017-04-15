@@ -6,3 +6,7 @@ __pycache__/
 
 # dependencies managed by Bower
 /static/vendor/
+
+# project files
+ceopardy.db
+ceopardy.log

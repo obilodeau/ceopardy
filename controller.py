@@ -20,9 +20,12 @@ from threading import Lock
 
 from flask import current_app as app
 
-from model import Game, GameBoard, GameState
+from config import config
+from ceopardy import db
+from model import Game, Team, GameState, GameBoard
 
 
+# TODO consider for removal now that we use a database: make sure to use transactions properly!
 def locked(f):
     @functools.wraps(f)
     def wrapped(self, *args, **kwargs):
@@ -35,35 +38,59 @@ def locked(f):
 class Controller():
     def __init__(self):
         app.logger.debug("Controller initialized")
-        self.game = Game()
-        self.gb = GameBoard()
-        # Merge various constants from model
-        self.game.config.update(self.gb.config)
         self.lock = Lock()
 
-    def is_game_ready(self):
-        return self.game.state is GameState.started
+        # if there's not a game state, create one
+        if Game.query.first() is None:
+            game = Game()
+            db.session.add(game)
+            db.session.commit()
 
-    @locked
-    def start_game(self, teamnames):
+
+    @staticmethod
+    def is_game_ready():
+        game = Game.query.first()
+        return game.state == GameState.started
+
+    @staticmethod
+    def start_game(teamnames):
         app.logger.info("Starting game with teams: {}".format(teamnames))
-        self.game.setup(teamnames)
-        return self.game.start()
+        game = Game.query.first()
+        if game.state == GameState.uninitialized:
+            for _tn in teamnames:
+                team = Team(_tn)
+                db.session.add(team)
+            game.state = GameState.started
+            db.session.commit()
+        else:
+            raise GameProblem("Trying to setup a game that is already started")
 
-    def get_config(self):
-        return self.game.config
+        return True
 
-    def get_team_stats(self):
-        if self.game.state is GameState.started:
-            return self.game.get_team_stats()
+
+    @staticmethod
+    def get_config():
+        return config
+
+
+    @staticmethod
+    def get_team_stats():
+        game = Game.query.first()
+        if game.state == GameState.started:
+            # TODO implement score
+            return {team.name: 0 for team in Team.query.all()}
         else:
             return None
 
-    def get_nb_teams(self):
-        return self.game.config["NB_TEAMS"]
+
+    @staticmethod
+    def get_nb_teams():
+        return config["NB_TEAMS"]
 
     def get_question(self, column, row):
-        return self.gb.questions[row - 1][column - 1]
+        # TODO migrate to db
+        gb = GameBoard()
+        return gb.questions[row - 1][column - 1]
     
     def get_question_solved(self, column, row):
         question = self.get_question(column, row)
@@ -75,13 +102,17 @@ class Controller():
         question.solved = value
 
     def dictionize_questions_solved(self):
-        questions = self.gb.questions
+        # TODO migrate to db
+        gb = GameBoard()
+        questions = gb.questions
         result = {}
         for row in range(len(questions)):
-            for column in range(len(self.gb.questions[row])):
-                question = self.gb.questions[row][column]
+            for column in range(len(gb.questions[row])):
+                question = gb.questions[row][column]
                 name = "c{0}q{1}".format(column + 1, row + 1)
                 result[name] = question.solved
         return result
 
 
+class GameProblem(Exception):
+    pass

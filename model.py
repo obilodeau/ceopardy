@@ -20,26 +20,16 @@ from enum import Enum
 from flask import current_app as app
 
 from ceopardy import db
-from config import NB_TEAMS, CATEGORIES_PER_GAME, QUESTIONS_PER_CATEGORY
+from config import config
 
 # TODO save a game in progress
 # TODO load a game in progress
 # TODO refactor to GameModel?
-class Game():
+class old_Game():
     def __init__(self):
-        self.config = {
-            'NB_TEAMS': NB_TEAMS
-        }
         self.state = GameState.uninitialized
         self.teams = []
 
-
-    def setup(self, teamnames):
-        if self.state is GameState.uninitialized:
-            self.teams = [Team(team) for team in teamnames]
-            self.state = GameState.setup
-        else:
-            raise GameProblem("Trying to setup a game that is already started")
 
 
 
@@ -57,10 +47,24 @@ class Game():
     # TODO randomly pick a team
 
 
+# TODO remove
 class GameState(Enum):
     uninitialized = 0
     setup = 1
     started = 2
+
+
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    state = db.Column(db.Enum(GameState))
+    #ceopardy_version = db.Column(db.String(16))
+    #schema_version = db.Column(db.Integer)
+
+    def __init__(self):
+        self.state = 'uninitialized'
+
+    def __repr__(self):
+        return '<Game in state %r>' % self.state
 
 
 class Team(db.Model):
@@ -80,19 +84,15 @@ class Team(db.Model):
 
 class GameBoard():
     def __init__(self):
-        self.config = {
-            'CATEGORIES_PER_GAME': CATEGORIES_PER_GAME,
-            'QUESTIONS_PER_CATEGORY': QUESTIONS_PER_CATEGORY
-        }
         self.questions = []
-        for column in range(CATEGORIES_PER_GAME):
+        for column in range(config['CATEGORIES_PER_GAME']):
             l = []
-            for row in range(QUESTIONS_PER_CATEGORY):
+            for row in range(config['QUESTIONS_PER_CATEGORY']):
                 question = Question("Nothing!", (row + 1) * 100, [row + 1, column + 1])
                 l.append(question)
             self.questions.append(l)
         self.categories = []
-        for column in range(CATEGORIES_PER_GAME):
+        for column in range(config['CATEGORIES_PER_GAME']):
             category = Category("This is C%d" % (column + 1), column + 1)
             self.categories.append(category)
 
@@ -111,6 +111,7 @@ class Question():
         self.solved = False
 
 
+# TODO consider for removal (duplicated in controller)
 class GameProblem(Exception):
     pass
 

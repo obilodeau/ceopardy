@@ -42,11 +42,11 @@ def inject_config():
 
 
 @app.route('/')
-def start():
+def viewer():
     controller = get_controller()
     if controller.is_game_ready():
-        # TODO eventually viewer should just become /?
-        return render_template("viewer.html")
+        team_stats = controller.get_team_stats()
+        return render_template('viewer.html', team_stats=team_stats)
     else:
         return render_template('lobby.html')
 
@@ -82,16 +82,6 @@ def setup():
         return redirect('/host')
 
     return render_template('host-setup.html', form=form)
-
-
-# TODO eventually viewer should just become /?
-@app.route('/viewer')
-def viewer():
-    controller = get_controller()
-    team_stats = controller.get_team_stats()
-    # FIXME crashes, needs a database
-    # See: http://flask.pocoo.org/docs/0.12/appcontext/
-    return render_template('viewer.html', team_stats=team_stats)
 
 
 @socketio.on('click', namespace='/host')
