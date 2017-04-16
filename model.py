@@ -15,6 +15,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+import collections
 from enum import Enum
 
 from flask import current_app as app
@@ -110,6 +111,8 @@ class Question(db.Model):
         return '<Question {} for {} at col {} row {}>'\
             .format(self.category, self.score_original, self.col, self.row)
 
+
+FinalQuestion = collections.namedtuple('FinalQuestion', 'category question')
 
 class GameBoard():
     def __init__(self):

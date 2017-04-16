@@ -75,7 +75,7 @@ class Controller():
         if game.state == GameState.uninitialized:
 
             # TODO need to be able to specify given game
-            gamefile = parse_gamefile('data/1st.round')
+            gamefile, final = parse_gamefile('data/1st.round')
             questions = parse_questions(q_file)
 
             # TODO do some validation based on config constants
@@ -84,6 +84,11 @@ class Controller():
                     score = _row * config['SCORE_TICK']
                     question = Question(_q, score, _cat, _row, _col)
                     db.session.add(question)
+
+            # add final question
+            if final is not None:
+                question = Question(final.question, 0, final.category, 0, 0, final=True)
+                db.session.add(question)
             db.session.commit()
 
         else:
@@ -130,6 +135,7 @@ class Controller():
     def get_categories():
         return [_q.category for _q in
                 db.session.query(Question.category).distinct()
+                  .filter(Question.final == False)
                   .order_by(Question.col)]
 
 

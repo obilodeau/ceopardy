@@ -17,8 +17,9 @@
 #
 import re
 
+from model import FinalQuestion
 
-# FIXME lets commit demo question and categories files from beopardy (since we are compatible)
+
 def parse_questions(filename):
     """Parses a question file.
        Returns a dict (of categories) of lists of questions (in score order)
@@ -62,21 +63,31 @@ def parse_questions(filename):
 def parse_gamefile(filename):
     """Parses a game file. A game file holds the categories that are going to be
         played in order.
-       Returns a list of category strings.
+       Returns a list of category strings and a final question dict
     """
     # TODO should drop the old format entirely?
     # if so we need to be able to express final question somehow
     categories = list()
+    final = None
     try:
         with open(filename, 'r') as f:
             for line in f:
-                categories.append(line.rstrip("\r\n"))
+                line = line.rstrip("\r\n")
+
+                # match: final: [category] text
+                m = re.match(r'final: \[([^]]+)\] (.*)$', line)
+                if m:
+                    final = FinalQuestion(category=m.group(1),
+                                          question=m.group(2))
+                    continue
+
+                categories.append(line)
 
     except Exception as e:
         context = "Problem parsing the game file: {}".format(filename)
         raise GamefileParsingError(context) from e
 
-    return categories
+    return categories, final
 
 
 class QuestionParsingError(Exception):
