@@ -111,7 +111,9 @@ class Question(db.Model):
         return '<Question {} for {} at col {} row {}>'\
             .format(self.category, self.score_original, self.col, self.row)
 
-
+# For the database, a final question is just a flag on a regular question.
+# This convenience object is created so that we manage it in a more OO-ish way
+# after parsing and before database insertion.
 FinalQuestion = collections.namedtuple('FinalQuestion', 'category question')
 
 class GameBoard():
@@ -140,3 +142,5 @@ class Category():
 class GameProblem(Exception):
     pass
 
+# this creates the database if it doesn't already exist
+db.create_all()
