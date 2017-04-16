@@ -27,9 +27,14 @@ from flask_sqlalchemy import SQLAlchemy
 
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
+VERSION = "0.1.0"
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ceopardy.db'
+# To supress warnings about a feature we don't use
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
 
@@ -44,9 +49,11 @@ def inject_config():
 @app.route('/')
 def viewer():
     controller = get_controller()
-    if controller.is_game_ready():
+    if controller.is_game_started():
+        categories = controller.get_categories()
         team_stats = controller.get_team_stats()
-        return render_template('viewer.html', team_stats=team_stats)
+        return render_template('viewer.html', categories=categories,
+                               team_stats=team_stats)
     else:
         return render_template('lobby.html')
 
@@ -59,7 +66,7 @@ def viewer():
 def host():
     # Start the game if it's not already started
     controller = get_controller()
-    if not controller.is_game_ready():
+    if not controller.is_game_started():
         form = TeamNamesForm()
         return render_template('host-setup.html', form=form)
 
@@ -75,7 +82,9 @@ def setup():
     if form.validate_on_submit():
 
         teamnames = [field.data for field in form if TEAM_FIELD_ID in field.flags]
-        controller.start_game(teamnames)
+        controller.setup_teams(teamnames)
+        controller.setup_questions()
+        controller.start_game()
 
         # announce waiting room that game has started
         emit("start_game", namespace="/wait", broadcast=True)
@@ -119,7 +128,9 @@ def handle_roulette():
 @socketio.on('refresh', namespace='/viewer')
 def handle_refresh():
     controller = get_controller()
-    state = controller.dictionize_questions_solved()
+    # FIXME
+    #state = controller.dictionize_questions_solved()
+    state = {}
     emit("update-board", state)
 
 

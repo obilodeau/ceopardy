@@ -22,7 +22,8 @@ from flask import current_app as app
 
 from config import config
 from ceopardy import db
-from model import Game, Team, GameState, GameBoard
+from model import Game, Team, GameState, GameBoard, Question
+from utils import parse_questions, parse_gamefile
 
 
 # TODO consider for removal now that we use a database: make sure to use transactions properly!
@@ -48,24 +49,62 @@ class Controller():
 
 
     @staticmethod
-    def is_game_ready():
+    def is_game_started():
         game = Game.query.first()
         return game.state == GameState.started
 
+
     @staticmethod
-    def start_game(teamnames):
-        app.logger.info("Starting game with teams: {}".format(teamnames))
+    def setup_teams(teamnames):
+        app.logger.info("Setup teams: {}".format(teamnames))
         game = Game.query.first()
         if game.state == GameState.uninitialized:
             for _tn in teamnames:
                 team = Team(_tn)
                 db.session.add(team)
-            game.state = GameState.started
             db.session.commit()
         else:
             raise GameProblem("Trying to setup a game that is already started")
-
         return True
+
+
+    @staticmethod
+    def setup_questions(q_file=config['QUESTIONS_FILENAME']):
+        app.logger.info("Setup questions from file: {}".format(q_file))
+        game = Game.query.first()
+        if game.state == GameState.uninitialized:
+
+            # TODO need to be able to specify given game
+            gamefile = parse_gamefile('data/1st.round')
+            questions = parse_questions(q_file)
+
+            # TODO do some validation based on config constants
+            for _col, _cat in enumerate(gamefile, start=1):
+                for _row, _q in enumerate(questions[_cat], start=1):
+                    score = _row * config['SCORE_TICK']
+                    question = Question(_q, score, _cat, _row, _col)
+                    db.session.add(question)
+            db.session.commit()
+
+        else:
+            raise GameProblem("Trying to setup a game that is already started")
+        return True
+
+
+    @staticmethod
+    def start_game():
+        app.logger.info("Starting the game. Good luck everyone!")
+        # Are there teams and questions?
+        if Team.query.all() and Question.query.all():
+
+            # Yes, mark game as started
+            game = Game.query.first()
+            game.state = GameState.started
+            db.session.commit()
+            return True
+
+        else:
+            raise GameProblem("Trying to start a game that is not ready")
 
 
     @staticmethod
@@ -87,6 +126,13 @@ class Controller():
     def get_nb_teams():
         return config["NB_TEAMS"]
 
+    @staticmethod
+    def get_categories():
+        return [_q.category for _q in
+                db.session.query(Question.category).distinct()
+                  .order_by(Question.col)]
+
+
     def get_question(self, column, row):
         # TODO migrate to db
         gb = GameBoard()
@@ -101,17 +147,17 @@ class Controller():
         question = self.get_question(column, row)
         question.solved = value
 
-    def dictionize_questions_solved(self):
-        # TODO migrate to db
-        gb = GameBoard()
-        questions = gb.questions
-        result = {}
-        for row in range(len(questions)):
-            for column in range(len(gb.questions[row])):
-                question = gb.questions[row][column]
-                name = "c{0}q{1}".format(column + 1, row + 1)
-                result[name] = question.solved
-        return result
+    #def dictionize_questions_solved(self):
+    #    # TODO migrate to db
+    #    gb = GameBoard()
+    #    questions = gb.questions
+    #    result = {}
+    #    for row in range(len(questions)):
+    #        for column in range(len(gb.questions[row])):
+    #            question = gb.questions[row][column]
+    #            name = "c{0}q{1}".format(column + 1, row + 1)
+    #            result[name] = question.solved
+    #    return result
 
 
 class GameProblem(Exception):

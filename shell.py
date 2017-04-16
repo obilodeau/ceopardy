@@ -16,7 +16,7 @@
 # GNU General Public License for more details.
 #
 from ceopardy import db
-import model
+from model import Question, Team, Game
 
 # creates all tables from model
-db.create_all()
+#db.create_all()

@@ -19,9 +19,11 @@ from enum import Enum
 
 from flask import current_app as app
 
-from ceopardy import db
+from ceopardy import db, VERSION
 from config import config
 
+
+SCHEMA_VERSION = 1
 # TODO save a game in progress
 # TODO load a game in progress
 # TODO refactor to GameModel?
@@ -57,11 +59,13 @@ class GameState(Enum):
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     state = db.Column(db.Enum(GameState))
-    #ceopardy_version = db.Column(db.String(16))
-    #schema_version = db.Column(db.Integer)
+    ceopardy_version = db.Column(db.String(16))
+    schema_version = db.Column(db.Integer)
 
     def __init__(self):
         self.state = 'uninitialized'
+        self.ceopardy_version = VERSION
+        self.schema_version = SCHEMA_VERSION
 
     def __repr__(self):
         return '<Game in state %r>' % self.state
@@ -80,6 +84,31 @@ class Team(db.Model):
 
     def __repr__(self):
         return '<Team %r>' % self.name
+
+
+class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(255))
+    score_original = db.Column(db.Integer)
+    category = db.Column(db.String(80))
+    final = db.Column(db.Boolean)
+    double = db.Column(db.Boolean)
+    row = db.Column(db.Integer)
+    col = db.Column(db.Integer)
+
+    def __init__(self, text, score_original, category, row, col, final=False,
+                 double=False):
+        self.text = text
+        self.score_original = score_original
+        self.category = category
+        self.row = row
+        self.col = col
+        self.final = final
+        self.double = double
+
+    def __repr__(self):
+        return '<Question {} for {} at col {} row {}>'\
+            .format(self.category, self.score_original, self.col, self.row)
 
 
 class GameBoard():
@@ -102,13 +131,6 @@ class Category():
         self.value = value
         self.column = column
 
-
-class Question():
-    def __init__(self, value, amount, coordinates):
-        self.value = value
-        self.amount = amount
-        self.coordinates = coordinates
-        self.solved = False
 
 
 # TODO consider for removal (duplicated in controller)

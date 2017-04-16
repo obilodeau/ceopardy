@@ -8,9 +8,9 @@
         <div class="container-categories">
             <div class="black-box">
                 <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
-                    {% for _c in range(CATEGORIES_PER_GAME) %}
+                    {% for name in categories %}
                     <div class="col-ceopardy flex-horizontal-pad">
-                        <div id="c{{ _c }}" class="box-ceopardy box-category"><p>I LIKE THIS C{{ _c }}</p></div>
+                        <div id="c{{ loop.index }}" class="box-ceopardy box-category"><p>{{ name }}</p></div>
                     </div>
                     {% endfor %}
                 </div>

@@ -18,5 +18,7 @@
 config = {
     'NB_TEAMS': 3,
     'CATEGORIES_PER_GAME': 5,
-    'QUESTIONS_PER_CATEGORY': 5
+    'QUESTIONS_PER_CATEGORY': 5,
+    'QUESTIONS_FILENAME': 'data/Questions.cp',
+    'SCORE_TICK': 100
 }
