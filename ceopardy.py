@@ -21,7 +21,7 @@ import random
 import re
 import sys
 
-from flask import g, Flask, render_template, redirect
+from flask import g, Flask, render_template, redirect, jsonify
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
@@ -75,17 +75,16 @@ def viewer():
 # authentication related: commented for now
 @app.route('/host')
 def host():
-    # Start the game if it's not already started
     controller = get_controller()
+    form = TeamNamesForm()
     if not controller.is_game_started():
-        form = TeamNamesForm()
-        return render_template('host-setup.html', form=form)
+        return render_template('host.html', form=form, setup_teams=True)
 
-    return render_template('host.html')
+    return render_template('host.html', form=form)
 
 
 # TODO: kick-out if game is started
-@app.route('/setup', methods=["GET", "POST"])
+@app.route('/setup', methods=["POST"])
 def setup():
     controller = get_controller()
     form = TeamNamesForm()
@@ -99,9 +98,9 @@ def setup():
 
         # announce waiting room that game has started
         emit("start_game", namespace="/wait", broadcast=True)
-        return redirect('/host')
+        return jsonify(data={'message': 'success'})
 
-    return render_template('host-setup.html', form=form)
+    return jsonify(data=form.errors)
 
 
 @socketio.on('click', namespace='/host')
