@@ -118,13 +118,13 @@ class Controller():
 
 
     @staticmethod
-    def get_team_stats():
+    def get_teams():
         game = Game.query.first()
         if game.state == GameState.started:
             # TODO implement score
             return {team.name: 0 for team in Team.query.all()}
         else:
-            return None
+            return []
 
 
     @staticmethod

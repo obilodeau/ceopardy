@@ -20,5 +20,13 @@ config = {
     'CATEGORIES_PER_GAME': 5,
     'QUESTIONS_PER_CATEGORY': 5,
     'QUESTIONS_FILENAME': 'data/Questions.cp',
-    'SCORE_TICK': 100
+    'SCORE_TICK': 100,
+    'MESSAGES': [\
+        {"title": "Game not started",
+         "text": "Please wait while the game is being set up..."},
+        {"title": "Technical difficulties",
+         "text": "It seems we're having some trouble, hang in there!"},
+        {"title": "Break",
+         "text": "On a short break, we'll be right back after these messages."},
+    ]
 }

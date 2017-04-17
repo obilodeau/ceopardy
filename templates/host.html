@@ -10,13 +10,65 @@
 {% block content %}
 <div class="container-host">
 
-    <div class="container-top container-all container-light" style="display: flex;">
-        {% block main %}
-            Welcome back game master!
-        {% endblock %}
+    <div class="container-header container-slider flex-border-header container-light">
+    
+        <div style="display: flex; width: 100%;">
+            <div class="container-header-control container-padding">
+                <p class="form-header form-grey">Teams</p>
+                <div id="teams">
+                    {{ form.csrf_token }}
+                    {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
+                    {% for field in form if field.flags.teamname %}
+                    <div class="form-row form-grey team-info">
+                        <div class="form-text">Name:</div>
+                        <div class="form-expand form-cursive form-text team-name" contenteditable="true">test</div>
+                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="form-expand"></div>
+                <div class="form-row form-grey">
+                    <div class="form-expand"></div>
+                    <div class="form-icon form-click team-add"><i class="fa fa-plus fa-lg"></i></div>
+                    <div class="form-icon form-click team-refresh"><i class="fa fa-refresh fa-lg"></i></div>
+                    <div class="form-expand"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container-arrow container-dark">
+            <!--Down Arrow-->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+                <polygon points="0,0 50,50 100,0 50,25 0,0"/>
+            </svg>
+        </div>
+
+    </div>
+
+    <!--For now...this is a place holder for the space occupied by the arrow-->
+    <div class="container-all container-light" style="height: 35px;"></div>
+    
+    <div class="container-top container-all container-light">
+        {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+        <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
+            {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
+            <div class="col-ceopardy flex-horizontal-pad">
+                <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button"><p>${{ _r * 100 }}</p></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <button id="roulette" type="button">Roulette!</button>
     </div>
     
-    <div class="container-footer flex-border container-light">
+    <div class="container-bottom container-all container-light">
+        
+    </div>
+    
+    <!--For now...this is a place holder for the space occupied by the arrow-->
+    <div class="container-all container-light" style="height: 35px;"></div>
+    
+    <div class="container-footer container-slider flex-border-footer container-light">
     
         <div class="container-arrow container-dark">
             <!--Up Arrow-->
@@ -24,72 +76,49 @@
                 <polygon points="0,50 50,0 100,50 50,25 0,50"/>
             </svg>
         </div>
-        <div style="display: flex; width: 100%">
-            <div class="container-footer-control">
-                <div style="width: 50%;">
-                    {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-                        <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
-                            {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
-                                <div class="col-ceopardy flex-horizontal-pad">
-                                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button" style="color: white;">${{ _r * 100 }}</div>
-                                </div>
-                            {% endfor %}
+        
+        <div style="display: flex; width: 100%;">
+            <div class="container-footer-control container-padding">
+                {% set one = {"title": "Game not started" } %}
+                <p class="form-header form-grey">Messages</p>
+                {% for _m in MESSAGES %}
+                <div id="messages">
+                    <div class="form-row form-grey team-info">
+                        <div class="form-text">{{ _m.title }}</div>
+                        <div class="form-hidden message-text">{{ _m.text }}</div>
+                        <div class="form-expand"></div>
+                        <div class="form-icon form-click message-display">
+                            <i class="fa fa-eye fa-lg message-show"></i>
+                            <i class="fa fa-eye-slash fa-lg message-hide" style="display: none;"></i>
                         </div>
-                    {% endfor %}
+                    </div>
                 </div>
-                <div style="width: 50%;">
-                    <button id="roulette" type="button">Roulette!</button>
+                {% endfor %}
+                <div id="messages">
+                    <div class="form-row form-grey team-info">
+                        <div class="form-text">Custom</div>
+                        <div class="form-expand"></div>
+                        <div class="form-icon form-click message-edit"><i class="fa fa-edit fa-lg"></i></div>
+                        <div class="form-icon form-click message-display">
+                            <i class="fa fa-eye fa-lg message-show"></i>
+                            <i class="fa fa-eye-slash fa-lg message-hide" style="display: none;"></i>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="container-bottom container-light">
-                <p>bottom</p>
+                <div class="form-expand">
+                    <div id="message-custom" class="form-grey form-edit" style="display: none;" contenteditable="true">
+                        <span>test</span>
+                    </div>
+                </div>
+                
             </div>
             <div class="container-separator-v container-dark"></div>
             <div class="container-footer-control">
-                <iframe class="iframe-viewer" src="/"></iframe>
+                <iframe class="iframe-viewer" src="/viewer"></iframe>
             </div>
         </div>
-    
-    
-    
-    
-    
+
     </div>
-    
-    <!--<div class="container-arrow container-all container-light">
-        <img id="up" src="/static/images/up.svg">
-        <img id="down" src="/static/images/down.svg" style="display: none;">
-    </div>
-    
-    <div class="container-bottom container-all container-light" style="display: flex;">
-    
-    <div class="container-arrow">
-        <a href="#carouselExampleControls" role="button" data-slide="next">
-            <img id="left" src="/static/images/left.svg">
-        </a>
-    </div>
-    
-    <div id="carouselExampleControls" class="carousel slide" style="flex: 1;">
-        <div class="carousel-inner" role="listbox">
-        <div class="carousel-item active">
-        <img class="d-block img-fluid" src="..." alt="First slide">
-        </div>
-        <div class="carousel-item">
-        <img class="d-block img-fluid" src="..." alt="Second slide">
-        </div>
-        <div class="carousel-item">
-        <img class="d-block img-fluid" src="..." alt="Third slide">
-        </div>
-        </div>
-    </div>
-    
-    <div class="container-arrow">
-        <a href="#carouselExampleControls" role="button" data-slide="prev">
-            <img id="left" src="/static/images/right.svg">
-        </a>
-    </div>
-    </div>-->
 
 </div>
 {% endblock %}
@@ -107,7 +136,95 @@
             alert(data);
         });
         
+        function ShowContainer(event) {
+            var container = '.container-' + event.data.name;
+            var slide = 'slide-' + event.data.direction
+            if($(container).hasClass(slide)) {
+                $(container).removeClass(slide); 
+            }
+            else {
+                $(container).addClass(slide);
+            }
+        }
+        
+        function AddTeam(event) {
+            var info = $('#teams').find('.team-info');
+            var count = info.length;
+            if (count >= 5) {
+                // Maximum number of teams...
+                return;
+            }
+            count += 1;
+            clone = info.first().clone();
+            clone.find('.team-name').text("Team #" + count.toString());
+            clone.find('.team-delete').click(DeleteTeam);
+            $('#teams').append(clone);
+        }
+        
+        function DeleteTeam(event) {
+            var info = $('#teams').find('.team-info');
+            var count = info.length;
+            if (count <= 1) {
+                // Minimum number of teams...
+                return;
+            }
+            $(this).closest('.team-info').remove();
+        }
+        
+        function RefreshTeams(event) {
+            
+        }
+        
+        function DisplayMessage(event) {
+            var show = $(this).find('.message-show');
+            var hide = $(this).find('.message-hide');
+            var visible = show.is(":visible");
+            $('.message-hide').hide();
+            $('.message-show').show();
+            var element = $(this).parent().find('.message-text');
+            if (visible) {
+                show.hide();
+                hide.show();
+                ShowMessage(element);
+            }
+            else {
+                hide.hide();
+                show.show();
+                HideMessage();
+            }
+        }
+        
+        function ShowMessage(element) {
+            if (element.length == 0) {
+                text = $('#message-custom').first().text();
+            }
+            else {
+                text = element.text();
+            }
+            socket.emit('message', {action: "show", text: text});
+        }
+        
+        function HideMessage() {
+            socket.emit('message', {action: "hide"});
+        }
+        
+        function EditMessage(event) {
+            if ($('#message-custom').is(":visible")) {
+                $('#message-custom').children().hide();
+                $('#message-custom').animate({"height": "0"}, 600, function() {
+                    $('#message-custom').hide();
+                });
+            }
+            else {
+                $('#message-custom').show();
+                $('#message-custom').animate({"height": "100%"}, 600, function() {
+                    $('#message-custom').children().show();
+                });
+            }
+        }
+        
         $(document).ready(function() {
+
             $(".box-ceopardy").on("click", function() {
                 var id = $(this).attr('id');
                 if ($(this).hasClass("box-selected")) {
@@ -136,16 +253,19 @@
                 });*/
             });
             
-            $('.container-footer').click(function() {
-                if($('.container-footer').hasClass('slide-up')) {
-                    $('.container-footer').removeClass('slide-up'); 
-                }
-                else {
-                    $('.container-footer').addClass('slide-up');
-                }
-            });
+            $('.container-header > .container-arrow').on("click", 
+                {'name': 'header', 'direction': 'down'}, ShowContainer);
+            $('.container-footer > .container-arrow').on("click", 
+                {'name': 'footer', 'direction': 'up'}, ShowContainer);
+            
+            $('.team-add').on("click", AddTeam);
+            $('.team-delete').on("click", DeleteTeam);
+            $('.team-refresh').on("click", RefreshTeams);
+            
+            $('.message-display').on("click", DisplayMessage);
+            $('.message-edit').on("click", EditMessage);
+            
         });
-        
         
     </script>
 {% endblock %}

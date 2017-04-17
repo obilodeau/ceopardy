@@ -47,7 +47,7 @@ def inject_config():
 
 
 @app.route('/')
-def viewer():
+def slash():
     controller = get_controller()
     if controller.is_game_started():
         categories = controller.get_categories()
@@ -56,6 +56,17 @@ def viewer():
                                team_stats=team_stats)
     else:
         return render_template('lobby.html')
+
+
+# TODO eventually viewer should just become /?
+@app.route('/viewer')
+def viewer():
+    controller = get_controller()
+    teams = controller.get_teams()
+    print(teams, file=sys.stderr)
+    # FIXME crashes, needs a database
+    # See: http://flask.pocoo.org/docs/0.12/appcontext/
+    return render_template('viewer.html', teams=teams)
 
 
 # TODO we must kill all client-side state on server load.
@@ -102,15 +113,24 @@ def handle_click(data):
         items = match.groups()
         column = int(items[0])
         row = int(items[1])
-        controller.set_question_solved(column, row, True)
-        state = controller.dictionize_questions_solved()
-        emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("show-overlay", "<p>Test!</p>", namespace='/viewer', broadcast=True)
+        #controller.set_question_solved(column, row, True)
+        #state = controller.dictionize_questions_solved()
+        #emit("update-board", state, namespace='/viewer', broadcast=True)
+        emit("overlay", {"action": "show", "id": "small", "html": "<p>Test!</p>"}, namespace='/viewer', broadcast=True)
 
 
 @socketio.on('unclick', namespace='/host')
 def handle_click(data):
-    emit("hide-overlay", namespace='/viewer', broadcast=True)
+    emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
+
+
+@socketio.on('message', namespace='/host')
+def handle_message(data):
+    # Temporary XSS!!!
+    if data["action"] == "show":
+        emit("overlay", {"action": "show", "id": "big", "html": "<p>{0}</p>".format(data["text"])}, namespace='/viewer', broadcast=True)
+    else:
+        emit("overlay", {"action": "hide", "id": "big", "html": ""}, namespace='/viewer', broadcast=True)
 
 
 @socketio.on('roulette', namespace='/host')
