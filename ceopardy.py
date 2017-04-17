@@ -25,6 +25,7 @@ from flask import g, Flask, render_template, redirect
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
+from config import config
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
 VERSION = "0.1.0"
@@ -42,8 +43,7 @@ db = SQLAlchemy(app)
 @app.context_processor
 def inject_config():
     """Injects ceopardy configuration for the template system"""
-    controller = get_controller()
-    return controller.get_config()
+    return config
 
 
 @app.route('/')
@@ -107,7 +107,7 @@ def setup():
 @socketio.on('click', namespace='/host')
 def handle_click(data):
     controller = get_controller()
-    print('received data: ' + data["id"], file=sys.stderr)
+    app.logger.debug('received data: {}'.format(data["id"]))
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
         items = match.groups()
@@ -126,7 +126,7 @@ def handle_click(data):
 
 @socketio.on('message', namespace='/host')
 def handle_message(data):
-    # Temporary XSS!!!
+    # FIXME Temporary XSS!!!
     if data["action"] == "show":
         emit("overlay", {"action": "show", "id": "big", "html": "<p>{0}</p>".format(data["text"])}, namespace='/viewer', broadcast=True)
     else:
