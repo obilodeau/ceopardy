@@ -98,9 +98,9 @@ def setup():
 
         # announce waiting room that game has started
         emit("start_game", namespace="/wait", broadcast=True)
-        return jsonify(data={'message': 'success'})
+        return jsonify(result="success")
 
-    return jsonify(data=form.errors)
+    return jsonify(result="failure", errors=form.errors)
 
 
 @socketio.on('click', namespace='/host')

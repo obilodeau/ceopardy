@@ -10,20 +10,21 @@
 {% block content %}
 <div class="container-host">
 
-    <div class="container-header container-slider flex-border-header container-light {{ "slide-down" if setup_teams }}">
+    <div class="container-header container-slider flex-border-header container-light {{ 'slide-down' if setup_teams }}">
 
-        <form id="teams">
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
-                <p class="form-header form-grey">Teams</p>
-                <div id="teams">
+                <p class="form-header form-color">Teams</p>
+                <!--<div id="teams">-->
+                <form id="teams">
+                        
                     {{ form.csrf_token }}
                     {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
                     {% for field in form if field.flags.teamname %}
-                    <div class="form-row form-grey team-info">
+                    <div class="form-row form-color team-info">
                         <div class="form-text">{{ field.label }}</div>
                         <!-- <div class="form-expand form-cursive form-text team-name" contenteditable="true">test</div> //-->
-                        {{ field(class_="form-expand form-cursive form-text team-name", placeholder="Enter the name of the team") }}
+                        {{ field(class_="form-expand form-cursive form-text form-color form-no-form team-name", autocomplete="off", placeholder="Enter the name of the team") }}
                         {% if field.errors %}
                             {# FIXME layout issues here #}
                             <div class="alert alert-danger" role="alert">
@@ -36,19 +37,19 @@
                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
                     </div>
                     {% endfor %}
-                </div>
+                    
+                    </form>
+               <!--</div>-->
                 <div class="form-expand"></div>
-                <div class="form-row form-grey">
+                <div class="form-row form-color">
                     <div class="form-expand"></div>
                     <div class="form-icon form-click team-add"><i class="fa fa-plus fa-lg"></i></div>
                     <div class="form-icon form-click team-refresh"><i class="fa fa-refresh fa-lg"></i></div>
-                    <input type="submit">
                     <div class="form-expand"></div>
                 </div>
             </div>
         </div>
-        </form>
-
+        
         <div class="container-arrow container-dark">
             <!--Down Arrow-->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" preserveAspectRatio="none">
@@ -81,7 +82,7 @@
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
-    <div class="container-footer container-slider flex-border-footer container-light">
+    <div class="container-footer container-slider flex-border-footer container-light {{ 'slide-up' if setup_teams }}">
     
         <div class="container-arrow container-dark">
             <!--Up Arrow-->
@@ -93,10 +94,10 @@
         <div style="display: flex; width: 100%;">
             <div class="container-footer-control container-padding">
                 {% set one = {"title": "Game not started" } %}
-                <p class="form-header form-grey">Messages</p>
+                <p class="form-header form-color">Messages</p>
                 {% for _m in MESSAGES %}
                 <div id="messages">
-                    <div class="form-row form-grey team-info">
+                    <div class="form-row form-color team-info">
                         <div class="form-text">{{ _m.title }}</div>
                         <div class="form-hidden message-text">{{ _m.text }}</div>
                         <div class="form-expand"></div>
@@ -108,7 +109,7 @@
                 </div>
                 {% endfor %}
                 <div id="messages">
-                    <div class="form-row form-grey team-info">
+                    <div class="form-row form-color team-info">
                         <div class="form-text">Custom</div>
                         <div class="form-expand"></div>
                         <div class="form-icon form-click message-edit"><i class="fa fa-edit fa-lg"></i></div>
@@ -119,7 +120,7 @@
                     </div>
                 </div>
                 <div class="form-expand">
-                    <div id="message-custom" class="form-grey form-edit" style="display: none;" contenteditable="true">
+                    <div id="message-custom" class="form-color form-edit" style="display: none;" contenteditable="true">
                         <span>test</span>
                     </div>
                 </div>
@@ -185,7 +186,25 @@
         }
         
         function RefreshTeams(event) {
-
+            var url = "{{ url_for('setup') }}";
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: $('#teams').serialize(),
+                dataType: 'json',
+                success: function (data) {
+                    if (data.result == "success") {
+                        // For now we'll make it unclickable too...
+                        $('.container-header > .container-arrow').off("click");
+                        $('.container-header').removeClass('slide-down');
+                    }
+                    else {
+                        // TODO remove debugging
+                        console.log(data);
+                        // FIXME if data contains anything else: update form fields with errors
+                    }
+                }
+            });
         }
 
         function DisplayMessage(event) {
@@ -266,8 +285,10 @@
                 });*/
             });
             
+            {% if setup_teams %}
             $('.container-header > .container-arrow').on("click", 
                 {'name': 'header', 'direction': 'down'}, ShowContainer);
+            {% endif %}
             $('.container-footer > .container-arrow').on("click", 
                 {'name': 'footer', 'direction': 'up'}, ShowContainer);
             
@@ -278,20 +299,6 @@
             $('.message-display').on("click", DisplayMessage);
             $('.message-edit').on("click", EditMessage);
 
-            $('#teams').submit(function (e) {
-                var url = "{{ url_for('setup') }}";
-                $.ajax({
-                    type: "POST",
-                    url: url,
-                    data: $('form').serialize(),
-                    success: function (data) {
-                        console.log(data)  // TODO remove debugging
-                        // FIXME if data contains message: 'success' then remove slide down class from container-header
-                        // FIXME if data contains anything else: update form fields with errors
-                    }
-                });
-                e.preventDefault();
-            });
             // Inject CSRF token
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {

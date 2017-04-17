@@ -144,7 +144,7 @@ body {
     bottom: 0px !important;
 }
 
-.form-grey {
+.form-color {
     color: #d5c19c;
     border-color: #d5c19c;
 }
@@ -170,6 +170,34 @@ body {
     border-style: solid;
     transition: all 0.5s ease-out;
     font-family: 'Oleo Script', Helvetica, sans-serif;
+}
+
+.form-no-form {
+    background: transparent;
+}
+
+.form-no-form:active,
+.form-no-form:focus {
+    outline: none;
+    color: #d9a24f;
+    border-color: #d9a24f;
+}
+
+.form-no-form::-webkit-input-placeholder {
+    opacity: 0.5;
+    color: #d5c19c;
+}
+.form-no-form:-moz-placeholder {
+    /* FF 4-18 */
+    color: #d5c19c;
+}
+.form-no-form::-moz-placeholder {
+    /* FF 19+ */
+    color: #d5c19c;
+}
+.form-no-form:-ms-input-placeholder {
+    /* IE 10+ */
+    color: #d5c19c;
 }
 
 .form-edit {
