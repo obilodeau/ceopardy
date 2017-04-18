@@ -10,14 +10,13 @@
 {% block content %}
 <div class="container-host">
 
-    <div class="container-header container-slider flex-border-header container-light {{ 'slide-down' if setup_teams }}">
+    <div class="container-header container-slider flex-border-header container-light {{ 'slide-down' if not started }}">
 
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
                 <p class="form-header form-color">Teams</p>
                 <!--<div id="teams">-->
                 <form id="teams">
-                        
                     {{ form.csrf_token }}
                     {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
                     {% for field in form if field.flags.teamname %}
@@ -33,12 +32,10 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
-
                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
                     </div>
                     {% endfor %}
-                    
-                    </form>
+                </form>
                <!--</div>-->
                 <div class="form-expand"></div>
                 <div class="form-row form-color">
@@ -82,7 +79,7 @@
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
-    <div class="container-footer container-slider flex-border-footer container-light {{ 'slide-up' if setup_teams }}">
+    <div class="container-footer container-slider flex-border-footer container-light {{ 'slide-up' if not started }}">
     
         <div class="container-arrow container-dark">
             <!--Up Arrow-->
@@ -162,6 +159,11 @@
         }
         
         function AddTeam(event) {
+            {% if not VARIABLE_TEAMS %}
+            alert("Fixed teams...");
+            return;
+            {% endif %}
+            // This is not used right now!
             var info = $('#teams').find('.team-info');
             var count = info.length;
             if (count >= 5) {
@@ -176,6 +178,11 @@
         }
         
         function DeleteTeam(event) {
+            {% if not VARIABLE_TEAMS %}
+            alert("Fixed teams...");
+            return;
+            {% endif %}
+            // This is not used right now!
             var info = $('#teams').find('.team-info');
             var count = info.length;
             if (count <= 1) {
@@ -195,7 +202,7 @@
                 success: function (data) {
                     if (data.result == "success") {
                         // For now we'll make it unclickable too...
-                        $('.container-header > .container-arrow').off("click");
+                        //$('.container-header > .container-arrow').off("click");
                         $('.container-header').removeClass('slide-down');
                     }
                     else {
@@ -285,10 +292,10 @@
                 });*/
             });
             
-            {% if setup_teams %}
+            {# if not started #}
             $('.container-header > .container-arrow').on("click", 
                 {'name': 'header', 'direction': 'down'}, ShowContainer);
-            {% endif %}
+            {# endif #}
             $('.container-footer > .container-arrow').on("click", 
                 {'name': 'footer', 'direction': 'up'}, ShowContainer);
             
@@ -298,6 +305,12 @@
             
             $('.message-display').on("click", DisplayMessage);
             $('.message-edit').on("click", EditMessage);
+            
+            {% if not started %}
+            // First message should be the one about starting the game
+            // This might not be the best solution, we'll see...
+            $('#messages').find('.message-display').first().trigger('click');
+            {% endif %}
 
             // Inject CSRF token
             $.ajaxSetup({

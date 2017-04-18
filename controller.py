@@ -49,6 +49,12 @@ class Controller():
 
 
     @staticmethod
+    def is_game_initialized():
+        game = Game.query.first()
+        return game.state != GameState.uninitialized
+
+
+    @staticmethod
     def is_game_started():
         game = Game.query.first()
         return game.state == GameState.started

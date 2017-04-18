@@ -17,6 +17,7 @@
 #
 config = {
     'NB_TEAMS': 3,
+    'VARIABLE_TEAMS': False,
     'CATEGORIES_PER_GAME': 5,
     'QUESTIONS_PER_CATEGORY': 5,
     'QUESTIONS_FILENAME': 'data/Questions.cp',

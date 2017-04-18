@@ -312,8 +312,11 @@ svg:hover polygon {
     top: 0px;
     left: 0;
     right: 0;
-    display: none;
     background-color: transparent !important;
+}
+
+.no-display {
+    display: none;
 }
 
 .small-container-overlay {

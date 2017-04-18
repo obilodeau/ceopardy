@@ -47,26 +47,14 @@ def inject_config():
 
 
 @app.route('/')
-def slash():
-    controller = get_controller()
-    if controller.is_game_started():
-        categories = controller.get_categories()
-        team_stats = controller.get_team_stats()
-        return render_template('viewer.html', categories=categories,
-                               team_stats=team_stats)
-    else:
-        return render_template('lobby.html')
-
-
-# TODO eventually viewer should just become /?
 @app.route('/viewer')
 def viewer():
     controller = get_controller()
+    categories = controller.get_categories()
     teams = controller.get_teams()
-    print(teams, file=sys.stderr)
-    # FIXME crashes, needs a database
-    # See: http://flask.pocoo.org/docs/0.12/appcontext/
-    return render_template('viewer.html', teams=teams)
+    initialized = controller.is_game_initialized()
+    return render_template('viewer.html', teams=teams, categories=categories,
+                           initialized=initialized)
 
 
 # TODO we must kill all client-side state on server load.
@@ -77,10 +65,8 @@ def viewer():
 def host():
     controller = get_controller()
     form = TeamNamesForm()
-    if not controller.is_game_started():
-        return render_template('host.html', form=form, setup_teams=True)
-
-    return render_template('host.html', form=form)
+    started = controller.is_game_started()
+    return render_template('host.html', form=form, started=started)
 
 
 # TODO: kick-out if game is started
@@ -97,7 +83,7 @@ def setup():
         controller.start_game()
 
         # announce waiting room that game has started
-        emit("start_game", namespace="/wait", broadcast=True)
+        #emit("start_game", namespace="/wait", broadcast=True)
         return jsonify(result="success")
 
     return jsonify(result="failure", errors=form.errors)
