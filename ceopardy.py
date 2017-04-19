@@ -113,11 +113,13 @@ def handle_click(data):
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
         col, row = match.groups()
-        question_text = controller.get_question(col, row)
+        qid, question_text = controller.get_question(col, row)
         #state = controller.dictionize_questions_solved()
         #emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
+        emit("test2", {"action": "show_answer_ui", "qid": qid,
+                      "q_text": question_text}, namespace='/host')
 
 
 @socketio.on('unclick', namespace='/host')

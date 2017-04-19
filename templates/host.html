@@ -147,6 +147,13 @@
         socket.on('test', function(data) {
             alert(data);
         });
+
+        // FIXME fchar: turn this into something pretty (and change socketio names as fit)
+        socket.on('test2', function(data) {
+            if (data.action == "show_answer_ui") {
+                $(".container-bottom").html("<p>" + data.qid + " / " + data.q_text + "</p>");
+            }
+        });
         
         function ShowContainer(event) {
             var container = '.container-' + event.data.name;
@@ -321,6 +328,7 @@
             $('#messages').find('.message-display').first().trigger('click');
             {% endif %}
 
+            // FIXME I think this should be moved into team refresh but was left here as a mistake, Francois?
             // Inject CSRF token
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {

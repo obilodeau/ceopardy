@@ -174,7 +174,7 @@ class Controller():
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).first()
-        return question_to_html(_q.text)
+        return _q.id, question_to_html(_q.text)
 
 
     def get_question_solved(self, column, row):
