@@ -15,7 +15,7 @@
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
                 <p class="form-header form-color">Teams</p>
-                <form id="form_teams">
+                <form id="form-teams">
                     {{ form.csrf_token }}
                     {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
                     {% for field in form if field.flags.teamname %}
@@ -24,6 +24,7 @@
                         {{ field(class_="form-expand form-cursive form-text form-color form-no-form team-name", autocomplete="off", placeholder="Enter the name of the team") }}
                         {% if field.errors %}
                             {# FIXME layout issues here #}
+                            {# IS THIS STILL IN USE SOMEHOW?!?! #}
                             <div class="alert alert-danger" role="alert">
                                 {% for error in field.errors %}
                                     {{ error }}
@@ -33,18 +34,18 @@
                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
                     </div>
                     {% endfor %}
-               <!--</div>-->
-                <div id="form_teams_errors" class="form-row form-color">
+                    <!--To handle normal form key presses-->
+                    <input type="submit" style="display: none">
+                </form>
+                <div id="form-teams-errors" class="form-row form-color">
                 </div>
                 <div class="form-expand"></div>
                 <div class="form-row form-color">
                     <div class="form-expand"></div>
                     <div class="form-icon form-click team-add"><i class="fa fa-plus fa-lg"></i></div>
                     <div class="form-icon form-click team-refresh"><i class="fa fa-refresh fa-lg"></i></div>
-                    <input type="submit" style="display: none">
                     <div class="form-expand"></div>
                 </div>
-                </form>
             </div>
         </div>
         
@@ -136,208 +137,203 @@
 {% endblock %}
 
 {% block ui %}
-    <script>
-        
-        var socket = io.connect('http://' + document.domain + ':' + location.port + '/host');
-        
-        socket.on('connect', function() {
-            //socket.emit('my event', {data: 'I\'m connected!'});
-        });
-        
-        socket.on('test', function(data) {
-            alert(data);
-        });
+<script>
+    
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/host');
+    
+    socket.on('connect', function() {
+        //socket.emit('my event', {data: 'I\'m connected!'});
+    });
+    
+    socket.on('test', function(data) {
+        alert(data);
+    });
 
-        // FIXME fchar: turn this into something pretty (and change socketio names as fit)
-        socket.on('test2', function(data) {
-            if (data.action == "show_answer_ui") {
-                $(".container-bottom").html("<p>" + data.qid + " / " + data.q_text + "</p>");
-            }
-        });
-        
-        function ShowContainer(event) {
-            var container = '.container-' + event.data.name;
-            var slide = 'slide-' + event.data.direction
-            if($(container).hasClass(slide)) {
-                $(container).removeClass(slide); 
-            }
-            else {
-                $(container).addClass(slide);
-            }
+    // FIXME fchar: turn this into something pretty (and change socketio names as fit)
+    socket.on('test2', function(data) {
+        if (data.action == "show_answer_ui") {
+            $(".container-bottom").html("<p>" + data.qid + " / " + data.q_text + "</p>");
         }
-        
-        function AddTeam(event) {
-            {% if not VARIABLE_TEAMS %}
-            alert("Fixed teams...");
+    });
+    
+    function ShowContainer(event) {
+        var container = '.container-' + event.data.name;
+        var slide = 'slide-' + event.data.direction
+        if($(container).hasClass(slide)) {
+            $(container).removeClass(slide); 
+        }
+        else {
+            $(container).addClass(slide);
+        }
+    }
+    
+    function AddTeam(event) {
+        {% if not VARIABLE_TEAMS %}
+        alert("Fixed teams...");
+        return;
+        {% endif %}
+        // This is not used right now!
+        var info = $('#form-teams').find('.team-info');
+        var count = info.length;
+        if (count >= 5) {
+            // Maximum number of teams...
             return;
-            {% endif %}
-            // This is not used right now!
-            var info = $('#form_teams').find('.team-info');
-            var count = info.length;
-            if (count >= 5) {
-                // Maximum number of teams...
-                return;
-            }
-            count += 1;
-            clone = info.first().clone();
-            clone.find('.team-name').text("Team #" + count.toString());
-            clone.find('.team-delete').click(DeleteTeam);
-            $('#form_teams').append(clone);
         }
-        
-        function DeleteTeam(event) {
-            {% if not VARIABLE_TEAMS %}
-            alert("Fixed teams...");
+        count += 1;
+        clone = info.first().clone();
+        clone.find('.team-name').text("Team #" + count.toString());
+        clone.find('.team-delete').click(DeleteTeam);
+        $('#form-teams').append(clone);
+    }
+    
+    function DeleteTeam(event) {
+        {% if not VARIABLE_TEAMS %}
+        alert("Fixed teams...");
+        return;
+        {% endif %}
+        // This is not used right now!
+        var info = $('#form-teams').find('.team-info');
+        var count = info.length;
+        if (count <= 1) {
+            // Minimum number of teams...
             return;
-            {% endif %}
-            // This is not used right now!
-            var info = $('#form_teams').find('.team-info');
-            var count = info.length;
-            if (count <= 1) {
-                // Minimum number of teams...
-                return;
-            }
-            $(this).closest('.team-info').remove();
         }
-        
-        function RefreshTeams(event) {
-            var url = "{{ url_for('setup') }}";
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: $('#form_teams').serialize(),
-                dataType: 'json',
-                success: function (data) {
-                    if (data.result == "success") {
-                        $('.container-header').removeClass('slide-down');
-                    }
-                    else {
-                        // TODO improve error handling
-                        if (data.errors) {
-                            var errors = "";
-                            $.each(data.errors, function (k, v) {
-                                errors += v + "<br/>";
-                            });
-                            $("div#form_teams_errors").html('<span class="error">' + errors + '</span>');
-                        }
-                    }
+        $(this).closest('.team-info').remove();
+    }
+    
+    function RefreshTeams(event) {
+        var url = "{{ url_for('setup') }}";
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $('#form-teams').serialize(),
+            dataType: 'json',
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", "{{ form.csrf_token._value() }}")
                 }
-            });
-        }
-
-        function DisplayMessage(event) {
-            var show = $(this).find('.message-show');
-            var hide = $(this).find('.message-hide');
-            var visible = show.is(":visible");
-            $('.message-hide').hide();
-            $('.message-show').show();
-            var element = $(this).parent().find('.message-text');
-            if (visible) {
-                show.hide();
-                hide.show();
-                ShowMessage(element);
-            }
-            else {
-                hide.hide();
-                show.show();
-                HideMessage();
-            }
-        }
-        
-        function ShowMessage(element) {
-            if (element.length == 0) {
-                text = $('#message-custom').first().text();
-            }
-            else {
-                text = element.text();
-            }
-            socket.emit('message', {action: "show", text: text});
-        }
-        
-        function HideMessage() {
-            socket.emit('message', {action: "hide"});
-        }
-        
-        function EditMessage(event) {
-            if ($('#message-custom').is(":visible")) {
-                $('#message-custom').children().hide();
-                $('#message-custom').animate({"height": "0"}, 600, function() {
-                    $('#message-custom').hide();
-                });
-            }
-            else {
-                $('#message-custom').show();
-                $('#message-custom').animate({"height": "100%"}, 600, function() {
-                    $('#message-custom').children().show();
-                });
-            }
-        }
-        
-        $(document).ready(function() {
-
-            $(".box-ceopardy").on("click", function() {
-                var id = $(this).attr('id');
-                if ($(this).hasClass("box-selected")) {
-                    $(this).removeClass("box-selected");
-                    $(this).addClass("box-completed");
-                    socket.emit('unclick', {id: id});
+            },
+            success: function (data) {
+                if (data.result == "success") {
+                    $('.container-header').removeClass('slide-down');
                 }
                 else {
-                    $(".box-selected").addClass("box-completed");
-                    $(".box-selected").removeClass("box-selected");
-                    $(this).removeClass("box-completed");
-                    $(this).addClass("box-selected");
-                    socket.emit('click', {id: id});
-                }
-            });
-            
-            $("#roulette").on("click", function() {
-                socket.emit('roulette');
-                /*$.post("/api/roulette", function(data) {
-                    if (data.result != "ok") {
-                        alert(data.result);
-                    }
-                    else {
-                        
-                    }
-                });*/
-            });
-            
-            {# if not started #}
-            $('.container-header > .container-arrow').on("click", 
-                {'name': 'header', 'direction': 'down'}, ShowContainer);
-            {# endif #}
-            $('.container-footer > .container-arrow').on("click", 
-                {'name': 'footer', 'direction': 'up'}, ShowContainer);
-            
-            $('.team-add').on("click", AddTeam);
-            $('.team-delete').on("click", DeleteTeam);
-            $('.team-refresh').on("click", RefreshTeams);
-            $('#form_teams').submit(function(e){
-                e.preventDefault();
-                RefreshTeams(e);
-            });
-
-            
-            $('.message-display').on("click", DisplayMessage);
-            $('.message-edit').on("click", EditMessage);
-            
-            {% if not started %}
-            // First message should be the one about starting the game
-            // This might not be the best solution, we'll see...
-            $('#messages').find('.message-display').first().trigger('click');
-            {% endif %}
-
-            // FIXME I think this should be moved into team refresh but was left here as a mistake, Francois?
-            // Inject CSRF token
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", "{{ form.csrf_token._value() }}")
+                    // TODO improve error handling
+                    if (data.errors) {
+                        var errors = "";
+                        $.each(data.errors, function (k, v) {
+                            errors += v + "<br/>";
+                        });
+                        $("div#form-teams-errors").html('<span class="error">' + errors + '</span>');
                     }
                 }
+            }
+        });
+    }
+
+    function DisplayMessage(event) {
+        var show = $(this).find('.message-show');
+        var hide = $(this).find('.message-hide');
+        var visible = show.is(":visible");
+        $('.message-hide').hide();
+        $('.message-show').show();
+        var element = $(this).parent().find('.message-text');
+        if (visible) {
+            show.hide();
+            hide.show();
+            ShowMessage(element);
+        }
+        else {
+            hide.hide();
+            show.show();
+            HideMessage();
+        }
+    }
+    
+    function ShowMessage(element) {
+        if (element.length == 0) {
+            text = $('#message-custom').first().text();
+        }
+        else {
+            text = element.text();
+        }
+        socket.emit('message', {action: "show", text: text});
+    }
+    
+    function HideMessage() {
+        socket.emit('message', {action: "hide"});
+    }
+    
+    function EditMessage(event) {
+        if ($('#message-custom').is(":visible")) {
+            $('#message-custom').children().hide();
+            $('#message-custom').animate({"height": "0"}, 600, function() {
+                $('#message-custom').hide();
             });
+        }
+        else {
+            $('#message-custom').show();
+            $('#message-custom').animate({"height": "100%"}, 600, function() {
+                $('#message-custom').children().show();
+            });
+        }
+    }
+    
+    $(document).ready(function() {
+
+        $(".box-ceopardy").on("click", function() {
+            var id = $(this).attr('id');
+            if ($(this).hasClass("box-selected")) {
+                $(this).removeClass("box-selected");
+                $(this).addClass("box-completed");
+                socket.emit('unclick', {id: id});
+            }
+            else {
+                $(".box-selected").addClass("box-completed");
+                $(".box-selected").removeClass("box-selected");
+                $(this).removeClass("box-completed");
+                $(this).addClass("box-selected");
+                socket.emit('click', {id: id});
+            }
         });
         
-    </script>
+        $("#roulette").on("click", function() {
+            socket.emit('roulette');
+            /*$.post("/api/roulette", function(data) {
+                if (data.result != "ok") {
+                    alert(data.result);
+                }
+                else {
+                    
+                }
+            });*/
+        });
+        
+        {# if not started #}
+        $('.container-header > .container-arrow').on("click", 
+            {'name': 'header', 'direction': 'down'}, ShowContainer);
+        {# endif #}
+        $('.container-footer > .container-arrow').on("click", 
+            {'name': 'footer', 'direction': 'up'}, ShowContainer);
+        
+        $('.team-add').on("click", AddTeam);
+        $('.team-delete').on("click", DeleteTeam);
+        $('.team-refresh').on("click", RefreshTeams);
+        $('#form-teams').submit(function(e){
+            e.preventDefault();
+            RefreshTeams(e);
+        });
+
+        
+        $('.message-display').on("click", DisplayMessage);
+        $('.message-edit').on("click", EditMessage);
+        
+        {% if not started %}
+        // First message should be the one about starting the game
+        // This might not be the best solution, we'll see...
+        $('#messages').find('.message-display').first().trigger('click');
+        {% endif %}
+    });
+    
+</script>
 {% endblock %}

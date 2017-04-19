@@ -2,131 +2,130 @@
 {% block title %}Game Board{% endblock %}
 
 {% block content %}
-    {% set height = (100 / QUESTIONS_PER_CATEGORY)|int %}
-    <div class="container-game container-all container-light">
+{% set height = (100 / QUESTIONS_PER_CATEGORY)|int %}
+<div class="container-game container-all container-light">
 
-        <div class="container-categories">
-            <div class="black-box">
-                <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
-                    {% for name in categories %}
-                    <div class="col-ceopardy flex-horizontal-pad">
-                        <div id="c{{ loop.index }}" class="box-ceopardy box-category"><p>{{ name }}</p></div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="container-separator-h"></div>
-        
-        <div class="container-questions">
-            <div class="black-box">
-                {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-                <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
-                    {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
-                    <div class="col-ceopardy flex-horizontal-pad">
-                        <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button"><p>${{ _r * 100 }}</p></div>
-                    </div>
-                    {% endfor %}
+    <div class="container-categories">
+        <div class="black-box">
+            <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
+                {% for name in categories %}
+                <div class="col-ceopardy flex-horizontal-pad">
+                    <div id="c{{ loop.index }}" class="box-ceopardy box-category"><p>{{ name }}</p></div>
                 </div>
                 {% endfor %}
             </div>
         </div>
-        
-        <div class="container-separator-h"></div>
-        
-        <div class="container-results">
-            {% for name, score in teams.items() %}
-            <div class="container-team">
-                    <div id="t{{ _n }}" class="black-box" style="width: 80%; max-width:250px; margin: auto;">
-                        <div class="col-player flex-horizontal-pad">
-                            <div class="row-player flex-vertical-pad" style="height: 30%;">
-                                <div id="t{{ _n }}score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
-                            </div>
-                            <div class="row-player flex-vertical-pad" style="height: 70%;">
-                                <div id="t{{ _n }}name" class="box-ceopardy box-team team-{{ _n }}"><p>{{ name }}</p></div>
-                            </div>
-                        </div>
-                    </div>
+    </div>
+    
+    <div class="container-separator-h"></div>
+    
+    <div class="container-questions">
+        <div class="black-box">
+            {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+            <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
+                {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
+                <div class="col-ceopardy flex-horizontal-pad">
+                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button"><p>${{ _r * 100 }}</p></div>
+                </div>
+                {% endfor %}
             </div>
             {% endfor %}
         </div>
     </div>
     
-    <div id="small-overlay" class="container-game container-absolute container-all no-display">
-        <div class="small-container-overlay">
-            <div class="black-box">
-                <div class="box-overlay">
-                    <div id="small-overlay-content" class="box-ceopardy box-question">That person designs great gameboards!</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="container-separator-h"></div>
     
-    <div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if initialized }}">
-        <div class="big-container-overlay">
-            <div class="black-box">
-                <div class="box-overlay">
-                    <div id="big-overlay-content" class="box-ceopardy box-question"><p>There is currently no host running the show!</p></div>
+    <div class="container-results">
+        {% for name, score in teams.items() %}
+        <div class="container-team">
+                <div id="t{{ loop.index }}" class="black-box" style="width: 80%; max-width:250px; margin: auto;">
+                    <div class="col-player flex-horizontal-pad">
+                        <div class="row-player flex-vertical-pad" style="height: 30%;">
+                            <div id="t{{ loop.index }}score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
+                        </div>
+                        <div class="row-player flex-vertical-pad" style="height: 70%;">
+                            <div id="t{{ loop.index }}name" class="box-ceopardy box-team team-{{ loop.index }}"><p>{{ name }}</p></div>
+                        </div>
+                    </div>
                 </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="small-overlay" class="container-game container-absolute container-all no-display">
+    <div class="small-container-overlay">
+        <div class="black-box">
+            <div class="box-overlay">
+                <div id="small-overlay-content" class="box-ceopardy box-question">That person designs great gameboards!</div>
             </div>
         </div>
     </div>
+</div>
 
+<div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if initialized }}">
+    <div class="big-container-overlay">
+        <div class="black-box">
+            <div class="box-overlay">
+                <div id="big-overlay-content" class="box-ceopardy box-question"><p>There is currently no host running the show!</p></div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block ui %}
-    <script>
-        var socket = io.connect('http://' + document.domain + ':' + location.port + '/viewer');
-        var rouletteId = null;
+<script>
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/viewer');
+    var rouletteId = null;
 
-        socket.on('connect', function() {
-            socket.emit('refresh');
-        });
-        
-        socket.on('update-board', function(data) {
-            for (var id in data) {
-                if (data.hasOwnProperty(id)) {
-                    var solved = data[id];
-                    if (solved) {
-                        $("#" + id).children().hide();
-                    }
-                    else {
-                        $("#" + id).children().show();
-                    }
+    socket.on('connect', function() {
+        socket.emit('refresh');
+    });
+    
+    socket.on('update-board', function(data) {
+        for (var id in data) {
+            if (data.hasOwnProperty(id)) {
+                var solved = data[id];
+                if (solved) {
+                    $("#" + id).children().hide();
+                }
+                else {
+                    $("#" + id).children().show();
                 }
             }
-        });
-        
-        socket.on('overlay', function(data) {
-            if (data.action == "show") {
-                $("#" + data.id + "-overlay-content").html(data.html);
-                $("#" + data.id + "-overlay").fadeIn(1000);
-            }
-            else {
-                 $("#" + data.id + "-overlay").fadeOut(1000);
-                 $("#" + data.id + "-overlay-content").html(data.html);
-            }
-        });
-        
-        socket.on('select-team', function(data) {
-            console.log(data);
-            clearInterval(rouletteId);
+        }
+    });
+    
+    socket.on('overlay', function(data) {
+        if (data.action == "show") {
+            $("#" + data.id + "-overlay-content").html(data.html);
+            $("#" + data.id + "-overlay").fadeIn(1000);
+        }
+        else {
+             $("#" + data.id + "-overlay").fadeOut(1000);
+             $("#" + data.id + "-overlay-content").html(data.html);
+        }
+    });
+    
+    socket.on('select-team', function(data) {
+        console.log(data);
+        clearInterval(rouletteId);
+        $(".team-selected").removeClass("team-selected");
+        $("#" + data).addClass("team-selected");
+    });
+    
+    socket.on('roulette-team', function(data) {
+        clearInterval(rouletteId);
+        rouletteId = setInterval(function() {
+            var id = data.shift();
             $(".team-selected").removeClass("team-selected");
-            $("#" + data).addClass("team-selected");
-        });
-        
-        socket.on('roulette-team', function(data) {
-            clearInterval(rouletteId);
-            rouletteId = setInterval(function() {
-                var id = data.shift();
-                $(".team-selected").removeClass("team-selected");
-                $("#" + id).addClass("team-selected");
-                if (data.length == 0) {
-                    clearInterval(rouletteId);
-                    rouletteId = null;
-                }
-            }, 100);
-        });
-    </script>
+            $("#" + id).addClass("team-selected");
+            if (data.length == 0) {
+                clearInterval(rouletteId);
+                rouletteId = null;
+            }
+        }, 100);
+    });
+</script>
 {% endblock %}
