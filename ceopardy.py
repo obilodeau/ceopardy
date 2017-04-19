@@ -112,13 +112,12 @@ def handle_click(data):
     app.logger.debug('received data: {}'.format(data["id"]))
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
-        items = match.groups()
-        column = int(items[0])
-        row = int(items[1])
-        #controller.set_question_solved(column, row, True)
+        col, row = match.groups()
+        question_text = controller.get_question(col, row)
         #state = controller.dictionize_questions_solved()
         #emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("overlay", {"action": "show", "id": "small", "html": "<p>Test!</p>"}, namespace='/viewer', broadcast=True)
+        emit("overlay", {"action": "show", "id": "small", "html": question_text},
+             namespace='/viewer', broadcast=True)
 
 
 @socketio.on('unclick', namespace='/host')

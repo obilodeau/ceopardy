@@ -90,6 +90,10 @@ def parse_gamefile(filename):
     return categories, final
 
 
+def question_to_html(question_text):
+    return "<p>" + question_text + "</p>"
+
+
 class QuestionParsingError(Exception):
     pass
 

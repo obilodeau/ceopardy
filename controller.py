@@ -19,11 +19,12 @@ import functools
 from threading import Lock
 
 from flask import current_app as app
+from sqlalchemy import and_
 
 from config import config
 from ceopardy import db
 from model import Game, Team, GameState, GameBoard, Question
-from utils import parse_questions, parse_gamefile
+from utils import parse_questions, parse_gamefile, question_to_html
 
 
 # TODO consider for removal now that we use a database: make sure to use transactions properly!
@@ -137,10 +138,10 @@ class Controller():
     def get_teams_score():
         game = Game.query.first()
         if game.state == GameState.started:
-            # TODO implement score
+            # TODO implement score and return ordered dict so that team order doesn't change
             return {team.name: 0 for team in Team.query.all()}
         else:
-            return []
+            return {'Team1': 0, 'Team2': 0, 'Team3': 0}
 
 
     @staticmethod
@@ -166,11 +167,16 @@ class Controller():
                   .order_by(Question.col)]
 
 
-    def get_question(self, column, row):
-        # TODO migrate to db
-        gb = GameBoard()
-        return gb.questions[row - 1][column - 1]
-    
+    @staticmethod
+    def get_question(column, row):
+        app.logger.info(
+            "Question requested for row: {} and col: {}".format(row, column))
+
+        condition = and_(Question.row == row, Question.col == column)
+        _q = Question.query.filter(condition).first()
+        return question_to_html(_q.text)
+
+
     def get_question_solved(self, column, row):
         question = self.get_question(column, row)
         return question.solved
