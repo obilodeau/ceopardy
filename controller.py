@@ -74,6 +74,13 @@ class Controller():
             raise GameProblem("Trying to setup a game that is already started")
         return True
 
+    @staticmethod
+    def update_teams(teamnames):
+        """Teamnames is {teamid: team_name} dict"""
+        app.logger.info("Update teams: {}".format(teamnames))
+        for _id, _name in teamnames.items():
+            db.session.query(Team).filter_by(id=_id).update({"name": _name})
+
 
     @staticmethod
     def setup_questions(q_file=config['QUESTIONS_FILENAME']):
@@ -137,6 +144,14 @@ class Controller():
     @staticmethod
     def get_teams_for_form():
         return {team.tid: team.name for team in Team.query.all()}
+
+
+    @staticmethod
+    def teams_exists():
+        if Team.query.all():
+            return True
+        return False
+
 
     def get_nb_teams():
         return config["NB_TEAMS"]

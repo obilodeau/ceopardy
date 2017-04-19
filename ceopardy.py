@@ -75,6 +75,8 @@ def host():
 
 
 # TODO: kick-out if game is started
+# TODO: we might be a little better if we split everything in individual REST APIs?
+#       see http://stackoverflow.com/questions/3850742/flask-how-do-i-combine-flask-wtf-and-flask-sqlalchemy-to-edit-db-models
 @app.route('/setup', methods=["POST"])
 def setup():
     controller = get_controller()
@@ -82,10 +84,20 @@ def setup():
     # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
     if form.validate_on_submit():
 
-        teamnames = {field.id: field.data for field in form if TEAM_FIELD_ID in field.flags}
-        controller.setup_teams(teamnames)
-        controller.setup_questions()
-        controller.start_game()
+        teamnames = {field.id: field.data for field in form
+                     if TEAM_FIELD_ID in field.flags}
+
+        # If teams exists, update them
+        if controller.teams_exists():
+            controller.update_teams(teamnames)
+
+        # Otherwise create them
+        else:
+            controller.setup_teams(teamnames)
+            # FIXME move lines below in another "feature" to allow retries w/o
+            #       requiring a database reset
+            controller.setup_questions()
+            controller.start_game()
 
         # announce waiting room that game has started
         #emit("start_game", namespace="/wait", broadcast=True)
