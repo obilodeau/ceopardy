@@ -15,14 +15,12 @@
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
                 <p class="form-header form-color">Teams</p>
-                <!--<div id="teams">-->
-                <form id="teams">
+                <form id="form_teams">
                     {{ form.csrf_token }}
                     {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
                     {% for field in form if field.flags.teamname %}
                     <div class="form-row form-color team-info">
                         <div class="form-text">{{ field.label }}</div>
-                        <!-- <div class="form-expand form-cursive form-text team-name" contenteditable="true">test</div> //-->
                         {{ field(class_="form-expand form-cursive form-text form-color form-no-form team-name", autocomplete="off", placeholder="Enter the name of the team") }}
                         {% if field.errors %}
                             {# FIXME layout issues here #}
@@ -35,15 +33,16 @@
                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
                     </div>
                     {% endfor %}
-                </form>
                <!--</div>-->
                 <div class="form-expand"></div>
                 <div class="form-row form-color">
                     <div class="form-expand"></div>
                     <div class="form-icon form-click team-add"><i class="fa fa-plus fa-lg"></i></div>
                     <div class="form-icon form-click team-refresh"><i class="fa fa-refresh fa-lg"></i></div>
+                    <input type="submit" style="display: none">
                     <div class="form-expand"></div>
                 </div>
+                </form>
             </div>
         </div>
         
@@ -164,7 +163,7 @@
             return;
             {% endif %}
             // This is not used right now!
-            var info = $('#teams').find('.team-info');
+            var info = $('#form_teams').find('.team-info');
             var count = info.length;
             if (count >= 5) {
                 // Maximum number of teams...
@@ -174,7 +173,7 @@
             clone = info.first().clone();
             clone.find('.team-name').text("Team #" + count.toString());
             clone.find('.team-delete').click(DeleteTeam);
-            $('#teams').append(clone);
+            $('#form_teams').append(clone);
         }
         
         function DeleteTeam(event) {
@@ -183,7 +182,7 @@
             return;
             {% endif %}
             // This is not used right now!
-            var info = $('#teams').find('.team-info');
+            var info = $('#form_teams').find('.team-info');
             var count = info.length;
             if (count <= 1) {
                 // Minimum number of teams...
@@ -197,12 +196,10 @@
             $.ajax({
                 type: "POST",
                 url: url,
-                data: $('#teams').serialize(),
+                data: $('#form_teams').serialize(),
                 dataType: 'json',
                 success: function (data) {
                     if (data.result == "success") {
-                        // For now we'll make it unclickable too...
-                        //$('.container-header > .container-arrow').off("click");
                         $('.container-header').removeClass('slide-down');
                     }
                     else {
@@ -302,6 +299,11 @@
             $('.team-add').on("click", AddTeam);
             $('.team-delete').on("click", DeleteTeam);
             $('.team-refresh').on("click", RefreshTeams);
+            $('#form_teams').submit(function(e){
+                e.preventDefault();
+                RefreshTeams(e);
+            });
+
             
             $('.message-display').on("click", DisplayMessage);
             $('.message-edit').on("click", EditMessage);
