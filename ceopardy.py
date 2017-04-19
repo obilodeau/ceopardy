@@ -51,7 +51,7 @@ def inject_config():
 def viewer():
     controller = get_controller()
     categories = controller.get_categories()
-    teams = controller.get_teams()
+    teams = controller.get_teams_score()
     initialized = controller.is_game_initialized()
     return render_template('viewer.html', teams=teams, categories=categories,
                            initialized=initialized)
@@ -64,8 +64,13 @@ def viewer():
 @app.route('/host')
 def host():
     controller = get_controller()
-    form = TeamNamesForm()
-    started = controller.is_game_started()
+    if controller.is_game_started():
+        fields = controller.get_teams_for_form()
+        form = TeamNamesForm(data=fields)
+        started = True
+    else:
+        form = TeamNamesForm()
+        started = False
     return render_template('host.html', form=form, started=started)
 
 
@@ -77,7 +82,7 @@ def setup():
     # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
     if form.validate_on_submit():
 
-        teamnames = [field.data for field in form if TEAM_FIELD_ID in field.flags]
+        teamnames = {field.id: field.data for field in form if TEAM_FIELD_ID in field.flags}
         controller.setup_teams(teamnames)
         controller.setup_questions()
         controller.start_game()

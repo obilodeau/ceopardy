@@ -74,10 +74,12 @@ class Game(db.Model):
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    tid = db.Column(db.String(7), unique=True)
     name = db.Column(db.String(80), unique=True)
     handicap = db.Column(db.Integer)
 
-    def __init__(self, name, handicap=0):
+    def __init__(self, tid, name, handicap=0):
+        self.tid = tid
         self.name = name
         self.handicap = handicap
         app.logger.debug("Team created: name is {}, handicap is {}"

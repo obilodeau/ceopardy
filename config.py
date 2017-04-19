@@ -15,6 +15,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+import os
+
 config = {
     'NB_TEAMS': 3,
     'VARIABLE_TEAMS': False,
@@ -29,5 +31,6 @@ config = {
          "text": "It seems we're having some trouble, hang in there!"},
         {"title": "Break",
          "text": "On a short break, we'll be right back after these messages."},
-    ]
+    ],
+    'BASE_DIR': os.path.dirname(__file__) + '/'
 }

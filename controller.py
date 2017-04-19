@@ -62,11 +62,12 @@ class Controller():
 
     @staticmethod
     def setup_teams(teamnames):
+        """Teamnames is {teamid: team_name} dict"""
         app.logger.info("Setup teams: {}".format(teamnames))
         game = Game.query.first()
         if game.state == GameState.uninitialized:
-            for _tn in teamnames:
-                team = Team(_tn)
+            for _tid, _tn in teamnames.items():
+                team = Team(_tid, _tn)
                 db.session.add(team)
             db.session.commit()
         else:
@@ -81,8 +82,8 @@ class Controller():
         if game.state == GameState.uninitialized:
 
             # TODO need to be able to specify given game
-            gamefile, final = parse_gamefile('data/1st.round')
-            questions = parse_questions(q_file)
+            gamefile, final = parse_gamefile(config['BASE_DIR'] + 'data/1st.round')
+            questions = parse_questions(config['BASE_DIR'] + q_file)
 
             # TODO do some validation based on config constants
             for _col, _cat in enumerate(gamefile, start=1):
@@ -124,7 +125,7 @@ class Controller():
 
 
     @staticmethod
-    def get_teams():
+    def get_teams_score():
         game = Game.query.first()
         if game.state == GameState.started:
             # TODO implement score
@@ -134,6 +135,9 @@ class Controller():
 
 
     @staticmethod
+    def get_teams_for_form():
+        return {team.tid: team.name for team in Team.query.all()}
+
     def get_nb_teams():
         return config["NB_TEAMS"]
 
