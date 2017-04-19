@@ -74,12 +74,14 @@ class Controller():
             raise GameProblem("Trying to setup a game that is already started")
         return True
 
+
     @staticmethod
     def update_teams(teamnames):
         """Teamnames is {teamid: team_name} dict"""
         app.logger.info("Update teams: {}".format(teamnames))
         for _id, _name in teamnames.items():
-            db.session.query(Team).filter_by(id=_id).update({"name": _name})
+            db.session.query(Team).filter_by(tid=_id).update({"name": _name})
+        db.session.commit()
 
 
     @staticmethod
