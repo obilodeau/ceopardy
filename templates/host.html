@@ -34,6 +34,8 @@
                     </div>
                     {% endfor %}
                <!--</div>-->
+                <div id="form_teams_errors" class="form-row form-color">
+                </div>
                 <div class="form-expand"></div>
                 <div class="form-row form-color">
                     <div class="form-expand"></div>
@@ -203,9 +205,14 @@
                         $('.container-header').removeClass('slide-down');
                     }
                     else {
-                        // TODO remove debugging
-                        console.log(data);
-                        // FIXME if data contains anything else: update form fields with errors
+                        // TODO improve error handling
+                        if (data.errors) {
+                            var errors = "";
+                            $.each(data.errors, function (k, v) {
+                                errors += v + "<br/>";
+                            });
+                            $("div#form_teams_errors").html('<span class="error">' + errors + '</span>');
+                        }
                     }
                 }
             });
