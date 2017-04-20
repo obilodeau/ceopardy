@@ -99,8 +99,7 @@ def setup():
             controller.setup_questions()
             controller.start_game()
 
-        # announce waiting room that game has started
-        #emit("start_game", namespace="/wait", broadcast=True)
+        emit("team", {"action": "name", "args": teamnames}, namespace='/viewer', broadcast=True)
         return jsonify(result="success")
 
     return jsonify(result="failure", errors=form.errors)
@@ -141,11 +140,12 @@ def handle_roulette():
     controller = get_controller()
     nb = controller.get_nb_teams()
     l = []
-    team = "t" + str(random.randrange(1, nb + 1))
+    team = "team" + str(random.randrange(1, nb + 1))
     for i in range(12):
-        l.append("t" + str(i % nb + 1))
+        l.append("team" + str(i % nb + 1))
     l.append(team)
-    emit("roulette-team", l, namespace='/viewer', broadcast=True)
+    app.logger.debug(l)
+    emit("team", {"action": "roulette", "args": l}, namespace='/viewer', broadcast=True)
 
 
 @socketio.on('refresh', namespace='/viewer')

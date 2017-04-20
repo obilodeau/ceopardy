@@ -38,13 +38,13 @@
     <div class="container-results">
         {% for name, score in teams.items() %}
         <div class="container-team">
-                <div id="t{{ loop.index }}" class="black-box" style="width: 80%; max-width:250px; margin: auto;">
+                <div id="team{{ loop.index }}" class="black-box" style="width: 80%; max-width:250px; margin: auto;">
                     <div class="col-player flex-horizontal-pad">
                         <div class="row-player flex-vertical-pad" style="height: 30%;">
-                            <div id="t{{ loop.index }}score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
+                            <div id="team{{ loop.index }}-score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
                         </div>
                         <div class="row-player flex-vertical-pad" style="height: 70%;">
-                            <div id="t{{ loop.index }}name" class="box-ceopardy box-team team-{{ loop.index }}"><p>{{ name }}</p></div>
+                            <div id="team{{ loop.index }}-name" class="box-ceopardy box-team team-{{ loop.index }}"><p>{{ name }}</p></div>
                         </div>
                     </div>
                 </div>
@@ -108,24 +108,35 @@
         }
     });
     
-    socket.on('select-team', function(data) {
-        console.log(data);
-        clearInterval(rouletteId);
-        $(".team-selected").removeClass("team-selected");
-        $("#" + data).addClass("team-selected");
-    });
-    
-    socket.on('roulette-team', function(data) {
-        clearInterval(rouletteId);
-        rouletteId = setInterval(function() {
-            var id = data.shift();
-            $(".team-selected").removeClass("team-selected");
-            $("#" + id).addClass("team-selected");
-            if (data.length == 0) {
-                clearInterval(rouletteId);
-                rouletteId = null;
+    socket.on('team', function(data) {
+        if ((data.action == "name") || (data.action == "score")) {
+            for (var key in data.args) {
+                if (!data.args.hasOwnProperty(key)) {
+                    continue;
+                }
+                // No XSS with text function
+                $('#' + key + '-' + data.action + ' > p').text(data.args[key]);
             }
-        }, 100);
+        }
+        else if (data.action == "select") {
+            clearInterval(rouletteId);
+            $(".team-selected").removeClass("team-selected");
+            $("#" + data.args).addClass("team-selected");
+        }
+        else if (data.action == "roulette") {
+            // We might have to rethink this because a browser tab could be asleep
+            clearInterval(rouletteId);
+            rouletteId = setInterval(function() {
+                var id = data.args.shift();
+                $(".team-selected").removeClass("team-selected");
+                $("#" + id).addClass("team-selected");
+                console.log("#" + id);
+                if (data.args.length == 0) {
+                    clearInterval(rouletteId);
+                    rouletteId = null;
+                }
+            }, 100);
+        }
     });
 </script>
 {% endblock %}

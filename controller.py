@@ -156,6 +156,7 @@ class Controller():
         return False
 
 
+    @staticmethod
     def get_nb_teams():
         return config["NB_TEAMS"]
 
