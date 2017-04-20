@@ -22,22 +22,15 @@
                     <div class="form-row form-color team-info">
                         <div class="form-text">{{ field.label }}</div>
                         {{ field(class_="form-expand form-cursive form-text form-color form-no-form team-name", autocomplete="off", placeholder="Enter the name of the team") }}
-                        {% if field.errors %}
-                            {# FIXME layout issues here #}
-                            {# IS THIS STILL IN USE SOMEHOW?!?! #}
-                            <div class="alert alert-danger" role="alert">
-                                {% for error in field.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
+                    </div>
+                    <div class="form-error">
                     </div>
                     {% endfor %}
                     <!--To handle normal form key presses-->
                     <input type="submit" style="display: none">
                 </form>
-                <div id="form-teams-errors" class="form-row form-color">
+                <div id="form-teams-errors" class="form-color">
                 </div>
                 <div class="form-expand"></div>
                 <div class="form-row form-color">
@@ -184,6 +177,8 @@
         clone.find('.team-name').text("Team #" + count.toString());
         clone.find('.team-delete').click(DeleteTeam);
         $('#form-teams').append(clone);
+        // Add the error div too
+        $('#form-teams').append('<div class="form-error"></div>');
     }
     
     function DeleteTeam(event) {
@@ -198,7 +193,10 @@
             // Minimum number of teams...
             return;
         }
-        $(this).closest('.team-info').remove();
+        var team = $(this).closest('.team-info');
+        // Remove the error div too
+        team.next().remove();
+        team.remove();
     }
     
     function RefreshTeams(event) {
@@ -214,18 +212,31 @@
                 }
             },
             success: function (data) {
+                $(".form-error").empty();
                 if (data.result == "success") {
                     $('.container-header').removeClass('slide-down');
                 }
                 else {
-                    // TODO improve error handling
-                    if (data.errors) {
+                    // Equivalent of a normal form error handling
+                    for (var key in data.errors) {
+                        if (data.errors.hasOwnProperty(key)) {
+                            var array = data.errors[key];
+                            var html = '<ul>';
+                            for (var i = 0; i < array.length; i++) {
+                                html += '<li>' + array[i] + '</li>';
+                            }
+                            html += '</ul>';
+                            $("#" + key).parent().next().html(html);
+                        }
+                    }
+                    // If you agree, we'll drop this one
+                    /*if (data.errors) {
                         var errors = "";
                         $.each(data.errors, function (k, v) {
                             errors += v + "<br/>";
                         });
                         $("div#form-teams-errors").html('<span class="error">' + errors + '</span>');
-                    }
+                    }*/
                 }
             }
         });
@@ -280,7 +291,6 @@
     }
     
     $(document).ready(function() {
-
         $(".box-ceopardy").on("click", function() {
             var id = $(this).attr('id');
             if ($(this).hasClass("box-selected")) {
@@ -324,7 +334,6 @@
             RefreshTeams(e);
         });
 
-        
         $('.message-display').on("click", DisplayMessage);
         $('.message-edit').on("click", EditMessage);
         
