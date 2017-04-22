@@ -68,7 +68,23 @@
     </div>
     
     <div class="container-bottom container-all container-light">
-        
+        <div id="answer-controls" class="no-display">
+            <div id="question-context"></div>
+            <form id="form-question-normal">
+                <input id="question-id" type="hidden" name="qid">
+                {# TODO: handle values from currently answered questions #}
+                {% for tid, name in teams.items() %}
+                    <label for="{{ tid }}">{{ name }}</label>
+                    <input name="{{ tid }}" type="range" min="-1" max="1" step="1"/>
+                    <br/>
+                {% endfor %}
+                <input type="submit" value="Answers complete">
+            </form>
+            {# TODO: daily doubles should be handled at some point #}
+            <div class="question-daily-double no-display">
+                <input id="{{ tid }}" type="range" min="0" max="500000000" step="{{ SCORE_TICK }}"/>
+            </div>
+        </div>
     </div>
     
     <!--For now...this is a place holder for the space occupied by the arrow-->
@@ -142,13 +158,41 @@
         alert(data);
     });
 
-    // FIXME fchar: turn this into something pretty (and change socketio names as fit)
+    {# FIXME fchar: change naming as you see fit #}
     socket.on('test2', function(data) {
         if (data.action == "show_answer_ui") {
-            $(".container-bottom").html("<p>" + data.qid + " / " + data.q_text + "</p>");
+            $("#question-context").html("<p>" + data.qid + " / " + data.q_text + "</p>");
+            $("#answer-controls").removeClass("no-display");
+            $("input#question-id").val(data.qid);
         }
     });
-    
+
+    {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
+    function SubmitAnswers(event) {
+        var url = "{{ url_for('answer') }}";
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $('#form-question-normal').serialize(),
+            dataType: 'json',
+            success: function (data) {
+                $(".form-error").empty();
+                if (data.result == "success") {
+                    // TODO
+                }
+                else {
+                   // TODO
+                }
+            }
+        });
+    }
+    $("#form-question-normal").submit( function(e) {
+        e.preventDefault();
+        SubmitAnswers(e);
+    });
+
+
+
     function ShowContainer(event) {
         var container = '.container-' + event.data.name;
         var slide = 'slide-' + event.data.direction
@@ -229,14 +273,6 @@
                             $("#" + key).parent().next().html(html);
                         }
                     }
-                    // If you agree, we'll drop this one
-                    /*if (data.errors) {
-                        var errors = "";
-                        $.each(data.errors, function (k, v) {
-                            errors += v + "<br/>";
-                        });
-                        $("div#form-teams-errors").html('<span class="error">' + errors + '</span>');
-                    }*/
                 }
             }
         });
@@ -333,6 +369,8 @@
             e.preventDefault();
             RefreshTeams(e);
         });
+
+
 
         $('.message-display').on("click", DisplayMessage);
         $('.message-edit').on("click", EditMessage);

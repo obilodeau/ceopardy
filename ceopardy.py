@@ -21,7 +21,7 @@ import random
 import re
 import sys
 
-from flask import g, Flask, render_template, redirect, jsonify
+from flask import g, Flask, render_template, redirect, jsonify, request
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
@@ -65,13 +65,13 @@ def viewer():
 def host():
     controller = get_controller()
     if controller.is_game_started():
-        fields = controller.get_teams_for_form()
-        form = TeamNamesForm(data=fields)
+        teams = controller.get_teams_for_form()
+        form = TeamNamesForm(data=teams)
         started = True
     else:
         form = TeamNamesForm()
         started = False
-    return render_template('host.html', form=form, started=started)
+    return render_template('host.html', form=form, started=started, teams=teams)
 
 
 # TODO: kick-out if game is started
@@ -103,6 +103,13 @@ def setup():
         return jsonify(result="success")
 
     return jsonify(result="failure", errors=form.errors)
+
+
+@app.route('/answer', methods=["POST"])
+def answer():
+    # TODO incomplete
+    app.logger.debug(request.form)
+    return jsonify(result="success")
 
 
 @socketio.on('click', namespace='/host')
