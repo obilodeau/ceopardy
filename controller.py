@@ -215,6 +215,21 @@ class Controller():
         question = self.get_question(column, row)
         question.solved = value
 
+    @staticmethod
+    def get_questions_status():
+        """Status about all questions: answered or not"""
+        questions = db.session.query(Question.row, Question.col, Answer.id)\
+                                    .outerjoin(Answer).all()
+
+        results = {}
+        for question in questions:
+            _row, _col, _answer = question
+            qid = "c{}q{}".format(_col, _row)
+            results[qid] = _answer is not None
+
+        return results
+
+
     #def dictionize_questions_solved(self):
     #    # TODO migrate to db
     #    gb = GameBoard()

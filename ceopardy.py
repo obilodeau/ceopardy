@@ -52,9 +52,11 @@ def viewer():
     controller = get_controller()
     categories = controller.get_categories()
     teams = controller.get_teams_score()
+    questions = controller.get_questions_status()
     initialized = controller.is_game_initialized()
     return render_template('viewer.html', teams=teams, categories=categories,
-                           initialized=initialized)
+                           questions=questions, initialized=initialized)
+    # FIXME: fchar: is there a way to socketio a board update right after this?
 
 
 # TODO we must kill all client-side state on server load.
@@ -110,7 +112,6 @@ def setup():
 
 @app.route('/answer', methods=["POST"])
 def answer():
-    # TODO incomplete
     app.logger.debug("Answer form has been submitted with: {}", request.form)
     controller = get_controller()
 
@@ -133,8 +134,10 @@ def handle_click(data):
     if match is not None:
         col, row = match.groups()
         qid, question_text = controller.get_question(col, row)
-        #state = controller.dictionize_questions_solved()
-        #emit("update-board", state, namespace='/viewer', broadcast=True)
+
+        # FIXME doesn't seem to be the right moment to update the board
+        state = controller.get_questions_status()
+        emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
         emit("test2", {"action": "show_answer_ui", "qid": qid,
