@@ -28,29 +28,8 @@ SCHEMA_VERSION = 1
 # TODO save a game in progress
 # TODO load a game in progress
 # TODO refactor to GameModel?
-class old_Game():
-    def __init__(self):
-        self.state = GameState.uninitialized
-        self.teams = []
 
 
-
-
-    def start(self):
-        if self.state is GameState.setup:
-            self.state = GameState.started
-            return True
-        else:
-            raise GameProblem("Trying to start a game that isn't ready to start")
-
-
-    def get_team_stats(self):
-        return [{team.name: team.score} for team in self.teams]
-
-    # TODO randomly pick a team
-
-
-# TODO remove
 class GameState(Enum):
     uninitialized = 0
     setup = 1
