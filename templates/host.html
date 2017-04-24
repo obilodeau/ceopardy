@@ -70,6 +70,7 @@
     <div class="container-bottom container-all container-light">
         <div id="answer-controls" class="no-display">
             <div id="question-context"></div>
+            {# TODO: consider migrating this to a flask-wtform #}
             <form id="form-question-normal">
                 <input id="question-id" type="hidden" name="qid">
                 {# TODO: handle values from currently answered questions #}
@@ -178,10 +179,11 @@
             success: function (data) {
                 $(".form-error").empty();
                 if (data.result == "success") {
-                    // TODO
+                    // reset form values
+                    $('form#form-question-normal input[type=range]').val(0);
                 }
                 else {
-                   // TODO
+                   console.log("You fucked it up! ;)");
                 }
             }
         });

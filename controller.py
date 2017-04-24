@@ -23,7 +23,7 @@ from sqlalchemy import and_
 
 from config import config
 from ceopardy import db
-from model import Game, Team, GameState, GameBoard, Question
+from model import Answer, Game, Team, GameState, Question, Response
 from utils import parse_questions, parse_gamefile, question_to_html
 
 
@@ -176,6 +176,21 @@ class Controller():
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).first()
         return _q.id, question_to_html(_q.text)
+
+
+    @staticmethod
+    def answer_normal(question_id, answers):
+        app.logger.info("Answers submitted for question {}: {}"
+                        .format(question_id, answers))
+
+        # data looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
+        for tid, response in answers.items():
+            team = Team.query.filter(Team.tid == tid).first()
+            question = Question.query.get(question_id)
+            response = Response(int(response))
+            db.session.add(Answer(response, team, question))
+        db.session.commit()
+        return True
 
 
     def get_question_solved(self, column, row):

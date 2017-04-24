@@ -78,6 +78,8 @@ class Team(db.Model):
     name = db.Column(db.String(80), unique=True)
     handicap = db.Column(db.Integer)
 
+    answers = db.relationship('Answer', back_populates='team')
+
     def __init__(self, tid, name, handicap=0):
         self.tid = tid
         self.name = name
@@ -99,6 +101,8 @@ class Question(db.Model):
     row = db.Column(db.Integer)
     col = db.Column(db.Integer)
 
+    answers = db.relationship('Answer', back_populates="question")
+
     def __init__(self, text, score_original, category, row, col, final=False,
                  double=False):
         self.text = text
@@ -113,10 +117,42 @@ class Question(db.Model):
         return '<Question {} for {} at col {} row {}>'\
             .format(self.category, self.score_original, self.col, self.row)
 
+
 # For the database, a final question is just a flag on a regular question.
 # This convenience object is created so that we manage it in a more OO-ish way
 # after parsing and before database insertion.
 FinalQuestion = collections.namedtuple('FinalQuestion', 'category question')
+
+
+class Response(Enum):
+    bad = -1
+    nop = 0
+    good = 1
+
+
+class Answer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    score_attributed = db.Column(db.Integer)
+    response = db.Column(db.Enum(Response))
+
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
+    team = db.relationship('Team', back_populates="answers")
+
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
+    question = db.relationship('Question', back_populates="answers")
+
+    def __init__(self, response, team, question):
+        """Meant to be used on normal questions where score is not changeable"""
+        self.score_attributed = question.score_original
+        self.response = response
+        self.team = team
+        self.question = question
+
+    def __repr__(self):
+        return '<Answer by team id {} to question id {} is {}. Points {}>'\
+            .format(self.team_id, self.question_id, self.response.name,
+                    self.score_attributed)
+
 
 class GameBoard():
     def __init__(self):

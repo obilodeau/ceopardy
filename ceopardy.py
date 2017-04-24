@@ -111,8 +111,18 @@ def setup():
 @app.route('/answer', methods=["POST"])
 def answer():
     # TODO incomplete
-    app.logger.debug(request.form)
-    return jsonify(result="success")
+    app.logger.debug("Answer form has been submitted with: {}", request.form)
+    controller = get_controller()
+
+    qid = request.form['qid']
+
+    # send everything but qid as a dict
+    answers = request.form.to_dict()
+    answers.pop('qid')
+    if controller.answer_normal(qid, answers):
+        return jsonify(result="success")
+
+    return jsonify(result="failure", error="Something went wrong")
 
 
 @socketio.on('click', namespace='/host')
