@@ -16,6 +16,7 @@
 # GNU General Public License for more details.
 #
 import functools
+from collections import OrderedDict
 from threading import Lock
 
 from flask import current_app as app
@@ -138,9 +139,21 @@ class Controller():
     def get_teams_score():
         game = Game.query.first()
         if game.state == GameState.started:
-            # TODO implement score and return ordered dict so that team order doesn't change
-            return {team.name: 0 for team in Team.query.all()}
+            answers = db.session.query(Team.id, Team.name, Answer.response,
+                                       Answer.score_attributed)\
+                                .join(Answer).order_by(Team.id).all()
+            results = OrderedDict()
+            for answer in answers:
+                _id, _name, _response, _score = answer
+                # not already defined? initialize
+                if not results.get(_name):
+                    results[_name] = 0
+
+                results[_name] += _response.value * _score
+            return results
+
         else:
+            # TODO this is not adaptable to NB_TEAMS
             return {'Team1': 0, 'Team2': 0, 'Team3': 0}
 
 

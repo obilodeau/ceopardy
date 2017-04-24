@@ -16,7 +16,8 @@
 # GNU General Public License for more details.
 #
 from ceopardy import db
-from model import Question, Team, Game
+from model import Answer, Question, Team, Game
+from sqlalchemy import func
 
 # creates all tables from model
 #db.create_all()
