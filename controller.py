@@ -44,7 +44,7 @@ class Controller():
         self.lock = Lock()
 
         # if there's not a game state, create one
-        if Game.query.first() is None:
+        if Game.query.one() is None:
             game = Game()
             db.session.add(game)
             db.session.commit()
@@ -52,13 +52,13 @@ class Controller():
 
     @staticmethod
     def is_game_initialized():
-        game = Game.query.first()
+        game = Game.query.one()
         return game.state != GameState.uninitialized
 
 
     @staticmethod
     def is_game_started():
-        game = Game.query.first()
+        game = Game.query.one()
         return game.state == GameState.started
 
 
@@ -66,7 +66,7 @@ class Controller():
     def setup_teams(teamnames):
         """Teamnames is {teamid: team_name} dict"""
         app.logger.info("Setup teams: {}".format(teamnames))
-        game = Game.query.first()
+        game = Game.query.one()
         if game.state == GameState.uninitialized:
             for _tid, _tn in teamnames.items():
                 team = Team(_tid, _tn)
@@ -89,7 +89,7 @@ class Controller():
     @staticmethod
     def setup_questions(q_file=config['QUESTIONS_FILENAME']):
         app.logger.info("Setup questions from file: {}".format(q_file))
-        game = Game.query.first()
+        game = Game.query.one()
         if game.state == GameState.uninitialized:
 
             # TODO need to be able to specify given game
@@ -121,7 +121,7 @@ class Controller():
         if Team.query.all() and Question.query.all():
 
             # Yes, mark game as started
-            game = Game.query.first()
+            game = Game.query.one()
             game.state = GameState.started
             db.session.commit()
             return True
@@ -137,7 +137,7 @@ class Controller():
 
     @staticmethod
     def get_teams_score():
-        game = Game.query.first()
+        game = Game.query.one()
         if game.state == GameState.started:
             answers = db.session.query(Team.id, Team.name, Answer.response,
                                        Answer.score_attributed)\
@@ -187,7 +187,7 @@ class Controller():
             "Question requested for row: {} and col: {}".format(row, column))
 
         condition = and_(Question.row == row, Question.col == column)
-        _q = Question.query.filter(condition).first()
+        _q = Question.query.filter(condition).one()
         return _q.id, question_to_html(_q.text)
 
 
@@ -198,7 +198,7 @@ class Controller():
 
         # data looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
         for tid, response in answers.items():
-            team = Team.query.filter(Team.tid == tid).first()
+            team = Team.query.filter(Team.tid == tid).one()
             question = Question.query.get(question_id)
             response = Response(int(response))
             db.session.add(Answer(response, team, question))
