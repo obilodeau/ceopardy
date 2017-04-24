@@ -64,10 +64,13 @@ def viewer():
 @app.route('/host')
 def host():
     controller = get_controller()
+    teams = {}
     if controller.is_game_started():
         teams = controller.get_teams_for_form()
         form = TeamNamesForm(data=teams)
         started = True
+    # FIXME on a normal game flow (setup then play) the answer form is empty (no teams set)
+    #       not sure what solution to this problem I prefer yet
     else:
         form = TeamNamesForm()
         started = False
