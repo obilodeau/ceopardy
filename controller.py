@@ -15,33 +15,20 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-import functools
 from collections import OrderedDict
-from threading import Lock
 
 from flask import current_app as app
 from sqlalchemy import and_
 
-from config import config
 from ceopardy import db
+from config import config
 from model import Answer, Game, Team, GameState, Question, Response
 from utils import parse_questions, parse_gamefile, question_to_html
-
-
-# TODO consider for removal now that we use a database: make sure to use transactions properly!
-def locked(f):
-    @functools.wraps(f)
-    def wrapped(self, *args, **kwargs):
-        with self.lock:
-            result = f(self, *args, **kwargs)
-        return result
-    return wrapped
 
 
 class Controller():
     def __init__(self):
         app.logger.debug("Controller initialized")
-        self.lock = Lock()
 
         # if there's not a game state, create one
         if Game.query.one_or_none() is None:
@@ -189,6 +176,7 @@ class Controller():
     def get_nb_teams():
         return config["NB_TEAMS"]
 
+
     @staticmethod
     def get_categories():
         return [_q.category for _q in
@@ -230,15 +218,6 @@ class Controller():
         return True
 
 
-    def get_question_solved(self, column, row):
-        question = self.get_question(column, row)
-        return question.solved
-
-    @locked
-    def set_question_solved(self, column, row, value):
-        question = self.get_question(column, row)
-        question.solved = value
-
     @staticmethod
     def get_questions_status():
         """Status about all questions: answered or not"""
@@ -252,19 +231,6 @@ class Controller():
             results[qid] = _answer is not None
 
         return results
-
-
-    #def dictionize_questions_solved(self):
-    #    # TODO migrate to db
-    #    gb = GameBoard()
-    #    questions = gb.questions
-    #    result = {}
-    #    for row in range(len(questions)):
-    #        for column in range(len(gb.questions[row])):
-    #            question = gb.questions[row][column]
-    #            name = "c{0}q{1}".format(column + 1, row + 1)
-    #            result[name] = question.solved
-    #    return result
 
 
 class GameProblem(Exception):
