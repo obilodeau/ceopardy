@@ -439,6 +439,10 @@ svg:hover polygon {
 .box-question p.answered {
     display: none;
 }
+.box-question p.status {
+    color: #d9a24f;
+    font-size: 0.8vw;
+}
 
 .box-overlay {
     padding: calc(0.3vh + 0.3vw);

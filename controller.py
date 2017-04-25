@@ -219,10 +219,17 @@ class Controller():
 
 
     @staticmethod
-    def get_questions_status():
-        """Status about all questions: answered or not"""
-        questions = db.session.query(Question.row, Question.col, Answer.id)\
+    def _get_questions_status():
+        """Full status about all questions"""
+        questions = db.session.query(Question.row, Question.col, Answer)\
                                     .outerjoin(Answer).all()
+        return questions
+
+
+    @staticmethod
+    def get_questions_status_for_viewer():
+        """Limited status view about all questions: answered or not"""
+        questions = Controller._get_questions_status()
 
         results = {}
         for question in questions:
@@ -231,6 +238,43 @@ class Controller():
             results[qid] = _answer is not None
 
         return results
+
+
+    @staticmethod
+    def get_questions_status_for_host():
+        """Status view about all questions
+        Format looks like:
+        {c1q3: ['teamname responded bad points -300',
+                'magma responded good, points ...',
+                ... ]
+        """
+        questions = Controller._get_questions_status()
+
+        results = {}
+        for question in questions:
+            _row, _col, _answer = question
+            qid = "c{}q{}".format(_col, _row)
+            # if new entry, add list
+            if results.get(qid) is None:
+                results[qid] = []
+
+            # skip empty answers
+            if _answer is None:
+                continue
+
+            points = _answer.response.value * _answer.score_attributed
+            status = "{}: {}, Points: {}".format(
+                _answer.team.name, _answer.response.name, points)
+
+            if _answer.response == Response.bad:
+                status = '<span style="background: red;">' + status + '</span>'
+            elif _answer.response == Response.good:
+                status = '<span style="background: green;">' + status + '</span>'
+
+            results[qid].append(status)
+
+        return results
+
 
 
 class GameProblem(Exception):

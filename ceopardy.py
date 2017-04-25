@@ -52,7 +52,7 @@ def viewer():
     controller = get_controller()
     categories = controller.get_categories()
     teams = controller.get_teams_score()
-    questions = controller.get_questions_status()
+    questions = controller.get_questions_status_for_viewer()
     initialized = controller.is_game_initialized()
     return render_template('viewer.html', teams=teams, categories=categories,
                            questions=questions, initialized=initialized)
@@ -68,7 +68,7 @@ def host():
     controller = get_controller()
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
-    questions = controller.get_questions_status()
+    questions = controller.get_questions_status_for_host()
     if controller.is_game_started():
         started = True
     else:
@@ -121,8 +121,11 @@ def answer():
     answers.pop('qid')
     if controller.answer_normal(qid, answers):
         question_id = controller.get_question_viewid_from_dbid(qid)
+        # TODO this is grossly inefficient
+        question_status = controller.get_questions_status_for_host()
         # FIXME this doesn't handle refreshing /viewer score
-        return jsonify(result="success", question=question_id)
+        return jsonify(result="success", question=question_id,
+                       answers=question_status[question_id])
 
     return jsonify(result="failure", error="Something went wrong")
 
@@ -145,7 +148,7 @@ def handle_click(data):
 @socketio.on('unclick', namespace='/host')
 def handle_click(data):
     controller = get_controller()
-    state = controller.get_questions_status()
+    state = controller.get_questions_status_for_viewer()
     emit("update-board", state, namespace='/viewer', broadcast=True)
     emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
 

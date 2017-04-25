@@ -58,10 +58,17 @@
         {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
         <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
             {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
-            {% set answered = questions['c{}q{}'.format(_c, _r)] == True %}
             <div class="col-ceopardy flex-horizontal-pad">
                 <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button">
-                    <p class="{{ 'answered' if answered }}">${{ _r * SCORE_TICK }}</p>
+                    {% if questions['c{}q{}'.format(_c, _r)] == [] %}
+                        <p>${{ _r * SCORE_TICK }}</p>
+                    {% else %}
+                        <p class="status">
+                        {% for _q in questions['c{}q{}'.format(_c, _r)] %}
+                            {{ _q | safe}}<br/>
+                        {% endfor %}
+                        </p>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -184,8 +191,8 @@
                 if (data.result == "success") {
                     // reset form values
                     $('form#form-question-normal input[type=range]').val(0);
-                    // clear question
-                    $(`#${data.question}`).children().addClass('answered');
+
+                    _updateQuestionStatus(data.question, data.answers);
                 }
                 else {
                    console.log("You fucked it up! ;)");
@@ -197,6 +204,16 @@
         e.preventDefault();
         SubmitAnswers(e);
     });
+
+    // update question status
+    function _updateQuestionStatus(question, qstatus) {
+        var status = "";
+        for (var answer of qstatus) {
+            status += answer + "<br/>";
+        }
+        $(`#${question}`).children().addClass("status");
+        $(`#${question}`).children().html(status);
+    }
 
 
 
