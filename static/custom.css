@@ -436,6 +436,9 @@ svg:hover polygon {
     font-size: 5vw;
     line-height: 90%;
 }
+.box-question p.answered {
+    display: none;
+}
 
 .box-overlay {
     padding: calc(0.3vh + 0.3vw);

@@ -132,9 +132,6 @@ def handle_click(data):
         col, row = match.groups()
         qid, question_text = controller.get_question(col, row)
 
-        # FIXME doesn't seem to be the right moment to update the board
-        state = controller.get_questions_status()
-        emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
         emit("test2", {"action": "show_answer_ui", "qid": qid,
@@ -143,6 +140,9 @@ def handle_click(data):
 
 @socketio.on('unclick', namespace='/host')
 def handle_click(data):
+    controller = get_controller()
+    state = controller.get_questions_status()
+    emit("update-board", state, namespace='/viewer', broadcast=True)
     emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
 
 
