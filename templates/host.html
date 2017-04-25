@@ -58,8 +58,11 @@
         {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
         <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
             {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
+            {% set answered = questions['c{}q{}'.format(_c, _r)] == True %}
             <div class="col-ceopardy flex-horizontal-pad">
-                <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button"><p>${{ _r * 100 }}</p></div>
+                <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button">
+                    <p class="{{ 'answered' if answered }}">${{ _r * SCORE_TICK }}</p>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -160,7 +163,7 @@
     });
 
     {# FIXME fchar: change naming as you see fit #}
-    socket.on('test2', function(data) {
+    socket.on('selected_question', function(data) {
         if (data.action == "show_answer_ui") {
             $("#question-context").html("<p>" + data.qid + " / " + data.q_text + "</p>");
             $("#answer-controls").removeClass("no-display");
@@ -181,6 +184,8 @@
                 if (data.result == "success") {
                     // reset form values
                     $('form#form-question-normal input[type=range]').val(0);
+                    // clear question
+                    $(`#${data.question}`).children().addClass('answered');
                 }
                 else {
                    console.log("You fucked it up! ;)");

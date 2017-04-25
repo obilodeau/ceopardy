@@ -208,6 +208,14 @@ class Controller():
 
 
     @staticmethod
+    def get_question_viewid_from_dbid(question_id):
+        # sorry for the ugly name but it says it all
+        question = Question.query.get(question_id)
+        qid = "c{}q{}".format(question.col, question.row)
+        return qid
+
+
+    @staticmethod
     def answer_normal(question_id, answers):
         app.logger.info("Answers submitted for question {}: {}"
                         .format(question_id, answers))

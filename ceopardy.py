@@ -68,11 +68,13 @@ def host():
     controller = get_controller()
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
+    questions = controller.get_questions_status()
     if controller.is_game_started():
         started = True
     else:
         started = False
-    return render_template('host.html', form=form, started=started, teams=teams)
+    return render_template('host.html', form=form, started=started, teams=teams,
+                           questions=questions)
 
 
 # TODO: kick-out if game is started
@@ -118,7 +120,9 @@ def answer():
     answers = request.form.to_dict()
     answers.pop('qid')
     if controller.answer_normal(qid, answers):
-        return jsonify(result="success")
+        question_id = controller.get_question_viewid_from_dbid(qid)
+        # FIXME this doesn't handle refreshing /viewer score
+        return jsonify(result="success", question=question_id)
 
     return jsonify(result="failure", error="Something went wrong")
 
@@ -134,7 +138,7 @@ def handle_click(data):
 
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
-        emit("test2", {"action": "show_answer_ui", "qid": qid,
+        emit("selected_question", {"action": "show_answer_ui", "qid": qid,
                       "q_text": question_text}, namespace='/host')
 
 
