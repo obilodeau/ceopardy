@@ -25,6 +25,9 @@ from config import config
 # generate form because the number of team is configurable
 TEAM_FIELD_ID = 'teamname'
 
+# TODO design decision: either we create an AnswerForm or we get rid of this in
+#      favor of what we did with the answer form.
+#      See controller.get_teams_for_form()
 class TeamNamesForm(FlaskForm):
     pass
 

@@ -141,19 +141,29 @@ class Controller():
             answers = db.session.query(Team.id, Team.name, Answer.response,
                                        Answer.score_attributed)\
                                 .join(Answer).order_by(Team.id).all()
+
             results = OrderedDict()
+            # handle case when there are no answers: names with 0 score
+            if not answers:
+                for _team in db.session.query(Team).order_by(Team.id).all():
+                    results[_team.name] = 0
+                return results
+
+            # sum all answers with negative scoring handled for bad answers
             for answer in answers:
                 _id, _name, _response, _score = answer
                 # not already defined? initialize
                 if not results.get(_name):
                     results[_name] = 0
 
+                # bad: -1, nop: 0 and good: 1 multiplied with score gives result
                 results[_name] += _response.value * _score
             return results
 
         else:
-            # TODO this is not adaptable to NB_TEAMS
-            return {'Team1': 0, 'Team2': 0, 'Team3': 0}
+            # Return names with a 0 score
+            return {name: 0
+                    for tid, name in Controller.get_teams_for_form().items()}
 
 
     @staticmethod
