@@ -44,7 +44,7 @@ class Controller():
         self.lock = Lock()
 
         # if there's not a game state, create one
-        if Game.query.one() is None:
+        if Game.query.one_or_none() is None:
             game = Game()
             db.session.add(game)
             db.session.commit()
@@ -137,8 +137,7 @@ class Controller():
 
     @staticmethod
     def get_teams_score():
-        game = Game.query.one()
-        if game.state == GameState.started:
+        if Controller.is_game_started():
             answers = db.session.query(Team.id, Team.name, Answer.response,
                                        Answer.score_attributed)\
                                 .join(Answer).order_by(Team.id).all()
@@ -159,7 +158,14 @@ class Controller():
 
     @staticmethod
     def get_teams_for_form():
-        return {team.tid: team.name for team in Team.query.all()}
+        """Get list of teams
+        If there are no teams, then return place holder teams. This is useful
+        to render template for game setup."""
+        if Team.query.first() is not None:
+            return {team.tid: team.name for team in Team.query.all()}
+        else:
+            return {'team{}'.format(_i): 'Team {}'.format(_i)
+                    for _i in range(1, config['NB_TEAMS'] + 1)}
 
 
     @staticmethod

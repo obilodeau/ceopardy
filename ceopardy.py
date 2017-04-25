@@ -66,15 +66,11 @@ def viewer():
 @app.route('/host')
 def host():
     controller = get_controller()
-    teams = {}
+    teams = controller.get_teams_for_form()
+    form = TeamNamesForm(data=teams)
     if controller.is_game_started():
-        teams = controller.get_teams_for_form()
-        form = TeamNamesForm(data=teams)
         started = True
-    # FIXME on a normal game flow (setup then play) the answer form is empty (no teams set)
-    #       not sure what solution to this problem I prefer yet
     else:
-        form = TeamNamesForm()
         started = False
     return render_template('host.html', form=form, started=started, teams=teams)
 
@@ -105,13 +101,14 @@ def setup():
             controller.start_game()
 
         emit("team", {"action": "name", "args": teamnames}, namespace='/viewer', broadcast=True)
-        return jsonify(result="success")
+        return jsonify(result="success", teams=teamnames)
 
     return jsonify(result="failure", errors=form.errors)
 
 
 @app.route('/answer', methods=["POST"])
 def answer():
+    # FIXME this form isn't CSRF protected
     app.logger.debug("Answer form has been submitted with: {}", request.form)
     controller = get_controller()
 
