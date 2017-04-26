@@ -254,7 +254,7 @@ class Controller():
     def get_questions_status_for_host():
         """Status view about all questions
         Format looks like:
-        {c1q3: {'t1': '-300' , 't2': '500', ...}
+        {c1q3: {'team1': '-300' , 'team2': '500', ...}
         """
         questions = Controller._get_questions_status()
 
@@ -279,7 +279,7 @@ class Controller():
             elif _answer.response == Response.good:
                 status = '<span style="background: green;">' + status + '</span>'
             '''
-            tid = 't{}'.format(_answer.team_id)
+            tid = 'team{}'.format(_answer.team_id)
             results[qid][tid] = points
 
         return results

@@ -322,15 +322,15 @@ svg:hover polygon {
     width: 100%;
 }
 
-.t1-color {
+.team1-color {
     background-color: red;
 }
 
-.t2-color {
+.team2-color {
     background-color: green;
 }
 
-.t3-color {
+.team3-color {
     background-color: black;
 }
 
@@ -396,9 +396,6 @@ svg:hover polygon {
 }
 
 .row-player {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -ms-flexbox;
     display: flex;
     flex-wrap: wrap;
 }
@@ -444,6 +441,7 @@ svg:hover polygon {
 
 .box-question {
     cursor: pointer;
+    overflow: hidden;
 }
 
 .box-question-left {
@@ -452,8 +450,6 @@ svg:hover polygon {
     background-color: #000181;
     width: 30%;
     height: 100%;
-    border-top-left-radius: .25rem;
-    border-bottom-left-radius: .25rem;
     overflow: hidden;
 }
 
@@ -462,8 +458,6 @@ svg:hover polygon {
     background-color: #0001a1;
     width: 70%;
     height: 100%;
-    border-top-right-radius: .25rem;
-    border-bottom-right-radius: .25rem;
 }
 
 .box-question-status {
@@ -506,15 +500,15 @@ svg:hover polygon {
     line-height: 90%;
 }
 
-.team-1 {
+.team1-font {
     font-family: 'Merienda One', Helvetica, sans-serif;
 }
 
-.team-2 {
+.team2-font {
     font-family: 'Berkshire Swash', Helvetica, sans-serif;
 }
 
-.team-3 {
+.team3-font {
     font-family: 'Pacifico', Helvetica, sans-serif;
 }
 

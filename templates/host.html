@@ -63,12 +63,12 @@
                     <div class="box-question-left">
                         {# FIXME I feel bad for this #}
                         {% for _t in range(1, NB_TEAMS + 1) %}
-                        {% set score = questions['c{}q{}'.format(_c, _r)]['t{}'.format(_t)]|string %}
-                        {% set class = "" %}
-                        {% if score|length > 0 %}
-                            {% set class = 't{}-color'.format(_t) %}
-                        {% endif %}
-                        <div id="c{{ _c }}q{{ _r }}t{{ _t }}" class="box-question-status {{ class }}">
+                            {% set score = questions['c{}q{}'.format(_c, _r)]['team{}'.format(_t)]|string %}
+                            {% set class = "" %}
+                            {% if score|length > 0 %}
+                                {% set class = 'team{}-color'.format(_t) %}
+                            {% endif %}
+                        <div id="c{{ _c }}q{{ _r }}team{{ _t }}" class="box-question-status {{ class }}">
                             <span>{{ score }}</span>
                         </div>
                         {% endfor %}
