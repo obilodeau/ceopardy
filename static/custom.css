@@ -70,7 +70,6 @@ body {
     background-color: #4c2916;
 }
 
-
 .container-light {
     background-color: #4c2916;
     /*background-color: #603320;*/
@@ -323,6 +322,19 @@ svg:hover polygon {
     width: 100%;
 }
 
+.t1-color {
+    background-color: red;
+}
+
+.t2-color {
+    background-color: green;
+}
+
+.t3-color {
+    background-color: black;
+}
+
+
 /*.container-arrow:hover {
     background-color: #573d2a;
     transition: background 0.5s ease-out;
@@ -398,7 +410,7 @@ svg:hover polygon {
 }
 
 .box-selected {
-    background-color: #ff0000 !important;
+    background-color: #0001df !important;
 }
 
 .box-completed {
@@ -407,7 +419,7 @@ svg:hover polygon {
 
 .box-ceopardy {
     background-color: #0001a1;
-    border-color: #0001a1;
+    /*border: 2px solid #0001a1;*/
     width: 100%;
     height: 100%;
     display: flex;
@@ -428,6 +440,45 @@ svg:hover polygon {
     text-shadow: 2px 2px 0px #000000;
     font-size: 2.5vw;
     line-height: 90%;
+}
+
+.box-question {
+    cursor: pointer;
+}
+
+.box-question-left {
+    display: flex;
+    flex-direction: column;
+    background-color: #000181;
+    width: 30%;
+    height: 100%;
+    border-top-left-radius: .25rem;
+    border-bottom-left-radius: .25rem;
+    overflow: hidden;
+}
+
+.box-question-right {
+    display: table;
+    background-color: #0001a1;
+    width: 70%;
+    height: 100%;
+    border-top-right-radius: .25rem;
+    border-bottom-right-radius: .25rem;
+}
+
+.box-question-status {
+    color: #ffffff;
+    flex-grow: 1;
+    display: flex;
+    width: 100%;
+}
+
+.box-question-status span {
+    margin: auto;
+    text-align: center;
+    /* FIXME find a better ratio */
+    font-size: 1.5vh;
+    width: 100%;
 }
 
 .box-question p {

@@ -254,9 +254,7 @@ class Controller():
     def get_questions_status_for_host():
         """Status view about all questions
         Format looks like:
-        {c1q3: ['teamname responded bad points -300',
-                'magma responded good, points ...',
-                ... ]
+        {c1q3: {'t1': '-300' , 't2': '500', ...}
         """
         questions = Controller._get_questions_status()
 
@@ -266,22 +264,23 @@ class Controller():
             qid = "c{}q{}".format(_col, _row)
             # if new entry, add list
             if results.get(qid) is None:
-                results[qid] = []
+                results[qid] = {}
 
             # skip empty answers
             if _answer is None:
                 continue
 
             points = _answer.response.value * _answer.score_attributed
+            '''
             status = "{}: {}, Points: {}".format(
-                _answer.team.name, _answer.response.name, points)
-
+                _answer.team_id, _answer.response.name, points)
             if _answer.response == Response.bad:
                 status = '<span style="background: red;">' + status + '</span>'
             elif _answer.response == Response.good:
                 status = '<span style="background: green;">' + status + '</span>'
-
-            results[qid].append(status)
+            '''
+            tid = 't{}'.format(_answer.team_id)
+            results[qid][tid] = points
 
         return results
 

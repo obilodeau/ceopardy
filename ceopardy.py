@@ -112,20 +112,25 @@ def setup():
 def answer():
     # FIXME this form isn't CSRF protected
     app.logger.debug("Answer form has been submitted with: {}", request.form)
+    data = request.form
     controller = get_controller()
+    app.logger.debug('received data: {}'.format(data["id"]))
+    # FIXME turn this into a function, it's redundant
+    match = re.match("c([0-9]+)q([0-9]+)", data["id"])
+    if match is not None:
+        col, row = match.groups()
+        #FIXME get qid without text
+        qid, question_text = controller.get_question(col, row)
 
-    qid = request.form['qid']
-
-    # send everything but qid as a dict
-    answers = request.form.to_dict()
-    answers.pop('qid')
-    if controller.answer_normal(qid, answers):
-        question_id = controller.get_question_viewid_from_dbid(qid)
-        # TODO this is grossly inefficient
-        question_status = controller.get_questions_status_for_host()
-        # FIXME this doesn't handle refreshing /viewer score
-        return jsonify(result="success", question=question_id,
-                       answers=question_status[question_id])
+        # send everything but qid as a dict
+        answers = request.form.to_dict()
+        answers.pop('id')
+        if controller.answer_normal(qid, answers):
+            #question_id = controller.get_question_viewid_from_dbid(qid)
+            # TODO this is grossly inefficient
+            question_status = controller.get_questions_status_for_host()
+            # FIXME this doesn't handle refreshing /viewer score
+            return jsonify(result="success", answers=question_status[data["id"]])
 
     return jsonify(result="failure", error="Something went wrong")
 
@@ -137,20 +142,23 @@ def handle_click(data):
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
     if match is not None:
         col, row = match.groups()
+        #FIXME get text without qid
         qid, question_text = controller.get_question(col, row)
 
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
-        emit("selected_question", {"action": "show_answer_ui", "qid": qid,
-                      "q_text": question_text}, namespace='/host')
+        #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
+        #              "q_text": question_text}, namespace='/host')
+        return question_text
 
 
 @socketio.on('unclick', namespace='/host')
-def handle_click(data):
+def handle_unclick(data):
     controller = get_controller()
     state = controller.get_questions_status_for_viewer()
     emit("update-board", state, namespace='/viewer', broadcast=True)
     emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
+    return ""
 
 
 @socketio.on('message', namespace='/host')
@@ -208,7 +216,7 @@ if __name__ == '__main__':
 
         @app.teardown_appcontext
         def teardown_controller(exception):
-            app.logger.debug("Controller teardown requested")
+            #app.logger.debug("Controller teardown requested")
             _ctl = getattr(g, '_ctl', None)
             if _ctl is not None:
                 _ctl = None
