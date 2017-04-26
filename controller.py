@@ -207,13 +207,23 @@ class Controller():
     def answer_normal(question_id, answers):
         app.logger.info("Answers submitted for question {}: {}"
                         .format(question_id, answers))
+        # answers looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
 
-        # data looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
-        for tid, response in answers.items():
-            team = Team.query.filter(Team.tid == tid).one()
-            question = Question.query.get(question_id)
-            response = Response(int(response))
-            db.session.add(Answer(response, team, question))
+        # is there already an answer? If so update answers
+        prev_answers = Answer.query.filter(Answer.question_id == question_id).all()
+        if prev_answers:
+            for _answer in prev_answers:
+                _answer.response = Response(int(answers[_answer.team.tid]))
+                db.session.add(_answer)
+
+        # Otherwise create new ones
+        else:
+            for tid, response in answers.items():
+                team = Team.query.filter(Team.tid == tid).one()
+                question = Question.query.get(question_id)
+                response = Response(int(response))
+                db.session.add(Answer(response, team, question))
+
         db.session.commit()
         return True
 
