@@ -53,9 +53,12 @@ def viewer():
     categories = controller.get_categories()
     teams = controller.get_teams_score()
     questions = controller.get_questions_status_for_viewer()
-    initialized = controller.is_game_initialized()
+    overlay = {}
+    for name in ["small", "big"]:
+        overlay[name] = controller.get_overlay(name)
+    
     return render_template('viewer.html', teams=teams, categories=categories,
-                           questions=questions, initialized=initialized)
+                           questions=questions, overlay=overlay)
     # FIXME: fchar: is there a way to socketio a board update right after this?
 
 
@@ -66,13 +69,12 @@ def viewer():
 @app.route('/host')
 def host():
     controller = get_controller()
-    started = controller.is_game_started()
-    if not started:
+    if not controller.is_game_started():
         return render_template('start.html')
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
-    return render_template('host.html', form=form, started=started, teams=teams,
+    return render_template('host.html', form=form, teams=teams,
                            questions=questions)
 
 

@@ -56,21 +56,21 @@
     </div>
 </div>
 
-<div id="small-overlay" class="container-game container-absolute container-all no-display">
+<div id="small-overlay" class="container-game container-absolute container-all {{ 'no-display' if not overlay.small.visible }}">
     <div class="small-container-overlay">
         <div class="black-box">
             <div class="box-overlay">
-                <div id="small-overlay-content" class="box-ceopardy box-question">That person designs great gameboards!</div>
+                <div id="small-overlay-content" class="box-ceopardy box-question">{{ overlay.small.content }}</div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if initialized }}">
+<div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if not overlay.big.visible }}">
     <div class="big-container-overlay">
         <div class="black-box">
             <div class="box-overlay">
-                <div id="big-overlay-content" class="box-ceopardy box-question"><p>There is currently no host running the show!</p></div>
+                <div id="big-overlay-content" class="box-ceopardy box-question"><p>{{ overlay.big.content }}</p></div>
             </div>
         </div>
     </div>

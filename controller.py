@@ -22,7 +22,7 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
-from model import Answer, Game, Team, GameState, Question, Response
+from model import Answer, Game, Team, GameState, Question, Response, Overlay
 from utils import parse_questions, parse_gamefile, question_to_html
 
 
@@ -34,6 +34,10 @@ class Controller():
         if Game.query.one_or_none() is None:
             game = Game()
             db.session.add(game)
+            small = Overlay("small", False, "")
+            db.session.add(small)
+            big = Overlay("big", True, "There is currently no host running the show!")
+            db.session.add(big)
             db.session.commit()
 
 
@@ -90,7 +94,7 @@ class Controller():
                     question = Question(_q, score, _cat, _row, _col)
                     db.session.add(question)
 
-            # add final question
+            # Add final question
             if final is not None:
                 question = Question(final.question, 0, final.category, 0, 0, final=True)
                 db.session.add(question)
@@ -106,7 +110,6 @@ class Controller():
         app.logger.info("Starting the game. Good luck everyone!")
         # Are there teams and questions?
         if Team.query.all() and Question.query.all():
-
             # Yes, mark game as started
             game = Game.query.one()
             game.state = GameState.started
@@ -130,16 +133,16 @@ class Controller():
                                 .join(Answer).order_by(Team.id).all()
 
             results = OrderedDict()
-            # handle case when there are no answers: names with 0 score
+            # Handle case when there are no answers: names with 0 score
             if not answers:
                 for _team in db.session.query(Team).order_by(Team.id).all():
                     results[_team.name] = 0
                 return results
 
-            # sum all answers with negative scoring handled for bad answers
+            # Sum all answers with negative scoring handled for bad answers
             for answer in answers:
                 _id, _name, _response, _score = answer
-                # not already defined? initialize
+                # Not already defined? initialize
                 if not results.get(_name):
                     results[_name] = 0
 
@@ -197,7 +200,7 @@ class Controller():
 
     @staticmethod
     def get_question_viewid_from_dbid(question_id):
-        # sorry for the ugly name but it says it all
+        # Sorry for the ugly name but it says it all
         question = Question.query.get(question_id)
         qid = "c{}q{}".format(question.col, question.row)
         return qid
@@ -207,9 +210,9 @@ class Controller():
     def answer_normal(question_id, answers):
         app.logger.info("Answers submitted for question {}: {}"
                         .format(question_id, answers))
-        # answers looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
+        # Answers looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
 
-        # is there already an answer? If so update answers
+        # Is there already an answer? If so update answers
         prev_answers = Answer.query.filter(Answer.question_id == question_id).all()
         if prev_answers:
             for _answer in prev_answers:
@@ -271,19 +274,19 @@ class Controller():
                 continue
 
             points = _answer.response.value * _answer.score_attributed
-            '''
-            status = "{}: {}, Points: {}".format(
-                _answer.team_id, _answer.response.name, points)
-            if _answer.response == Response.bad:
-                status = '<span style="background: red;">' + status + '</span>'
-            elif _answer.response == Response.good:
-                status = '<span style="background: green;">' + status + '</span>'
-            '''
             tid = 'team{}'.format(_answer.team_id)
             results[qid][tid] = points
 
         return results
 
+
+    @staticmethod
+    def get_overlay(name):
+        row = db.session.query(Overlay).filter_by(name=name).one()
+        overlay = {}
+        overlay["visible"] = row.visible
+        overlay["content"] = row.content
+        return overlay
 
 
 class GameProblem(Exception):

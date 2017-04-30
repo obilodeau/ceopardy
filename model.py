@@ -154,10 +154,28 @@ class Category():
         self.column = column
 
 
+class Overlay(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(10), unique=True)
+    visible = db.Column(db.Boolean)
+    content = db.Column(db.String(4096))
+
+    def __init__(self, name, visible, content):
+        self.name = name
+        self.visible = visible
+        self.content = content
+
+    def __repr__(self):
+        if self.visible:
+            status = "visible"
+        else:
+            status = "hidden"
+        return '<Overlay {} is {}.>'.format(self.name, status)
+
 
 # TODO consider for removal (duplicated in controller)
 class GameProblem(Exception):
     pass
 
-# this creates the database if it doesn't already exist
+# This creates the database if it doesn't already exist
 db.create_all()

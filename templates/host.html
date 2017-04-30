@@ -10,11 +10,16 @@
 {% block content %}
 <div class="container-host">
 
-    <div class="container-header container-slider flex-border-header container-light {{ 'slide-down' if not started }}">
+    <div class="container-header container-slider flex-border-header container-light">
 
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
-                <p class="form-header form-color">Teams</p>
+                <div class="form-row form-color">
+                    <p class="form-header">Teams</p>
+                    <div class="form-icon form-click team-add">
+                        <i id="message-hide" class="fa fa-plus fa-lg"></i>
+                    </div>
+                </div>
                 <form id="form-teams">
                     {{ form.csrf_token }}
                     {# Dynamically render proper amount of fields based on 'teamname' flag in fields #}
@@ -35,8 +40,7 @@
                 <div class="form-expand"></div>
                 <div class="form-row form-color">
                     <div class="form-expand"></div>
-                    <div class="form-icon form-click team-add"><i class="fa fa-plus fa-lg"></i></div>
-                    <div class="form-icon form-click team-refresh"><i class="fa fa-refresh fa-lg"></i></div>
+                    <div class="form-icon form-click team-refresh"><i class="fa fa-refresh fa-2x"></i></div>
                     <div class="form-expand"></div>
                 </div>
             </div>
@@ -144,7 +148,7 @@
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
-    <div class="container-footer container-slider flex-border-footer container-light {{ 'slide-up' if not started }}">
+    <div class="container-footer container-slider flex-border-footer container-light">
     
         <div class="container-arrow container-dark">
             <!--Up Arrow-->
@@ -155,8 +159,12 @@
         
         <div style="display: flex; width: 100%;">
             <div class="container-footer-control container-padding">
-                {% set one = {"title": "Game not started" } %}
-                <p class="form-header form-color">Messages</p>
+                <div class="form-row form-color">
+                    <p class="form-header">Messages</p>
+                    <div class="form-icon form-click">
+                        <i id="message-hide" class="fa fa-eye-slash fa-lg"></i>
+                    </div>
+                </div>
                 {% for _m in MESSAGES %}
                 <div id="messages">
                     <div class="form-row form-color team-info">
@@ -442,12 +450,17 @@
 
         $('.message-display').on("click", DisplayMessage);
         $('.message-edit').on("click", EditMessage);
+        $('#message-hide').on("click", function(e) {
+            $('.message-hide').hide();
+            $('.message-show').show();
+            HideMessage(e);
+        });
         
-        {% if not started %}
+        {# if not started #}
         // First message should be the one about starting the game
         // This might not be the best solution, we'll see...
-        $('#messages').find('.message-display').first().trigger('click');
-        {% endif %}
+        //$('#messages').find('.message-display').first().trigger('click');
+        {# endif #}
         
         // Maybe there's a cleaner CSS approach for this
         $('.fa-spinner').hover(function() {
