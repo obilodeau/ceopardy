@@ -62,50 +62,49 @@ def viewer():
 # TODO we must kill all client-side state on server load.
 # To reproduce: Not-reloading a host view and reloading server causes mismatch
 # between client and server states. Client is out of sync.
-# authentication related: commented for now
+# TODO add authentication here
 @app.route('/host')
 def host():
     controller = get_controller()
+    started = controller.is_game_started()
+    if not started:
+        return render_template('start.html')
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
-    if controller.is_game_started():
-        started = True
-    else:
-        started = False
     return render_template('host.html', form=form, started=started, teams=teams,
                            questions=questions)
 
 
-# TODO: kick-out if game is started
-# TODO: we might be a little better if we split everything in individual REST APIs?
-#       see http://stackoverflow.com/questions/3850742/flask-how-do-i-combine-flask-wtf-and-flask-sqlalchemy-to-edit-db-models
+# For now, this will give un an initial state which will avoid complications when
+# rendering the host board
+@app.route('/init', methods=["POST"])
+def init():
+    controller = get_controller()
+    teamnames = {}
+    for i in range(1, config['NB_TEAMS'] + 1):
+        teamnames['team{}'.format(i)] = 'Team {}'.format(i)
+    try:
+        controller.setup_teams(teamnames)
+        controller.setup_questions()
+        controller.start_game()
+    except:
+        return jsonify(result="failure", error="Initialization error!")
+    return jsonify(result="success")
+
+
 @app.route('/setup', methods=["POST"])
 def setup():
     controller = get_controller()
     form = TeamNamesForm()
     # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
-    if form.validate_on_submit():
-
-        teamnames = {field.id: field.data for field in form
-                     if TEAM_FIELD_ID in field.flags}
-
-        # If teams exists, update them
-        if controller.teams_exists():
-            controller.update_teams(teamnames)
-
-        # Otherwise create them
-        else:
-            controller.setup_teams(teamnames)
-            # FIXME move lines below in another "feature" to allow retries w/o
-            #       requiring a database reset
-            controller.setup_questions()
-            controller.start_game()
-
-        emit("team", {"action": "name", "args": teamnames}, namespace='/viewer', broadcast=True)
-        return jsonify(result="success", teams=teamnames)
-
-    return jsonify(result="failure", errors=form.errors)
+    if not form.validate_on_submit():
+        return jsonify(result="failure", errors=form.errors)
+    teamnames = {field.id: field.data for field in form
+                 if TEAM_FIELD_ID in field.flags}
+    controller.update_teams(teamnames)
+    emit("team", {"action": "name", "args": teamnames}, namespace='/viewer', broadcast=True)
+    return jsonify(result="success", teams=teamnames)
 
 
 @app.route('/answer', methods=["POST"])
@@ -117,39 +116,38 @@ def answer():
     app.logger.debug('received data: {}'.format(data["id"]))
     # FIXME turn this into a function, it's redundant
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
-    if match is not None:
-        col, row = match.groups()
-        #FIXME get qid without text
-        qid, question_text = controller.get_question(col, row)
-
-        # send everything but qid as a dict
-        answers = request.form.to_dict()
-        answers.pop('id')
-        if controller.answer_normal(qid, answers):
-            #question_id = controller.get_question_viewid_from_dbid(qid)
-            # TODO this is grossly inefficient
-            question_status = controller.get_questions_status_for_host()
-            # FIXME this doesn't handle refreshing /viewer score
-            return jsonify(result="success", answers=question_status[data["id"]])
-
-    return jsonify(result="failure", error="Something went wrong")
-
+    if match is None:
+        return jsonify(result="failure", error="Invalid category/question format!")
+    col, row = match.groups()
+    # FIXME get qid without text
+    qid, question_text = controller.get_question(col, row)
+    # Send everything but qid as a dict
+    answers = request.form.to_dict()
+    answers.pop('id')
+    if not controller.answer_normal(qid, answers):
+        return jsonify(result="failure", error="Answer submission failed!")
+    # TODO this is grossly inefficient
+    question_status = controller.get_questions_status_for_host()
+    # FIXME this doesn't handle refreshing /viewer score
+    return jsonify(result="success", answers=question_status[data["id"]])
+    
 
 @socketio.on('click', namespace='/host')
 def handle_click(data):
     controller = get_controller()
     app.logger.debug('received data: {}'.format(data["id"]))
     match = re.match("c([0-9]+)q([0-9]+)", data["id"])
-    if match is not None:
-        col, row = match.groups()
-        #FIXME get text without qid
-        qid, question_text = controller.get_question(col, row)
+    if match is None:
+        return ""
+    col, row = match.groups()
+    #FIXME get text without qid
+    qid, question_text = controller.get_question(col, row)
 
-        emit("overlay", {"action": "show", "id": "small", "html": question_text},
-             namespace='/viewer', broadcast=True)
-        #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
-        #              "q_text": question_text}, namespace='/host')
-        return question_text
+    emit("overlay", {"action": "show", "id": "small", "html": question_text},
+         namespace='/viewer', broadcast=True)
+    #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
+    #              "q_text": question_text}, namespace='/host')
+    return question_text
 
 
 @socketio.on('unclick', namespace='/host')

@@ -1,4 +1,9 @@
 @font-face {
+  font-family: 'Gyparody';
+  src: url("/static/fonts/gyparody.ttf") format("truetype");
+}
+
+@font-face {
   font-family: 'Woodlands';
   src: url("/static/fonts/woodlands.otf") format("opentype");
 }

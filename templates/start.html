@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Start{% endblock %}
+
+{% block style %}
+<style>
+a {
+  cursor: pointer;
+}
+a:link {
+  color: #d5c19c;
+  text-decoration: none;
+}
+a:visited {
+  color: #d5c19c;
+  text-decoration: none;
+}
+a:hover {
+  color: #d9a24f;
+}
+a:active {
+  color: #d9a24f;
+}
+
+.animate-horizontal-left {
+  animation: horizontal-left 2s ease infinite;
+}
+
+.animate-horizontal-right {
+  animation: horizontal-right 2s ease infinite;
+}
+
+@keyframes horizontal-left {
+  0% {
+    transform: translate(0,0);
+  }
+
+  6% {
+    transform: translate(-5px,0);
+  }
+
+  12% {
+    transform: translate(0,0);
+  }
+
+  18% {
+    transform: translate(-5px,0);
+  }
+
+  24% {
+    transform: translate(0,0);
+  }
+
+  30% {
+    transform: translate(-5px,0);
+  }
+
+  36%, 100% {
+    transform: translate(0,0);
+  }
+}
+
+@keyframes horizontal-right {
+  0% {
+    transform: translate(0,0);
+  }
+
+  6% {
+    transform: translate(5px,0);
+  }
+
+  12% {
+    transform: translate(0,0);
+  }
+
+  18% {
+    transform: translate(5px,0);
+  }
+
+  24% {
+    transform: translate(0,0);
+  }
+
+  30% {
+    transform: translate(5px,0);
+  }
+
+  36%, 100% {
+    transform: translate(0,0);
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-host form-color" style="display: flex; flex-direction: column; justify-content: center;">
+    <div style="margin: auto; align-self: center;">
+        <div style="font-size: calc(8vh + 8vw); font-family: 'Gyparody', Helvetica, sans-serif;">Ceopardy!</div>
+        <div style="margin: auto; text-align:center;">
+            <i class="fa fa-arrow-right fa-lg animate-horizontal-right"></i>
+            <a style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">Start Game</a>
+            <i class="fa fa-arrow-left fa-lg animate-horizontal-left"></i>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block ui %}
+<script>
+    $('a').on("click", function(e) {
+        var url = "{{ url_for('init') }}";
+        $.ajax({
+            type: "POST",
+            url: url,
+            success: function (data) {
+                if (data.result == "success") {
+                    
+                }
+                else {
+                   console.log(data.error);
+                   e.preventDefault()
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
