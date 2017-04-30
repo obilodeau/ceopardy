@@ -170,17 +170,23 @@ def handle_message(data):
         emit("overlay", {"action": "hide", "id": "big", "html": ""}, namespace='/viewer', broadcast=True)
 
 
-@socketio.on('roulette', namespace='/host')
-def handle_roulette():
+@socketio.on('team', namespace='/host')
+def handle_roulette(data):
     controller = get_controller()
-    nb = controller.get_nb_teams()
-    l = []
-    team = "team" + str(random.randrange(1, nb + 1))
-    for i in range(12):
-        l.append("team" + str(i % nb + 1))
-    l.append(team)
-    app.logger.debug(l)
-    emit("team", {"action": "roulette", "args": l}, namespace='/viewer', broadcast=True)
+    if data["action"] == "select":
+        data["args"] = data["id"]
+    elif data["action"] == "roulette":
+        nb = controller.get_nb_teams()
+        l = []
+        team = "team" + str(random.randrange(1, nb + 1))
+        for i in range(12):
+            l.append("team" + str(i % nb + 1))
+        l.append(team)
+        data["args"] = l
+        app.logger.debug(l)
+    else:
+        return
+    emit("team", data, namespace='/viewer', broadcast=True)
 
 
 @socketio.on('refresh', namespace='/viewer')

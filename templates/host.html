@@ -56,7 +56,7 @@
     
     <div class="container-top container-all container-light">
         {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-        <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
+        <div class="row-ceopardy flex-vertical-pad">
             {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
             <div class="col-ceopardy flex-horizontal-pad">
                 <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question">
@@ -92,23 +92,48 @@
             {% endfor %}
         </div>
         {% endfor %}
-        <button id="roulette" type="button">Roulette!</button>
+        
+        <div class="row-ceopardy">
+            <div class="container-controls" style="width: calc(20% - 60px);">
+                
+            </div>
+            
+            <div class="container-controls form-color" style="width: 60px; display: flex; justify-content: center;">
+                <div id="team-roulette" class="form-icon form-click" style="align-self: center;"><i class="fa fa-spinner fa-2x fa-fw"></i></div>
+            </div>
+            
+            <div class="container-controls" style="flex-grow: 1;">
+                {# TODO: consider migrating this to a flask-wtform #}
+                <form id="form-question-normal">
+                    <input id="question-id" type="hidden" name="id">
+                    {% for tid, name in teams.items() %}
+                    <div class="row-ceopardy">
+                        <div class="box-answer-team form-color" style="display: flex; vertical-align: middle;">
+                            <div class="form-icon form-click team-select"><i class="fa fa-crosshairs fa-lg"></i></div>
+                            <label for="{{ tid }}" style="line-height: 200%; margin-left: 8px;">{{ name }}</label>
+                        </div>
+                        <div class="box-answer-slider">
+                            <input name="{{ tid }}" type="range" min="-1" max="1" step="1"/>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <input type="submit" style="display: none;">
+                </form>
+            </div>
+            
+            <div class="container-controls form-color" style="width: 60px; display: flex; justify-content: center;">
+                <div id="results-submit" class="form-icon form-click" style="align-self: center;"><i class="fa fa-check-square-o fa-2x"></i></div>
+            </div>
+            
+            <div class="container-controls" style="width: calc(20% - 60px);">
+                
+            </div>
+        </div>
     </div>
     
     <div class="container-bottom container-all container-light">
         <div id="answer-controls" class="no-display">
             <div id="question-context"></div>
-            {# TODO: consider migrating this to a flask-wtform #}
-            <form id="form-question-normal">
-                <input id="question-id" type="hidden" name="id">
-                {# FIXME: obtain values from currently answered questions #}
-                {% for tid, name in teams.items() %}
-                    <label for="{{ tid }}">{{ name }}</label>
-                    <input name="{{ tid }}" type="range" min="-1" max="1" step="1"/>
-                    <br/>
-                {% endfor %}
-                <input type="submit" value="Answers complete">
-            </form>
             {# TODO: daily doubles should be handled at some point #}
             <div class="question-daily-double no-display">
                 <input id="{{ tid }}" type="range" min="0" max="500000000" step="{{ SCORE_TICK }}"/>
@@ -176,53 +201,7 @@
 
 {% block ui %}
 <script>
-    
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/host');
-    
-    socket.on('connect', function() {
-        //socket.emit('my event', {data: 'I\'m connected!'});
-    });
-    
-    socket.on('test', function(data) {
-        alert(data);
-    });
-
-    {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
-    function SubmitAnswers(event) {
-        var url = "{{ url_for('answer') }}";
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: $('#form-question-normal').serialize(),
-            dataType: 'json',
-            success: function (data) {
-                $(".form-error").empty();
-                if (data.result == "success") {
-                    // reset form values
-                    $('#form-question-normal input[type=range]').val(0);
-                    var id = $('#question-id').val();
-                    console.log(id);
-                    for (var key in data.answers) {
-                        if (!data.answers.hasOwnProperty(key)) {
-                            continue;
-                        }
-                        var team = key;
-                        var score = data.answers[key];
-                        var selector = '#' + id + team;
-                        $(selector).addClass(team + '-color');
-                        $(selector + '> span').text(score);
-                    }
-                }
-                else {
-                   console.log("You fucked it up! ;)");
-                }
-            }
-        });
-    }
-    $("#form-question-normal").submit(function(e) {
-        e.preventDefault();
-        SubmitAnswers(e);
-    });
 
     function ShowContainer(event) {
         var container = '.container-' + event.data.name;
@@ -319,6 +298,40 @@
         }
     }
     
+    {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
+    function SubmitResults(event) {
+        console.log("submit");
+        var url = "{{ url_for('answer') }}";
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $('#form-question-normal').serialize(),
+            dataType: 'json',
+            success: function (data) {
+                $(".form-error").empty();
+                if (data.result == "success") {
+                    // reset form values
+                    $('#form-question-normal input[type=range]').val(0);
+                    var id = $('#question-id').val();
+                    console.log(id);
+                    for (var key in data.answers) {
+                        if (!data.answers.hasOwnProperty(key)) {
+                            continue;
+                        }
+                        var team = key;
+                        var score = data.answers[key];
+                        var selector = '#' + id + team;
+                        $(selector).addClass(team + '-color');
+                        $(selector + '> span').text(score);
+                    }
+                }
+                else {
+                   console.log("You fucked it up! ;)");
+                }
+            }
+        });
+    }
+    
     function SelectQuestion(data, id) {
         console.log(data);
         console.log(id);
@@ -401,18 +414,6 @@
             }
         });
         
-        $("#roulette").on("click", function() {
-            socket.emit('roulette');
-            /*$.post("/api/roulette", function(data) {
-                if (data.result != "ok") {
-                    alert(data.result);
-                }
-                else {
-                    
-                }
-            });*/
-        });
-        
         {# if not started #}
         $('.container-header > .container-arrow').on("click", 
             {'name': 'header', 'direction': 'down'}, ShowContainer);
@@ -423,11 +424,21 @@
         $('.team-add').on("click", AddTeam);
         $('.team-delete').on("click", DeleteTeam);
         $('.team-refresh').on("click", RefreshTeams);
-        $('#form-teams').submit(function(e){
+        $('#form-teams').on("submit", function(e){
             e.preventDefault();
             RefreshTeams(e);
         });
-
+        
+        
+        $('#team-roulette').on("click", function() {
+            socket.emit('team', {action: "roulette"});
+        });
+        $('.team-select').on("click", function() {
+            var id = $(this).parent().find('label').attr('for');
+            socket.emit('team', {action: "select", id: id});
+        });
+        
+        $('#results-submit').on("click", SubmitResults);
 
         $('.message-display').on("click", DisplayMessage);
         $('.message-edit').on("click", EditMessage);
@@ -437,6 +448,14 @@
         // This might not be the best solution, we'll see...
         $('#messages').find('.message-display').first().trigger('click');
         {% endif %}
+        
+        // Maybe there's a cleaner CSS approach for this
+        $('.fa-spinner').hover(function() {
+            $(this).addClass('fa-pulse');
+        }, function() {
+            $(this).removeClass('fa-pulse');
+        });
+        
     });
     
 </script>
