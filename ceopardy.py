@@ -156,6 +156,7 @@ def handle_question(data):
         #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
         #              "q_text": question_text}, namespace='/host')
         controller.set_selection("question", data["id"])
+        controller.set_overlay("small", True, question_text)
         return question_text
     elif data["action"] == "deselect":
         controller = get_controller()
@@ -163,6 +164,7 @@ def handle_question(data):
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
         controller.set_selection("question", "")
+        controller.set_overlay("small", False, "")
         return ""
 
 
