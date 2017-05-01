@@ -74,8 +74,12 @@ def host():
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
+    selection = {}
+    for name in ["question"]:
+        selection[name] = controller.get_selection(name)
+    
     return render_template('host.html', form=form, teams=teams,
-                           questions=questions)
+                           questions=questions, selection=selection)
 
 
 # For now, this will give un an initial state which will avoid complications when
@@ -134,40 +138,49 @@ def answer():
     return jsonify(result="success", answers=question_status[data["id"]])
     
 
-@socketio.on('click', namespace='/host')
-def handle_click(data):
+# TODO clean up this function
+@socketio.on('question', namespace='/host')
+def handle_question(data):
     controller = get_controller()
-    app.logger.debug('received data: {}'.format(data["id"]))
-    match = re.match("c([0-9]+)q([0-9]+)", data["id"])
-    if match is None:
+    if data["action"] == "select":
+        app.logger.debug('received data: {}'.format(data["id"]))
+        match = re.match("c([0-9]+)q([0-9]+)", data["id"])
+        if match is None:
+            return ""
+        col, row = match.groups()
+        #FIXME get text without qid
+        qid, question_text = controller.get_question(col, row)
+
+        emit("overlay", {"action": "show", "id": "small", "html": question_text},
+             namespace='/viewer', broadcast=True)
+        #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
+        #              "q_text": question_text}, namespace='/host')
+        controller.set_selection("question", data["id"])
+        return question_text
+    elif data["action"] == "deselect":
+        controller = get_controller()
+        state = controller.get_questions_status_for_viewer()
+        emit("update-board", state, namespace='/viewer', broadcast=True)
+        emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
+        controller.set_selection("question", "")
         return ""
-    col, row = match.groups()
-    #FIXME get text without qid
-    qid, question_text = controller.get_question(col, row)
-
-    emit("overlay", {"action": "show", "id": "small", "html": question_text},
-         namespace='/viewer', broadcast=True)
-    #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
-    #              "q_text": question_text}, namespace='/host')
-    return question_text
-
-
-@socketio.on('unclick', namespace='/host')
-def handle_unclick(data):
-    controller = get_controller()
-    state = controller.get_questions_status_for_viewer()
-    emit("update-board", state, namespace='/viewer', broadcast=True)
-    emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
-    return ""
 
 
 @socketio.on('message', namespace='/host')
 def handle_message(data):
+    controller = get_controller()
     # FIXME Temporary XSS!!!
     if data["action"] == "show":
-        emit("overlay", {"action": "show", "id": "big", "html": "<p>{0}</p>".format(data["text"])}, namespace='/viewer', broadcast=True)
+        content = "<p>{0}</p>".format(data["text"])
+        visible = True
+        emit("overlay", {"action": "show", "id": "big", "html": content}, 
+            namespace='/viewer', broadcast=True)
     else:
-        emit("overlay", {"action": "hide", "id": "big", "html": ""}, namespace='/viewer', broadcast=True)
+        content = ""
+        visible = False
+        emit("overlay", {"action": "hide", "id": "big", "html": ""}, 
+            namespace='/viewer', broadcast=True)
+    controller.set_overlay("big", visible, content)
 
 
 @socketio.on('team', namespace='/host')

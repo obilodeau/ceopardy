@@ -173,6 +173,19 @@ class Overlay(db.Model):
         return '<Overlay {} is {}.>'.format(self.name, status)
 
 
+class Selection(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(10), unique=True)
+    value = db.Column(db.String(10), unique=True)
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __repr__(self):
+        return '<Selection {} is {}.>'.format(self.name, self.value)
+
+
 # TODO consider for removal (duplicated in controller)
 class GameProblem(Exception):
     pass

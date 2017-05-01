@@ -22,7 +22,7 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
-from model import Answer, Game, Team, GameState, Question, Response, Overlay
+from model import Answer, Game, Team, GameState, Question, Response, Overlay, Selection
 from utils import parse_questions, parse_gamefile, question_to_html
 
 
@@ -30,14 +30,18 @@ class Controller():
     def __init__(self):
         app.logger.debug("Controller initialized")
 
-        # if there's not a game state, create one
+        # If there's not a game state, create one
         if Game.query.one_or_none() is None:
             game = Game()
             db.session.add(game)
+            # Default overlay state for a new game
             small = Overlay("small", False, "")
             db.session.add(small)
-            big = Overlay("big", True, "There is currently no host running the show!")
+            big = Overlay("big", True, "<p>There is currently no host running the show!</p>")
             db.session.add(big)
+            # No question is selected, the game hasn't started
+            selection = Selection("question", "")
+            db.session.add(selection)
             db.session.commit()
 
 
@@ -287,6 +291,26 @@ class Controller():
         overlay["visible"] = row.visible
         overlay["content"] = row.content
         return overlay
+
+
+    @staticmethod
+    def set_overlay(name, visible, content):
+        row = {"visible": visible, "content": content}
+        db.session.query(Overlay).filter_by(name=name).update(row)
+        db.session.commit()
+
+
+    @staticmethod
+    def get_selection(name):
+        row = db.session.query(Selection).filter_by(name=name).one()
+        return row.value
+
+
+    @staticmethod
+    def set_selection(name, value):
+        row = {"value": value}
+        db.session.query(Selection).filter_by(name=name).update(row)
+        db.session.commit()
 
 
 class GameProblem(Exception):

@@ -17,7 +17,7 @@
                 <div class="form-row form-color">
                     <p class="form-header">Teams</p>
                     <div class="form-icon form-click team-add">
-                        <i id="message-hide" class="fa fa-plus fa-lg"></i>
+                        <i class="fa fa-plus fa-lg"></i>
                     </div>
                 </div>
                 <form id="form-teams">
@@ -59,34 +59,37 @@
     <div class="container-all container-light" style="height: 35px;"></div>
     
     <div class="container-top container-all container-light">
+        {% set select_qid = selection['question'] %}
         {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-        <div class="row-ceopardy flex-vertical-pad">
+        <div class="row-ceopardy flex-vertical-pad {{ select_qid }}">
             {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
             <div class="col-ceopardy flex-horizontal-pad">
-                <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question">
+                {% set qid = 'c{}q{}'.format(_c, _r) %}
+                <div id="{{ qid }}" class="box-ceopardy box-question">
                     <div class="box-question-left">
                         {# FIXME I feel bad for this #}
                         {% for _t in range(1, NB_TEAMS + 1) %}
-                            {% set score = questions['c{}q{}'.format(_c, _r)]['team{}'.format(_t)]|string %}
+                            {% set tid = 'team{}'.format(_t) %}
+                            {% set score = questions[qid][tid]|string %}
                             {% set class = "" %}
                             {% if score|length > 0 %}
-                                {% set class = 'team{}-color'.format(_t) %}
+                                {% set class = tid + '-color' %}
                             {% endif %}
-                        <div id="c{{ _c }}q{{ _r }}team{{ _t }}" class="box-question-status {{ class }}">
+                        <div id="{{ qid }}{{ tid }}" class="box-question-status {{ class }}">
                             <span>{{ score }}</span>
                         </div>
                         {% endfor %}
                     </div>
-                    <div class="box-question-right">
+                    <div class="box-question-right {{ 'box-selected' if qid == select_qid }}">
                         <p>${{ _r * SCORE_TICK }}</p>
                     </div>
                     
                     {#
-                    {% if questions['c{}q{}'.format(_c, _r)] == [] %}
+                    {% if questions[qid] == [] %}
                         <p>${{ _r * SCORE_TICK }}</p>
                     {% else %}
                         <p class="status">
-                        {% for _q in questions['c{}q{}'.format(_c, _r)] %}
+                        {% for _q in questions[qid] %}
                             {{ _q | safe}}<br/>
                         {% endfor %}
                         </p>
@@ -109,7 +112,7 @@
             <div class="container-controls" style="flex-grow: 1;">
                 {# TODO: consider migrating this to a flask-wtform #}
                 <form id="form-question-normal">
-                    <input id="question-id" type="hidden" name="id">
+                    <input id="question-id" type="hidden" name="id" value="{{ select_qid }}">
                     {% for tid, name in teams.items() %}
                     <div class="row-ceopardy">
                         <div class="box-answer-team form-color" style="display: flex; vertical-align: middle;">
@@ -191,7 +194,7 @@
                 </div>
                 <div class="form-expand">
                     <div id="message-custom" class="form-color form-edit" style="display: none;" contenteditable="true">
-                        <span>test</span>
+                        <span></span>
                     </div>
                 </div>
                 
@@ -277,7 +280,13 @@
                 $(".form-error").empty();
                 if (data.result == "success") {
                     $('.container-header').removeClass('slide-down');
-                    _updateTeamsOnAnswerForm(data['teams']);
+                    // Update the answer form too
+                    var teams = data['teams'];
+                    for (var team in teams) {
+                        if (teams.hasOwnProperty(team)) {
+                            $(`#form-question-normal label[for=${team}]`).html(teams[team]);
+                        }
+                    }
                 }
                 else {
                     // Equivalent of a normal form error handling
@@ -296,13 +305,22 @@
             }
         });
     }
-
-    // update team names on answer form
-    function _updateTeamsOnAnswerForm(teams) {
-        for (var team in teams) {
-            if (teams.hasOwnProperty(team)) {
-                $(`form#form-question-normal label[for=${team}]`).html(teams[team]);
-            }
+    
+    function ClickQuestion(event) {
+        var box = $(this).find(".box-question-right")
+        var id = $(this).attr('id');
+        if (box.hasClass("box-selected")) {
+            box.removeClass("box-selected");
+            socket.emit('question', {action: "deselect", id: id}, function(data) {
+                DeselectQuestion(data, id);
+            });
+        }
+        else {
+            $(".box-selected").removeClass("box-selected");
+            box.addClass("box-selected");
+            socket.emit('question', {action: "select", id: id}, function(data) {
+                SelectQuestion(data, id);
+            });
         }
     }
     
@@ -404,23 +422,7 @@
     }
     
     $(document).ready(function() {
-        $(".box-ceopardy").on("click", function() {
-            var box = $(this).find(".box-question-right")
-            var id = $(this).attr('id');
-            if (box.hasClass("box-selected")) {
-                box.removeClass("box-selected");
-                socket.emit('unclick', {id: id}, function(data) {
-                    DeselectQuestion(data, id);
-                });
-            }
-            else {
-                $(".box-selected").removeClass("box-selected");
-                box.addClass("box-selected");
-                socket.emit('click', {id: id}, function(data) {
-                    SelectQuestion(data, id);
-                });
-            }
-        });
+        $(".box-ceopardy").on("click", ClickQuestion);
         
         {# if not started #}
         $('.container-header > .container-arrow').on("click", 

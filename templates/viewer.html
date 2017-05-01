@@ -60,7 +60,7 @@
     <div class="small-container-overlay">
         <div class="black-box">
             <div class="box-overlay">
-                <div id="small-overlay-content" class="box-ceopardy box-question">{{ overlay.small.content }}</div>
+                <div id="small-overlay-content" class="box-ceopardy box-question">{{ overlay.small.content|safe }}</div>
             </div>
         </div>
     </div>
@@ -70,7 +70,7 @@
     <div class="big-container-overlay">
         <div class="black-box">
             <div class="box-overlay">
-                <div id="big-overlay-content" class="box-ceopardy box-question"><p>{{ overlay.big.content }}</p></div>
+                <div id="big-overlay-content" class="box-ceopardy box-question">{{ overlay.big.content|safe }}</div>
             </div>
         </div>
     </div>

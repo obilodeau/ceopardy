@@ -21,9 +21,11 @@ from wtforms.validators import InputRequired, ValidationError
 
 from config import config
 
-# this id is used to flag team name input entries so that we can dynamically
+
+# This id is used to flag team name input entries so that we can dynamically
 # generate form because the number of team is configurable
 TEAM_FIELD_ID = 'teamname'
+
 
 # TODO design decision: either we create an AnswerForm or we get rid of this in
 #      favor of what we did with the answer form.
@@ -31,9 +33,10 @@ TEAM_FIELD_ID = 'teamname'
 class TeamNamesForm(FlaskForm):
     pass
 
+
 class UniqueTeamName():
     """A validator that ensures that each field of a given field set is unique."""
-    # we are using WTForms' flags to identify team name entries so that they can be dynamic
+    # We use WTForms' flags to identify team name entries so that they can be dynamic
     field_flags = (TEAM_FIELD_ID,)
 
     def __call__(self, form, field):
@@ -43,6 +46,7 @@ class UniqueTeamName():
                 # raise error if name not unique
                 if field.data == otherfield.data:
                     raise ValidationError('Team name must be unique per game!')
+
 
 for _i in range(1, config['NB_TEAMS'] + 1):
     _i = str(_i)
