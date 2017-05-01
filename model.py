@@ -176,7 +176,7 @@ class Overlay(db.Model):
 class Selection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(10), unique=True)
-    value = db.Column(db.String(10), unique=True)
+    value = db.Column(db.String(10))
 
     def __init__(self, name, value):
         self.name = name

@@ -75,7 +75,7 @@ def host():
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
     selection = {}
-    for name in ["question"]:
+    for name in ["question", "message"]:
         selection[name] = controller.get_selection(name)
     
     return render_template('host.html', form=form, teams=teams,
@@ -173,18 +173,21 @@ def handle_message(data):
     if data["action"] == "show":
         content = "<p>{0}</p>".format(data["text"])
         visible = True
+        mid = data["id"]
         emit("overlay", {"action": "show", "id": "big", "html": content}, 
             namespace='/viewer', broadcast=True)
     else:
         content = ""
         visible = False
+        mid = ""
         emit("overlay", {"action": "hide", "id": "big", "html": ""}, 
             namespace='/viewer', broadcast=True)
+    controller.set_selection("message", mid)
     controller.set_overlay("big", visible, content)
 
 
 @socketio.on('team', namespace='/host')
-def handle_roulette(data):
+def handle_team(data):
     controller = get_controller()
     if data["action"] == "select":
         data["args"] = data["id"]

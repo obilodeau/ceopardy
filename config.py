@@ -31,6 +31,8 @@ config = {
          "text": "It seems we're having some trouble, hang in there!"},
         {"title": "Break",
          "text": "On a short break, we'll be right back after these messages."},
+        {"title": "Custom",
+         "text": ""},
     ],
     'BASE_DIR': os.path.dirname(__file__) + '/'
 }

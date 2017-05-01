@@ -302,14 +302,21 @@ class Controller():
 
     @staticmethod
     def get_selection(name):
-        row = db.session.query(Selection).filter_by(name=name).one()
-        return row.value
+        result = db.session.query(Selection).filter_by(name=name).all()
+        if result:
+            return result[0].value
+        else:
+            return ""
 
 
     @staticmethod
     def set_selection(name, value):
-        row = {"value": value}
-        db.session.query(Selection).filter_by(name=name).update(row)
+        result = db.session.query(Selection).filter_by(name=name).all()
+        if result:
+            result[0].value = value
+        else:
+            selection = Selection(name, value)
+            db.session.add(selection)
         db.session.commit()
 
 

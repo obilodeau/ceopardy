@@ -168,32 +168,32 @@
                         <i id="message-hide" class="fa fa-eye-slash fa-lg"></i>
                     </div>
                 </div>
+                {% set select_mid = selection['message'] %}
                 {% for _m in MESSAGES %}
-                <div id="messages">
+                {% set mid = 'message{}'.format(loop.index) %}
+                <div id="{{ mid }}" class="message-parent">
                     <div class="form-row form-color team-info">
                         <div class="form-text">{{ _m.title }}</div>
                         <div class="form-hidden message-text">{{ _m.text }}</div>
                         <div class="form-expand"></div>
+                        {% if _m.title == "Custom" %}
+                        <div class="form-icon form-click message-edit"><i class="fa fa-edit fa-lg"></i></div>
+                        {% endif %}
                         <div class="form-icon form-click message-display">
+                            {% if mid != select_mid %}
                             <i class="fa fa-eye fa-lg message-show"></i>
                             <i class="fa fa-eye-slash fa-lg message-hide" style="display: none;"></i>
+                            {% else %}
+                            <i class="fa fa-eye fa-lg message-show" style="display: none;"></i>
+                            <i class="fa fa-eye-slash fa-lg message-hide"></i>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 {% endfor %}
-                <div id="messages">
-                    <div class="form-row form-color team-info">
-                        <div class="form-text">Custom</div>
-                        <div class="form-expand"></div>
-                        <div class="form-icon form-click message-edit"><i class="fa fa-edit fa-lg"></i></div>
-                        <div class="form-icon form-click message-display">
-                            <i class="fa fa-eye fa-lg message-show"></i>
-                            <i class="fa fa-eye-slash fa-lg message-hide" style="display: none;"></i>
-                        </div>
-                    </div>
-                </div>
                 <div class="form-expand">
                     <div id="message-custom" class="form-color form-edit" style="display: none;" contenteditable="true">
+                        {# TODO restore content here on reload #}
                         <span></span>
                     </div>
                 </div>
@@ -393,13 +393,14 @@
     }
     
     function ShowMessage(element) {
-        if (element.length == 0) {
-            text = $('#message-custom').first().text();
+        var id = element.closest('.message-parent').attr("id");
+        if (element.text().length == 0) {
+            var text = $('#message-custom').first().text();
         }
         else {
-            text = element.text();
+            var text = element.text();
         }
-        socket.emit('message', {action: "show", text: text});
+        socket.emit('message', {action: "show", id: id, text: text});
     }
     
     function HideMessage() {
