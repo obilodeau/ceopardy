@@ -15,6 +15,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+import html
 import re
 
 from model import FinalQuestion
@@ -91,6 +92,26 @@ def parse_gamefile(filename):
 
 
 def question_to_html(question_text):
+    """Parses the questions from the Beopardy Game Board format"""
+    question_text = html.escape(question_text)
+
+    # Warning, we don't support nested line heading options
+    # UTF-8 is just killed since everything is UTF-8 now
+    if question_text.startswith('[utf8]'):
+        question_text = question_text.lstrip('[utf8]')
+
+    # Fixed width strings
+    if question_text.startswith('[fixed]'):
+        question_text = question_text.lstrip('[fixed]')
+        question_text = "<tt>{}</tt>".format(question_text)
+
+    # Parsing images
+    m = re.search(r'^\[img:([^\]]*)\]$', question_text)
+    if m:
+        # TODO file names will have to be hard to guess if we go multi-client
+        return '<img src="/static/game-media/{}">'.format(m.group(1))
+
+
     return "<p>" + question_text + "</p>"
 
 
