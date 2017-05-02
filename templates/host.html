@@ -10,7 +10,7 @@
 {% block content %}
 <div class="container-host">
 
-    <div class="container-header container-slider flex-border-header container-light">
+    <div class="container-header container-slider flex-border-header container-light {{ selection['container-header'] }}">
 
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
@@ -151,7 +151,7 @@
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
-    <div class="container-footer container-slider flex-border-footer container-light">
+    <div class="container-footer container-slider flex-border-footer container-light {{ selection['container-footer'] }}">
     
         <div class="container-arrow container-dark">
             <!--Up Arrow-->
@@ -214,14 +214,16 @@
 <script>
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/host');
 
-    function ShowContainer(event) {
-        var container = '.container-' + event.data.name;
-        var slide = 'slide-' + event.data.direction
-        if($(container).hasClass(slide)) {
-            $(container).removeClass(slide); 
+    function ShowContainer(name, direction) {
+        var container = 'container-' + name;
+        var slide = 'slide-' + direction
+        if($('.' + container).hasClass(slide)) {
+            $('.' + container).removeClass(slide);
+            socket.emit('slider', {id: container, value: ""});
         }
         else {
-            $(container).addClass(slide);
+            $('.' + container).addClass(slide);
+            socket.emit('slider', {id: container, value: slide});
         }
     }
     
@@ -279,7 +281,7 @@
             success: function (data) {
                 $(".form-error").empty();
                 if (data.result == "success") {
-                    $('.container-header').removeClass('slide-down');
+                    ShowContainer('header', 'down');
                     // Update the answer form too
                     var teams = data['teams'];
                     for (var team in teams) {
@@ -339,7 +341,6 @@
                     // reset form values
                     $('#form-question-normal input[type=range]').val(0);
                     var id = $('#question-id').val();
-                    console.log(id);
                     for (var key in data.answers) {
                         if (!data.answers.hasOwnProperty(key)) {
                             continue;
@@ -425,12 +426,12 @@
     $(document).ready(function() {
         $(".box-ceopardy").on("click", ClickQuestion);
         
-        {# if not started #}
-        $('.container-header > .container-arrow').on("click", 
-            {'name': 'header', 'direction': 'down'}, ShowContainer);
-        {# endif #}
-        $('.container-footer > .container-arrow').on("click", 
-            {'name': 'footer', 'direction': 'up'}, ShowContainer);
+        $('.container-header > .container-arrow').on("click", function() {
+            ShowContainer('header', 'down');
+        });
+        $('.container-footer > .container-arrow').on("click", function() {
+            ShowContainer('footer', 'up');
+        });
         
         $('.team-add').on("click", AddTeam);
         $('.team-delete').on("click", DeleteTeam);
@@ -458,12 +459,6 @@
             $('.message-show').show();
             HideMessage(e);
         });
-        
-        {# if not started #}
-        // First message should be the one about starting the game
-        // This might not be the best solution, we'll see...
-        //$('#messages').find('.message-display').first().trigger('click');
-        {# endif #}
         
         // Maybe there's a cleaner CSS approach for this
         $('.fa-spinner').hover(function() {

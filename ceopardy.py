@@ -75,7 +75,7 @@ def host():
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
     selection = {}
-    for name in ["question", "message"]:
+    for name in ["question", "message", "container-header", "container-footer"]:
         selection[name] = controller.get_selection(name)
     
     return render_template('host.html', form=form, teams=teams,
@@ -94,6 +94,12 @@ def init():
         controller.setup_teams(teamnames)
         controller.setup_questions()
         controller.start_game()
+        # This is kind of dirty, not sure I like it
+        content = "<p>{}</p>".format(config["MESSAGES"][0]["text"])
+        controller.set_selection("message", "message1")
+        controller.set_overlay("big", True, content)
+        emit("overlay", {"action": "show", "id": "big", "html": content}, 
+            namespace='/viewer', broadcast=True)
     except:
         return jsonify(result="failure", error="Initialization error!")
     return jsonify(result="success")
@@ -125,41 +131,34 @@ def answer():
     if match is None:
         return jsonify(result="failure", error="Invalid category/question format!")
     col, row = match.groups()
-    # FIXME get qid without text
-    qid, question_text = controller.get_question(col, row)
+    question_text = controller.get_question(col, row)
     # Send everything but qid as a dict
     answers = request.form.to_dict()
     answers.pop('id')
-    if not controller.answer_normal(qid, answers):
+    if not controller.answer_normal(col, row, answers):
         return jsonify(result="failure", error="Answer submission failed!")
     # TODO this is grossly inefficient
     question_status = controller.get_questions_status_for_host()
-    # FIXME this doesn't handle refreshing /viewer score
+    teams = controller.get_teams_score_by_tid()
+    emit("team", {"action": "score", "args": teams}, namespace='/viewer', broadcast=True)
     return jsonify(result="success", answers=question_status[data["id"]])
     
 
-# TODO clean up this function
 @socketio.on('question', namespace='/host')
 def handle_question(data):
     controller = get_controller()
     if data["action"] == "select":
-        app.logger.debug('received data: {}'.format(data["id"]))
         match = re.match("c([0-9]+)q([0-9]+)", data["id"])
         if match is None:
             return ""
         col, row = match.groups()
-        #FIXME get text without qid
-        qid, question_text = controller.get_question(col, row)
-
+        question_text = controller.get_question(col, row)
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
-        #emit("selected_question", {"action": "show_answer_ui", "qid": qid,
-        #              "q_text": question_text}, namespace='/host')
         controller.set_selection("question", data["id"])
         controller.set_overlay("small", True, question_text)
         return question_text
     elif data["action"] == "deselect":
-        controller = get_controller()
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
@@ -207,6 +206,12 @@ def handle_team(data):
     emit("team", data, namespace='/viewer', broadcast=True)
 
 
+@socketio.on('slider', namespace='/host')
+def handle_slider(data):
+    controller = get_controller()
+    controller.set_selection(data["id"], data["value"])
+
+
 @socketio.on('refresh', namespace='/viewer')
 def handle_refresh():
     controller = get_controller()
@@ -218,7 +223,7 @@ def handle_refresh():
 
 if __name__ == '__main__':
 
-    # logging
+    # Logging
     file_handler = logging.FileHandler('ceopardy.log')
     #file_handler.setLevel(logging.INFO)
     file_handler.setLevel(logging.DEBUG)
@@ -227,8 +232,8 @@ if __name__ == '__main__':
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
 
-    # cleaner controller access
-    # unsure if required once we have a db back-end
+    # Cleaner controller access
+    # Unsure if required once we have a db back-end
     with app.app_context():
 
         from controller import Controller

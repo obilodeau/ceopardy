@@ -42,6 +42,10 @@ class Controller():
             # No question is selected, the game hasn't started
             selection = Selection("question", "")
             db.session.add(selection)
+            selection = Selection("container-header", "slide-down")
+            db.session.add(selection)
+            selection = Selection("container-footer", "slide-up")
+            db.session.add(selection)
             db.session.commit()
 
 
@@ -160,6 +164,33 @@ class Controller():
                     for tid, name in Controller.get_teams_for_form().items()}
 
 
+    # TODO remove
+    # Temporary fix, find a way to merge with the function above!
+    @staticmethod
+    def get_teams_score_by_tid():
+        answers = db.session.query(Team.id, Team.tid, Answer.response,
+                                   Answer.score_attributed)\
+                            .join(Answer).order_by(Team.id).all()
+
+        results = OrderedDict()
+        # Handle case when there are no answers: names with 0 score
+        if not answers:
+            for _team in db.session.query(Team).order_by(Team.id).all():
+                results[_team.tid] = 0
+            return results
+
+        # Sum all answers with negative scoring handled for bad answers
+        for answer in answers:
+            _id, _tid, _response, _score = answer
+            # Not already defined? initialize
+            if not results.get(_tid):
+                results[_tid] = 0
+
+            # bad: -1, nop: 0 and good: 1 multiplied with score gives result
+            results[_tid] += _response.value * _score
+        return results
+
+
     @staticmethod
     def get_teams_for_form():
         """Get list of teams
@@ -199,7 +230,7 @@ class Controller():
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        return _q.id, question_to_html(_q.text)
+        return question_to_html(_q.text)
 
 
     @staticmethod
@@ -211,13 +242,16 @@ class Controller():
 
 
     @staticmethod
-    def answer_normal(question_id, answers):
-        app.logger.info("Answers submitted for question {}: {}"
-                        .format(question_id, answers))
+    def answer_normal(column, row, answers):
+        app.logger.info("Answers submitted for question ({}, {}): {}"
+                        .format(column, row, answers))
         # Answers looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
 
+        condition = and_(Question.row == row, Question.col == column)
+        _q = Question.query.filter(condition).one()
+        
         # Is there already an answer? If so update answers
-        prev_answers = Answer.query.filter(Answer.question_id == question_id).all()
+        prev_answers = Answer.query.filter(Answer.question_id == _q.id).all()
         if prev_answers:
             for _answer in prev_answers:
                 _answer.response = Response(int(answers[_answer.team.tid]))
@@ -225,10 +259,10 @@ class Controller():
 
         # Otherwise create new ones
         else:
-            for tid, response in answers.items():
+            for tid, points in answers.items():
                 team = Team.query.filter(Team.tid == tid).one()
-                question = Question.query.get(question_id)
-                response = Response(int(response))
+                question = Question.query.get(_q.id)
+                response = Response(int(points))
                 db.session.add(Answer(response, team, question))
 
         db.session.commit()

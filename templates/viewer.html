@@ -113,6 +113,7 @@
     
     socket.on('team', function(data) {
         if ((data.action == "name") || (data.action == "score")) {
+            console.log(data.args);
             for (var key in data.args) {
                 if (!data.args.hasOwnProperty(key)) {
                     continue;
