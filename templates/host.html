@@ -10,7 +10,7 @@
 {% block content %}
 <div class="container-host">
 
-    <div class="container-header container-slider flex-border-header container-light {{ selection['container-header'] }}">
+    <div class="container-header container-slider flex-border-header container-light {{ state.get('container-header', '') }}">
 
         <div style="display: flex; width: 100%;">
             <div class="container-header-control container-padding">
@@ -59,7 +59,7 @@
     <div class="container-all container-light" style="height: 35px;"></div>
     
     <div class="container-top container-all container-light">
-        {% set select_qid = selection['question'] %}
+        {% set select_qid = state.get('question', '') %}
         {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
         <div class="row-ceopardy flex-vertical-pad {{ select_qid }}">
             {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
@@ -151,7 +151,7 @@
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
-    <div class="container-footer container-slider flex-border-footer container-light {{ selection['container-footer'] }}">
+    <div class="container-footer container-slider flex-border-footer container-light {{ state.get('container-footer', '') }}">
     
         <div class="container-arrow container-dark">
             <!--Up Arrow-->
@@ -168,7 +168,7 @@
                         <i id="message-hide" class="fa fa-eye-slash fa-lg"></i>
                     </div>
                 </div>
-                {% set select_mid = selection['message'] %}
+                {% set select_mid = state.get('message', '') %}
                 {% for _m in MESSAGES %}
                 {% set mid = 'message{}'.format(loop.index) %}
                 <div id="{{ mid }}" class="message-parent">

@@ -154,36 +154,17 @@ class Category():
         self.column = column
 
 
-class Overlay(db.Model):
+class State(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(10), unique=True)
-    visible = db.Column(db.Boolean)
-    content = db.Column(db.String(4096))
-
-    def __init__(self, name, visible, content):
-        self.name = name
-        self.visible = visible
-        self.content = content
-
-    def __repr__(self):
-        if self.visible:
-            status = "visible"
-        else:
-            status = "hidden"
-        return '<Overlay {} is {}.>'.format(self.name, status)
-
-
-class Selection(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(10), unique=True)
-    value = db.Column(db.String(10))
+    value = db.Column(db.String(4096))
 
     def __init__(self, name, value):
         self.name = name
         self.value = value
 
     def __repr__(self):
-        return '<Selection {} is {}.>'.format(self.name, self.value)
+        return '<State {} is {}.>'.format(self.name, self.value)
 
 
 # TODO consider for removal (duplicated in controller)

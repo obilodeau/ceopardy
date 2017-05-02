@@ -53,12 +53,9 @@ def viewer():
     categories = controller.get_categories()
     teams = controller.get_teams_score()
     questions = controller.get_questions_status_for_viewer()
-    overlay = {}
-    for name in ["small", "big"]:
-        overlay[name] = controller.get_overlay(name)
-    
+    state = controller.get_complete_state()
     return render_template('viewer.html', teams=teams, categories=categories,
-                           questions=questions, overlay=overlay)
+                           questions=questions, state=state)
     # FIXME: fchar: is there a way to socketio a board update right after this?
 
 
@@ -74,12 +71,9 @@ def host():
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
-    selection = {}
-    for name in ["question", "message", "container-header", "container-footer"]:
-        selection[name] = controller.get_selection(name)
-    
+    state = controller.get_complete_state()
     return render_template('host.html', form=form, teams=teams,
-                           questions=questions, selection=selection)
+                           questions=questions, state=state)
 
 
 # For now, this will give un an initial state which will avoid complications when
@@ -96,8 +90,8 @@ def init():
         controller.start_game()
         # This is kind of dirty, not sure I like it
         content = "<p>{}</p>".format(config["MESSAGES"][0]["text"])
-        controller.set_selection("message", "message1")
-        controller.set_overlay("big", True, content)
+        controller.set_state("message", "message1")
+        controller.set_state("overlay-big", content)
         emit("overlay", {"action": "show", "id": "big", "html": content}, 
             namespace='/viewer', broadcast=True)
     except:
@@ -155,15 +149,15 @@ def handle_question(data):
         question_text = controller.get_question(col, row)
         emit("overlay", {"action": "show", "id": "small", "html": question_text},
              namespace='/viewer', broadcast=True)
-        controller.set_selection("question", data["id"])
-        controller.set_overlay("small", True, question_text)
+        controller.set_state("question", data["id"])
+        controller.set_state("overlay-small", question_text)
         return question_text
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
-        controller.set_selection("question", "")
-        controller.set_overlay("small", False, "")
+        controller.set_state("question", "")
+        controller.set_state("overlay-small", "")
         return ""
 
 
@@ -173,18 +167,16 @@ def handle_message(data):
     # FIXME Temporary XSS!!!
     if data["action"] == "show":
         content = "<p>{0}</p>".format(data["text"])
-        visible = True
         mid = data["id"]
         emit("overlay", {"action": "show", "id": "big", "html": content}, 
             namespace='/viewer', broadcast=True)
     else:
         content = ""
-        visible = False
         mid = ""
         emit("overlay", {"action": "hide", "id": "big", "html": ""}, 
             namespace='/viewer', broadcast=True)
-    controller.set_selection("message", mid)
-    controller.set_overlay("big", visible, content)
+    controller.set_state("message", mid)
+    controller.set_state("overlay-big", content)
 
 
 @socketio.on('team', namespace='/host')
@@ -192,6 +184,7 @@ def handle_team(data):
     controller = get_controller()
     if data["action"] == "select":
         data["args"] = data["id"]
+        controller.set_state("team", data["id"])
     elif data["action"] == "roulette":
         nb = controller.get_nb_teams()
         l = []
@@ -200,7 +193,7 @@ def handle_team(data):
             l.append("team" + str(i % nb + 1))
         l.append(team)
         data["args"] = l
-        app.logger.debug(l)
+        controller.set_state("team", team)
     else:
         return
     emit("team", data, namespace='/viewer', broadcast=True)
@@ -209,7 +202,7 @@ def handle_team(data):
 @socketio.on('slider', namespace='/host')
 def handle_slider(data):
     controller = get_controller()
-    controller.set_selection(data["id"], data["value"])
+    controller.set_state(data["id"], data["value"])
 
 
 @socketio.on('refresh', namespace='/viewer')

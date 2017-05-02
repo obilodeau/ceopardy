@@ -22,7 +22,7 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
-from model import Answer, Game, Team, GameState, Question, Response, Overlay, Selection
+from model import Answer, Game, Team, GameState, Question, Response, State
 from utils import parse_questions, parse_gamefile, question_to_html
 
 
@@ -35,17 +35,12 @@ class Controller():
             game = Game()
             db.session.add(game)
             # Default overlay state for a new game
-            small = Overlay("small", False, "")
-            db.session.add(small)
-            big = Overlay("big", True, "<p>There is currently no host running the show!</p>")
-            db.session.add(big)
+            db.session.add(State("overlay-small", ""))
+            db.session.add(State("overlay-big", "<p>There is currently no host running the show!</p>"))
             # No question is selected, the game hasn't started
-            selection = Selection("question", "")
-            db.session.add(selection)
-            selection = Selection("container-header", "slide-down")
-            db.session.add(selection)
-            selection = Selection("container-footer", "slide-up")
-            db.session.add(selection)
+            db.session.add(State("question", ""))
+            db.session.add(State("container-header", "slide-down"))
+            db.session.add(State("container-footer", "slide-up"))
             db.session.commit()
 
 
@@ -319,38 +314,29 @@ class Controller():
 
 
     @staticmethod
-    def get_overlay(name):
-        row = db.session.query(Overlay).filter_by(name=name).one()
-        overlay = {}
-        overlay["visible"] = row.visible
-        overlay["content"] = row.content
-        return overlay
-
-
-    @staticmethod
-    def set_overlay(name, visible, content):
-        row = {"visible": visible, "content": content}
-        db.session.query(Overlay).filter_by(name=name).update(row)
-        db.session.commit()
-
-
-    @staticmethod
-    def get_selection(name):
-        result = db.session.query(Selection).filter_by(name=name).all()
-        if result:
-            return result[0].value
+    def get_state(name):
+        result = State.query.filter_by(name=name).one_or_none()
+        if result is not None:
+            return result.value
         else:
             return ""
 
 
     @staticmethod
-    def set_selection(name, value):
-        result = db.session.query(Selection).filter_by(name=name).all()
-        if result:
-            result[0].value = value
+    def get_complete_state():
+        state = {}
+        for s in State.query.all():
+            state[s.name] = s.value
+        return state
+
+
+    @staticmethod
+    def set_state(name, value):
+        result = State.query.filter_by(name=name).one_or_none()
+        if result is not None:
+            result.value = value
         else:
-            selection = Selection(name, value)
-            db.session.add(selection)
+            db.session.add(State(name, value))
         db.session.commit()
 
 

@@ -39,15 +39,17 @@
     <div class="container-separator-h"></div>
     
     <div class="container-results">
+        {% set select_tid = state.get('team', '') %}
         {% for name, score in teams.items() %}
+        {% set tid = 'team{}'.format(loop.index) %}
         <div class="container-team">
-                <div id="team{{ loop.index }}" class="black-box" style="width: 80%; max-width:250px; margin: auto;">
+                <div id="{{ tid }}" class="black-box {{ 'team-selected' if select_tid == tid }}" style="width: 80%; max-width:250px; margin: auto;">
                     <div class="col-player flex-horizontal-pad">
                         <div class="row-player flex-vertical-pad" style="height: 30%;">
-                            <div id="team{{ loop.index }}-score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
+                            <div id="{{ tid }}-score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
                         </div>
                         <div class="row-player flex-vertical-pad" style="height: 70%;">
-                            <div id="team{{ loop.index }}-name" class="box-ceopardy box-team team{{ loop.index }}-font"><p>{{ name }}</p></div>
+                            <div id="{{ tid }}-name" class="box-ceopardy box-team {{ tid }}-font"><p>{{ name }}</p></div>
                         </div>
                     </div>
                 </div>
@@ -56,21 +58,21 @@
     </div>
 </div>
 
-<div id="small-overlay" class="container-game container-absolute container-all {{ 'no-display' if not overlay.small.visible }}">
+<div id="small-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-small', '') == '' }}">
     <div class="small-container-overlay">
         <div class="black-box">
             <div class="box-overlay">
-                <div id="small-overlay-content" class="box-ceopardy box-question">{{ overlay.small.content|safe }}</div>
+                <div id="small-overlay-content" class="box-ceopardy box-question">{{ state.get('overlay-small', '')|safe }}</div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if not overlay.big.visible }}">
+<div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-big', '') == '' }}">
     <div class="big-container-overlay">
         <div class="black-box">
             <div class="box-overlay">
-                <div id="big-overlay-content" class="box-ceopardy box-question">{{ overlay.big.content|safe }}</div>
+                <div id="big-overlay-content" class="box-ceopardy box-question">{{ state.get('overlay-big', '')|safe }}</div>
             </div>
         </div>
     </div>
