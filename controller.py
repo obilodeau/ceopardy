@@ -229,6 +229,22 @@ class Controller():
 
 
     @staticmethod
+    def get_answer(column, row):
+        app.logger.info(
+            "Answer requested for row: {} and col: {}".format(row, column))
+
+        condition = and_(Question.row == row, Question.col == column)
+        _q = Question.query.filter(condition).one()
+        _a = Answer.query.filter(Answer.question_id==_q.id).all()
+        if len(_a) == 0:
+            return {}
+        answer = {}
+        for a in _a:
+            answer[a.team.tid] = a.response.value
+        return answer
+
+
+    @staticmethod
     def get_question_viewid_from_dbid(question_id):
         # Sorry for the ugly name but it says it all
         question = Question.query.get(question_id)

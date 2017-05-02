@@ -349,7 +349,7 @@ svg:hover polygon {
   flex-grow: 1;
 }
 
-.box-answer-slider {
+.box-answer-range {
   width: 20%;
   flex-grow: 0;
 }

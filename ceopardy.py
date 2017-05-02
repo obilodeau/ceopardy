@@ -146,19 +146,20 @@ def handle_question(data):
         if match is None:
             return ""
         col, row = match.groups()
-        question_text = controller.get_question(col, row)
-        emit("overlay", {"action": "show", "id": "small", "html": question_text},
+        question = controller.get_question(col, row)
+        answer = controller.get_answer(col, row)
+        emit("overlay", {"action": "show", "id": "small", "html": question},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
-        controller.set_state("overlay-small", question_text)
-        return question_text
+        controller.set_state("overlay-small", question)
+        return {"question": question, "answer": answer}
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
         controller.set_state("question", "")
         controller.set_state("overlay-small", "")
-        return ""
+        return {}
 
 
 @socketio.on('message', namespace='/host')
