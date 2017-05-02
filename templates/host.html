@@ -451,6 +451,11 @@
         });
         
         $('#results-submit').on("click", SubmitResults);
+        $('#form-question-normal').on("submit", function(e){
+            e.preventDefault();
+            SubmitResults(e);
+        });
+        
 
         $('.message-display').on("click", DisplayMessage);
         $('.message-edit').on("click", EditMessage);
