@@ -97,9 +97,17 @@ a:active {
         <div style="font-size: calc(8vh + 8vw); font-family: 'Gyparody', Helvetica, sans-serif;">Ceopardy!</div>
         <div style="margin: auto; text-align:center;">
             <i class="fa fa-arrow-right fa-lg animate-horizontal-right"></i>
-            <a style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">Start Game</a>
+            <a data-action="new" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">New Game</a>
             <i class="fa fa-arrow-left fa-lg animate-horizontal-left"></i>
         </div>
+        {% if not must_init %}
+        <div style="margin: auto; text-align:center;">
+            {# TODO: Would be nice if animations would behave like cursor #}
+            <i class="fa fa-lg"></i>
+            <a data-action="resume" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">Resume Last Game</a>
+            <i class="fa fa-lg"></i>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -111,6 +119,8 @@ a:active {
         $.ajax({
             type: "POST",
             url: url,
+            data: { action: $(this).data('action') },
+            dataType: 'json',
             success: function (data) {
                 if (data.result == "success") {
                     

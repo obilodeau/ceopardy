@@ -28,7 +28,6 @@ from utils import parse_questions, parse_gamefile, question_to_html
 
 class Controller():
     def __init__(self):
-        app.logger.debug("Controller initialized")
 
         # If there's not a game state, create one
         if Game.query.one_or_none() is None:
@@ -45,15 +44,16 @@ class Controller():
 
 
     @staticmethod
-    def is_game_initialized():
+    def is_game_in_progress():
         game = Game.query.one()
-        return game.state != GameState.uninitialized
+        return game.state == GameState.in_round \
+            or game.state == GameState.in_final
 
 
     @staticmethod
-    def is_game_started():
+    def is_game_initialized():
         game = Game.query.one()
-        return game.state == GameState.started
+        return game.state != GameState.uninitialized
 
 
     @staticmethod
@@ -115,12 +115,44 @@ class Controller():
         if Team.query.all() and Question.query.all():
             # Yes, mark game as started
             game = Game.query.one()
-            game.state = GameState.started
+            game.state = GameState.in_round
             db.session.commit()
             return True
 
         else:
             raise GameProblem("Trying to start a game that is not ready")
+
+
+    @staticmethod
+    def finish_game():
+        scores = Controller.get_teams_score()
+        app.logger.info("Game is finished. Teams / Scores: {}".format(scores))
+
+        # Mark as finished
+        game = Game.query.one()
+        game.state = GameState.finished
+        db.session.commit()
+        return True
+
+
+    @staticmethod
+    def resume_game():
+        """Resuming a game is simply allowing to start over a finished game.
+        
+        Sometimes people click on finish by mistake or mess-up the score
+        in the final round. Resuming a game enables to fix that.
+        """
+        if Controller.is_game_initialized() is False:
+            app.logger.warn("Attempting to resume an uninitialized game...")
+            return False
+
+        game = Game.query.one()
+        game.state = GameState.in_round
+        db.session.commit()
+        scores = Controller.get_teams_score()
+        app.logger.info("A game has been resumed. Current teams / scores: {}"
+                        .format(scores))
+        return True
 
 
     @staticmethod
@@ -130,7 +162,7 @@ class Controller():
 
     @staticmethod
     def get_teams_score():
-        if Controller.is_game_started():
+        if Controller.is_game_initialized():
             answers = db.session.query(Team.id, Team.name, Answer.response,
                                        Answer.score_attributed)\
                                 .join(Answer).order_by(Team.id).all()
@@ -226,6 +258,12 @@ class Controller():
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
         return question_to_html(_q.text)
+
+
+    @staticmethod
+    def is_final_question():
+        """Is there a final question for this game?"""
+        return Question.query.filter(Question.final == True).one_or_none() is not None
 
 
     @staticmethod

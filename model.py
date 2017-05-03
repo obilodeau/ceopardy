@@ -32,8 +32,9 @@ SCHEMA_VERSION = 1
 
 class GameState(Enum):
     uninitialized = 0
-    setup = 1
-    started = 2
+    in_round = 1
+    in_final = 2
+    finished = 3
 
 
 class Game(db.Model):
@@ -43,7 +44,7 @@ class Game(db.Model):
     schema_version = db.Column(db.Integer)
 
     def __init__(self):
-        self.state = 'uninitialized'
+        self.state = GameState.uninitialized
         self.ceopardy_version = VERSION
         self.schema_version = SCHEMA_VERSION
 

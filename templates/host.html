@@ -131,7 +131,9 @@
             </div>
             
             <div class="container-controls" style="width: calc(20% - 60px);">
-                
+                <div id="finish-game" class="form-icon form-click" style="align-self: center;">
+                    <i class="fa fa-sign-out fa-2x"></i><p>finish the game</p>
+                </div>
             </div>
         </div>
     </div>
@@ -433,6 +435,12 @@
             });
         }
     }
+
+    function FinishGame(event) {
+        if (window.confirm("Bring the game to final round (if any). Are you sure?")) {
+			socket.emit('final', '');
+        }
+    }
     
     $(document).ready(function() {
         $(".box-ceopardy").on("click", ClickQuestion);
@@ -480,6 +488,8 @@
         }, function() {
             $(this).removeClass('fa-pulse');
         });
+
+        $('#finish-game').on("click", FinishGame);
         
     });
     

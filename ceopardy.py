@@ -66,8 +66,9 @@ def viewer():
 @app.route('/host')
 def host():
     controller = get_controller()
-    if not controller.is_game_started():
-        return render_template('start.html')
+    if not controller.is_game_in_progress():
+        must_init = controller.is_game_initialized() is False
+        return render_template('start.html', must_init=must_init)
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
@@ -80,22 +81,30 @@ def host():
 # rendering the host board
 @app.route('/init', methods=["POST"])
 def init():
+    """Init can resume a finished game or start a new one"""
     controller = get_controller()
-    teamnames = {}
-    for i in range(1, config['NB_TEAMS'] + 1):
-        teamnames['team{}'.format(i)] = 'Team {}'.format(i)
-    try:
-        controller.setup_teams(teamnames)
-        controller.setup_questions()
-        controller.start_game()
-        # This is kind of dirty, not sure I like it
-        content = "<p>{}</p>".format(config["MESSAGES"][0]["text"])
-        controller.set_state("message", "message1")
-        controller.set_state("overlay-big", content)
-        emit("overlay", {"action": "show", "id": "big", "html": content}, 
-            namespace='/viewer', broadcast=True)
-    except:
-        return jsonify(result="failure", error="Initialization error!")
+
+    if request.form['action'] == "new":
+        teamnames = {}
+        for i in range(1, config['NB_TEAMS'] + 1):
+            teamnames['team{}'.format(i)] = 'Team {}'.format(i)
+        try:
+            controller.setup_teams(teamnames)
+            controller.setup_questions()
+            controller.start_game()
+        except:
+            return jsonify(result="failure", error="Initialization error!")
+
+    elif request.form['action'] == "resume":
+        controller.resume_game()
+
+    # This is kind of dirty, not sure I like it
+    content = "<p>{}</p>".format(config["MESSAGES"][0]["text"])
+    controller.set_state("message", "message1")
+    controller.set_state("overlay-big", content)
+    emit("overlay", {"action": "show", "id": "big", "html": content},
+         namespace='/viewer', broadcast=True)
+
     return jsonify(result="success")
 
 
@@ -204,6 +213,22 @@ def handle_team(data):
 def handle_slider(data):
     controller = get_controller()
     controller.set_state(data["id"], data["value"])
+
+
+@socketio.on('final', namespace='/host')
+def move_to_final_round(data):
+    controller = get_controller()
+
+    if controller.is_final_question():
+        # TODO implement
+        pass
+    else:
+        # TODO better highlight winner
+        text = "<p>That's all folks! Thanks for playing!</p>"
+        controller.set_state("overlay-small", text)
+        controller.finish_game()
+        emit("overlay", {"action": "show", "id": "small", "html": text},
+             namespace='/viewer', broadcast=True)
 
 
 @socketio.on('refresh', namespace='/viewer')
