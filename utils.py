@@ -111,6 +111,8 @@ def question_to_html(question_text):
         # TODO file names will have to be hard to guess if we go multi-client
         return '<img src="/static/game-media/{}">'.format(m.group(1))
 
+    # Transform new lines into <br>
+    question_text = re.sub(r'\n', '<br/>', question_text)
 
     return "<p>" + question_text + "</p>"
 
