@@ -25,6 +25,7 @@ from flask import g, Flask, render_template, redirect, jsonify, request
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
+import utils
 from config import config
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
@@ -66,13 +67,18 @@ def viewer():
 @app.route('/host')
 def host():
     controller = get_controller()
+
     if not controller.is_game_in_progress():
         must_init = controller.is_game_initialized() is False
-        return render_template('start.html', must_init=must_init)
+        roundfiles = utils.list_roundfiles()
+        return render_template('start.html', must_init=must_init,
+                               roundfiles=roundfiles)
+
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     questions = controller.get_questions_status_for_host()
     state = controller.get_complete_state()
+
     return render_template('host.html', form=form, teams=teams,
                            questions=questions, state=state)
 
@@ -85,12 +91,22 @@ def init():
     controller = get_controller()
 
     if request.form['action'] == "new":
+        roundfile = request.form['name']
+        app.logger.info("New game requested with round file: {}"
+                        .format(roundfile))
+
+        # we want to start a new game, is there already one in the db?
+        if controller.is_game_initialized():
+            # FIXME
+            pass
+
+        # else let's start a game!
         teamnames = {}
         for i in range(1, config['NB_TEAMS'] + 1):
             teamnames['team{}'.format(i)] = 'Team {}'.format(i)
         try:
             controller.setup_teams(teamnames)
-            controller.setup_questions()
+            controller.setup_questions(roundfile)
             controller.start_game()
         except:
             return jsonify(result="failure", error="Initialization error!")

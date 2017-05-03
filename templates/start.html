@@ -97,14 +97,22 @@ a:active {
         <div style="font-size: calc(8vh + 8vw); font-family: 'Gyparody', Helvetica, sans-serif;">Ceopardy!</div>
         <div style="margin: auto; text-align:center;">
             <i class="fa fa-arrow-right fa-lg animate-horizontal-right"></i>
-            <a data-action="new" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">New Game</a>
+            <a id="new-game" style="padding-left: 10px; padding-right: 10px;">New Game</a>
             <i class="fa fa-arrow-left fa-lg animate-horizontal-left"></i>
+        </div>
+        <div id="roundfiles" class="no-display" style="margin: auto; text-align:center;">
+            {# TODO: Would be nice if animations would behave like cursor #}
+            {% for file in roundfiles %}
+                <i class="fa fa-lg"></i>
+		<a data-action="new" class="action-button" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">{{ file }}</a>
+                <i class="fa fa-lg"></i>
+            {% endfor %}
         </div>
         {% if not must_init %}
         <div style="margin: auto; text-align:center;">
             {# TODO: Would be nice if animations would behave like cursor #}
             <i class="fa fa-lg"></i>
-            <a data-action="resume" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">Resume Last Game</a>
+	    <a data-action="resume" class="action-button" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('host') }}">Resume Last Game</a>
             <i class="fa fa-lg"></i>
         </div>
         {% endif %}
@@ -114,12 +122,16 @@ a:active {
 
 {% block ui %}
 <script>
-    $('a').on("click", function(e) {
+    $('#new-game').on("click", function(e) {
+        $("#roundfiles").removeClass("no-display");
+    });
+        
+    $('.action-button').on("click", function(e) {
         var url = "{{ url_for('init') }}";
         $.ajax({
             type: "POST",
             url: url,
-            data: { action: $(this).data('action') },
+            data: { action: $(this).data('action'), name: $(this).text() },
             dataType: 'json',
             success: function (data) {
                 if (data.result == "success") {

@@ -15,9 +15,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+import glob
 import html
+import os
 import re
 
+from config import config
 from model import FinalQuestion
 
 
@@ -115,6 +118,14 @@ def question_to_html(question_text):
     question_text = re.sub(r'\n', '<br/>', question_text)
 
     return "<p>" + question_text + "</p>"
+
+
+def list_roundfiles():
+    """List available roundfiles in config's data directory"""
+
+    _glob = config['BASE_DIR'] + 'data/*.round'
+    # return file names only
+    return [os.path.basename(_f) for _f in glob.glob(_glob)]
 
 
 class QuestionParsingError(Exception):

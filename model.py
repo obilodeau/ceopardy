@@ -42,6 +42,7 @@ class Game(db.Model):
     state = db.Column(db.Enum(GameState))
     ceopardy_version = db.Column(db.String(16))
     schema_version = db.Column(db.Integer)
+    round_filename = db.Column(db.String(255))
 
     def __init__(self):
         self.state = GameState.uninitialized

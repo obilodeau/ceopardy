@@ -81,13 +81,12 @@ class Controller():
 
 
     @staticmethod
-    def setup_questions(q_file=config['QUESTIONS_FILENAME']):
+    def setup_questions(round_file, q_file=config['QUESTIONS_FILENAME']):
         app.logger.info("Setup questions from file: {}".format(q_file))
         game = Game.query.one()
         if game.state == GameState.uninitialized:
 
-            # TODO need to be able to specify given game
-            gamefile, final = parse_gamefile(config['BASE_DIR'] + 'data/1st.round')
+            gamefile, final = parse_gamefile(config['BASE_DIR'] + 'data/' + round_file)
             questions = parse_questions(config['BASE_DIR'] + q_file)
 
             # TODO do some validation based on config constants
@@ -101,6 +100,10 @@ class Controller():
             if final is not None:
                 question = Question(final.question, 0, final.category, 0, 0, final=True)
                 db.session.add(question)
+
+            # Once everything loaded successfully, identify round file and commit
+            game.round_filename = round_file
+            db.session.add(game)
             db.session.commit()
 
         else:
