@@ -269,4 +269,6 @@ if __name__ == '__main__':
             if _ctl is not None:
                 _ctl = None
 
-    socketio.run(app, host="0.0.0.0", debug=True)
+    # WARNING: This app is not ready to be exposed on the network.
+    #          Game host interface would be exposed.
+    socketio.run(app, host="127.0.0.1", debug=True)
