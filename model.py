@@ -133,21 +133,6 @@ class Answer(db.Model):
                     self.score_attributed)
 
 
-class GameBoard():
-    def __init__(self):
-        self.questions = []
-        for column in range(config['CATEGORIES_PER_GAME']):
-            l = []
-            for row in range(config['QUESTIONS_PER_CATEGORY']):
-                question = Question("Nothing!", (row + 1) * 100, [row + 1, column + 1])
-                l.append(question)
-            self.questions.append(l)
-        self.categories = []
-        for column in range(config['CATEGORIES_PER_GAME']):
-            category = Category("This is C%d" % (column + 1), column + 1)
-            self.categories.append(category)
-
-
 class Category():
     def __init__(self, value, column):
         self.value = value
@@ -166,10 +151,6 @@ class State(db.Model):
     def __repr__(self):
         return '<State {} is {}.>'.format(self.name, self.value)
 
-
-# TODO consider for removal (duplicated in controller)
-class GameProblem(Exception):
-    pass
 
 # This creates the database if it doesn't already exist
 db.create_all()
