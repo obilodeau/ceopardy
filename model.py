@@ -21,7 +21,6 @@ from enum import Enum
 from flask import current_app as app
 
 from ceopardy import db, VERSION
-from config import config
 
 
 SCHEMA_VERSION = 1
