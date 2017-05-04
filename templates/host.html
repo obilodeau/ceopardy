@@ -94,8 +94,9 @@
                 
             </div>
             
-            <div class="container-controls form-color" style="width: 60px; display: flex; justify-content: center;">
+            <div class="container-controls form-color" style="width: 60px; justify-content: center;">
                 <div id="team-roulette" class="form-icon form-click" style="align-self: center;"><i class="fa fa-spinner fa-2x fa-fw"></i></div>
+                <div id="buzz-lock" class="form-icon form-click" style="align-self: center;"><i class="fa fa-lock fa-2x fa-fw"></i></div>
             </div>
             
             <div class="container-controls" style="flex-grow: 1;">
@@ -376,14 +377,14 @@
         $("#question-context").html("<p>" + id + " / " + data.question + "</p>");
         $("#answer-controls").removeClass("no-display");
         $("#question-id").val(id);
-        buzzers_locked = false;
+        UnlockBuzzers();
         
     }
     
     function DeselectQuestion(data, id) {
         console.log(data);
         console.log(id);
-        buzzers_locked = true;
+        LockBuzzers();
         
         // Reset form values
         $('#form-question-normal input[type=range]').val(0);
@@ -443,6 +444,32 @@
 			socket.emit('final', '');
         }
     }
+
+    var buzzers_locked = true;
+    function HandleBuzzer(ev) {
+        if (buzzers_locked) return;
+
+        socket.emit('team', {action: "select", id: `team${ev.key}`});
+        $('#snd-timeout').get(0).play();
+        LockBuzzers();
+    }
+
+    function LockBuzzers() {
+        $('#buzz-lock i').removeClass('fa-unlock')
+        $('#buzz-lock i').addClass('fa-lock')
+        buzzers_locked = true;
+    }
+
+    function UnlockBuzzers() {
+        $('#buzz-lock i').removeClass('fa-lock')
+        $('#buzz-lock i').addClass('fa-unlock')
+        buzzers_locked = false;
+    }
+
+    function ToggleBuzzers() {
+        if (buzzers_locked) UnlockBuzzers();
+        else LockBuzzers();
+    }
     
     $(document).ready(function() {
         $(".box-ceopardy").on("click", ClickQuestion);
@@ -465,6 +492,9 @@
         $('#team-roulette').on("click", function() {
             socket.emit('team', {action: "roulette"});
         });
+
+        $('#buzz-lock').on("click", ToggleBuzzers);
+
         $('.team-select').on("click", function() {
             var id = $(this).parent().find('label').attr('for');
             socket.emit('team', {action: "select", id: id});
@@ -492,26 +522,17 @@
         });
 
         $('#finish-game').on("click", FinishGame);
-        
+
+        {# FIXME we only support 3 buzzers for now #}
+        $(document).keypress(function(e) {
+            // matches 1, 2 or 3 keys
+            if ([49, 50, 51].includes(e.keyCode)) {
+                console.log(e.key);
+                HandleBuzzer(e);
+            }
+        });
+
     });
 
-    var buzzers_locked = true;
-    function HandleBuzzer(ev) {
-        if (buzzers_locked) return;
-
-        socket.emit('team', {action: "select", id: `team${ev.key}`});
-        buzzers_locked = true;
-    }
-
-    {# FIXME we only support 3 buzzers for now #}
-    $(document).keypress(function(e) {
-        // matches 1, 2 or 3 keys
-        if ([49, 50, 51].includes(e.keyCode)) {
-            console.log(e.key);
-            HandleBuzzer(e);
-        }
-    });
-
-    
 </script>
 {% endblock %}
