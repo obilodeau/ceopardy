@@ -22,7 +22,8 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
-from model import Answer, Game, Team, GameState, Question, Response, State
+from model import Answer, Game, Team, GameState, Question, Response, State, \
+    FinalQuestion
 from utils import parse_questions, parse_gamefile, question_to_html
 
 
@@ -98,6 +99,7 @@ class Controller():
 
             # Add final question
             if final is not None:
+                final = FinalQuestion(**final)
                 question = Question(final.question, 0, final.category, 0, 0, final=True)
                 db.session.add(question)
 

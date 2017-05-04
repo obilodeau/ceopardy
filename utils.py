@@ -21,7 +21,6 @@ import os
 import re
 
 from config import config
-from model import FinalQuestion
 
 
 def parse_questions(filename):
@@ -81,8 +80,7 @@ def parse_gamefile(filename):
                 # match: final: [category] text
                 m = re.match(r'final: \[([^]]+)\] (.*)$', line)
                 if m:
-                    final = FinalQuestion(category=m.group(1),
-                                          question=m.group(2))
+                    final = {'category': m.group(1), 'question': m.group(2)}
                     continue
 
                 categories.append(line)
