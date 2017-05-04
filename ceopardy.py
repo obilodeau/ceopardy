@@ -95,12 +95,12 @@ def init():
         app.logger.info("New game requested with round file: {}"
                         .format(roundfile))
 
-        # we want to start a new game, is there already one in the db?
+        # We want to start a new game, is there already one in the db?
         if controller.is_game_initialized():
             # FIXME
             pass
 
-        # else let's start a game!
+        # Else let's start a game!
         teamnames = {}
         for i in range(1, config['NB_TEAMS'] + 1):
             teamnames['team{}'.format(i)] = 'Team {}'.format(i)
@@ -234,7 +234,6 @@ def handle_slider(data):
 @socketio.on('final', namespace='/host')
 def move_to_final_round(data):
     controller = get_controller()
-
     if controller.is_final_question():
         # TODO implement
         pass

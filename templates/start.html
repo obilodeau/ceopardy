@@ -30,71 +30,34 @@ a:active {
 }
 
 @keyframes horizontal-left {
-  0% {
-    transform: translate(0,0);
-  }
-
-  6% {
-    transform: translate(-5px,0);
-  }
-
-  12% {
-    transform: translate(0,0);
-  }
-
-  18% {
-    transform: translate(-5px,0);
-  }
-
-  24% {
-    transform: translate(0,0);
-  }
-
-  30% {
-    transform: translate(-5px,0);
-  }
-
-  36%, 100% {
-    transform: translate(0,0);
-  }
+  0%  { transform: translate(0,0); }
+  6%  { transform: translate(-5px,0);}
+  12% { transform: translate(0,0); }
+  18% { transform: translate(-5px,0); }
+  24% { transform: translate(0,0); }
+  30% { transform: translate(-5px,0); }
+  36%, 100% { transform: translate(0,0); }
 }
 
-@keyframes horizontal-right {
-  0% {
-    transform: translate(0,0);
-  }
-
-  6% {
-    transform: translate(5px,0);
-  }
-
-  12% {
-    transform: translate(0,0);
-  }
-
-  18% {
-    transform: translate(5px,0);
-  }
-
-  24% {
-    transform: translate(0,0);
-  }
-
-  30% {
-    transform: translate(5px,0);
-  }
-
-  36%, 100% {
-    transform: translate(0,0);
-  }
+@keyframes horizontal-right { 
+  0%  { transform: translate(0,0); }
+  6%  { transform: translate(5px,0); }
+  12% { transform: translate(0,0); }
+  18% { transform: translate(5px,0); }
+  24% { transform: translate(0,0); }
+  30% { transform: translate(5px,0); }
+  36%, 100% { transform: translate(0,0); }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-host form-color" style="display: flex; flex-direction: column; justify-content: center;">
-    <div style="margin: auto; align-self: center;">
-        <div style="font-size: calc(8vh + 8vw); font-family: 'Gyparody', Helvetica, sans-serif;">Ceopardy!</div>
+<div class="container-host form-color" style="display: flex; flex-direction: column;">
+    <div style="display: flex; flex-direction: column; height: 60%;">
+        <div style="flex-grow: 1;"></div>
+        <div style="font-size: calc(8vh + 8vw); font-family: 'Gyparody', Helvetica, sans-serif; margin: auto;">Ceopardy!</div>
+    </div>
+    <div style="flex; flex-direction: column; height: 40%;">
         <div style="margin: auto; text-align:center;">
             <i class="fa fa-arrow-right fa-lg animate-horizontal-right"></i>
             <a id="new-game" style="padding-left: 10px; padding-right: 10px;">New Game</a>
@@ -116,6 +79,7 @@ a:active {
             <i class="fa fa-lg"></i>
         </div>
         {% endif %}
+        <div style="flex-grow: 1;"></div>
     </div>
 </div>
 {% endblock %}
