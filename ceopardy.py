@@ -33,7 +33,7 @@ VERSION = "0.1.0"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ceopardy.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + config['DATABASE_FILENAME']
 # To supress warnings about a feature we don't use
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -97,10 +97,9 @@ def init():
 
         # We want to start a new game, is there already one in the db?
         if controller.is_game_initialized():
-            # FIXME
-            pass
+            controller.db_backup_and_create_new()
 
-        # Else let's start a game!
+        # Let's start a game!
         teamnames = {}
         for i in range(1, config['NB_TEAMS'] + 1):
             teamnames['team{}'.format(i)] = 'Team {}'.format(i)
@@ -109,6 +108,7 @@ def init():
             controller.setup_questions(roundfile)
             controller.start_game()
         except:
+            app.logger.exception("Initialization error!")
             return jsonify(result="failure", error="Initialization error!")
 
     elif request.form['action'] == "resume":

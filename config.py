@@ -34,5 +34,6 @@ config = {
         {"title": "Custom",
          "text": ""},
     ],
-    'BASE_DIR': os.path.dirname(__file__) + '/'
+    'BASE_DIR': os.path.dirname(__file__) + '/',
+    'DATABASE_FILENAME': 'ceopardy.db'
 }

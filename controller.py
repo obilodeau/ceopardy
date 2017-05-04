@@ -15,7 +15,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+import os
 from collections import OrderedDict
+from datetime import datetime
 
 from flask import current_app as app
 from sqlalchemy import and_
@@ -29,6 +31,14 @@ from utils import parse_questions, parse_gamefile, question_to_html
 
 class Controller():
     def __init__(self):
+        Controller._init()
+
+    @staticmethod
+    def _init():
+        """
+        This was extracted away from __init__ because it is called on a game
+        reset which happens in a static method.
+        """
 
         # If there's not a game state, create one
         if Game.query.one_or_none() is None:
@@ -397,6 +407,27 @@ class Controller():
         else:
             db.session.add(State(name, value))
         db.session.commit()
+
+
+    @staticmethod
+    def db_backup_and_create_new():
+        """
+        Drop db connections, move file, create new db connection 
+        and re-init empty db
+        """
+        # TODO we might need to lock this thing to avoid state issues with viewers
+        previous_roundfile = Game.query.one().round_filename
+        _bkp = 'ceopardy_{}_{}.db'.format(datetime.now().strftime('%Y-%m-%d_%H%M'),
+                                          previous_roundfile)
+        app.logger.info('Backing up current game to {}'.format(_bkp))
+        db.engine.dispose()
+        os.rename(config['BASE_DIR'] + config['DATABASE_FILENAME'],
+                  config['BASE_DIR'] + _bkp)
+        db.session = db.create_scoped_session()
+        db.create_all()
+        Controller._init()
+        app.logger.info('SQL Engine reconnected, empty database recreated.' +
+                        'We are ready to go!')
 
 
 class GameProblem(Exception):
