@@ -8,5 +8,5 @@ __pycache__/
 /static/vendor/
 
 # project files
-ceopardy.db
+ceopardy*db
 ceopardy.log
