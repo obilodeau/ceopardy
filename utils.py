@@ -110,7 +110,8 @@ def question_to_html(question_text):
     m = re.search(r'^\[img:([^\]]*)\]$', question_text)
     if m:
         # TODO file names will have to be hard to guess if we go multi-client
-        return '<img src="/static/game-media/{}">'.format(m.group(1))
+        # TODO push style into CSS
+        return '<img src="/static/game-media/{}" width="100%" style="max-height: 100%; max-width: 100%; object-fit: contain;">'.format(m.group(1))
 
     # Transform new lines into <br>
     question_text = re.sub(r'\n', '<br/>', question_text)
