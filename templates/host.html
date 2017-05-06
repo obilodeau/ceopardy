@@ -126,7 +126,10 @@
                         <div class="container-controls form-color" style="width: 60px; justify-content: center;">
                             <div id="team-roulette" class="form-icon form-click" style="align-self: center;">
                                 <i class="fa fa-spinner fa-2x fa-fw"></i>
-                                </div>
+                            </div>
+                            <div id="timeout" class="form-icon form-click" style="align-self: center;">
+                                <i class="fa fa-clock-o fa-2x"></i>
+                            </div>
                             <div id="buzz-lock" class="form-icon form-click" style="align-self: center;">
                                 <i class="fa fa-lock fa-2x fa-fw"></i>
                             </div>
@@ -273,6 +276,9 @@
     </div>
 
 </div>
+<audio id="snd-timeout" src="/static/sounds/timeout.mp3" type="audio/mp3" preload="auto"></audio>
+<audio id="snd-reveal" src="/static/sounds/category.mp3" type="audio/mp3" preload="auto"></audio>
+<audio id="snd-thinking" src="/static/sounds/thinking-music.wav" type="audio/wav" preload="auto"></audio>
 {% endblock %}
 
 {% block ui %}
@@ -536,19 +542,22 @@
         }
 	});
 
+    function play_sound(selector) {
+        try {
+            $(selector).get(0).play();
+        }
+        catch(error) {
+            console.log("No sound!");
+        }
+    }
+
     var buzzersLocked = true;
     function HandleBuzzer(event) {
         if (buzzersLocked) 
             return;
 
         socket.emit('team', {action: "select", id: `team${event.key}`});
-        try {
-            //$('#sound-timeout').get(0).play();
-            $('#snd-timeout').get(0).play();
-        }
-        catch(error) {
-            console.log("No sound!");
-        }
+        play_sound('#snd-timeout');
         LockBuzzers();
     }
 
@@ -629,6 +638,9 @@
             $(this).removeClass('fa-pulse');
         });
 
+        $('#timeout').on("click", function() {
+            play_sound('#snd-timeout');
+        });
         $('#finish-game').on("click", FinishGame);
 
         {# FIXME we only support 3 buzzers for now #}
