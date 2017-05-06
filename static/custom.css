@@ -592,7 +592,7 @@ svg:hover polygon {
   font-size: calc(3vh + 2vw);
   line-height: 90%;
 }
-.box-question p.answered {
+.box-question-viewer p.answered {
   display: none;
 }
 .box-question p.status {
