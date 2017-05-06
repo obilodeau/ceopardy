@@ -11,6 +11,7 @@
 {% set height = (100 / QUESTIONS_PER_CATEGORY)|int %}
 <div class="container-host">
 
+    <!----------------------------TOP SLIDER--------------------------->
     <div class="container-header container-slider flex-border-header container-light {{ state.get('container-header', '') }}">
 
         <div style="display: flex; width: 100%;">
@@ -28,7 +29,7 @@
                     <div class="form-row form-color team-info">
                         <div class="form-text">{{ field.label }}</div>
                         {{ field(class_="form-expand form-cursive form-text form-color form-no-form team-name", autocomplete="off", placeholder="Enter the name of the team") }}
-                       <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
+                        <div class="form-icon form-click team-delete"><i class="fa fa-remove fa-lg"></i></div>
                     </div>
                     <div class="form-error">
                     </div>
@@ -56,9 +57,12 @@
 
     </div>
 
+
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
+    
+    <!----------------------------TOP SECTION-------------------------->
     <div class="container-top container-all container-light">
         
         <div class="container-categories-host">
@@ -110,71 +114,108 @@
         </div>
     </div>
     
+    
+    <!----------------------------BOTTOM SECTION----------------------->
     <div class="container-bottom container-all container-light">
         
-        
-        <div class="row-ceopardy">
-            <div class="container-controls" style="width: calc(20% - 60px);">
-                
-            </div>
-            
-            <div class="container-controls form-color" style="width: 60px; justify-content: center;">
-                <div id="team-roulette" class="form-icon form-click" style="align-self: center;"><i class="fa fa-spinner fa-2x fa-fw"></i></div>
-                <div id="buzz-lock" class="form-icon form-click" style="align-self: center;"><i class="fa fa-lock fa-2x fa-fw"></i></div>
-            </div>
-            
-            <div class="container-controls" style="flex-grow: 1;">
-                {# TODO: consider migrating this to a flask-wtform #}
-                <form id="form-question-normal">
-                    <input id="question-id" type="hidden" name="id" value="{{ select_qid }}">
-                    {% set scores = questions.get(select_qid, {}) %}
-                    {% for tid, name in teams.items() %}
-                    <div class="row-ceopardy">
-                        <div class="box-answer-team form-color" style="display: flex; vertical-align: middle;">
-                            <div class="form-icon form-click team-select"><i class="fa fa-crosshairs fa-lg"></i></div>
-                            <label for="{{ tid }}" style="line-height: 200%; margin-left: 8px;">{{ name }}</label>
-                        </div>
-                        <div class="box-answer-range">
-                            {% set score = scores.get(tid, 0) %}
-                            {% if score > 0 %}
-                                {% set range = 1 %}
-                            {% elif score == 0 %}
-                                {% set range = 0 %}
-                            {% else %}
-                                {% set range = -1 %}
-                            {% endif %}
-                            <input id="{{ tid }}-range" class="team-range" name="{{ tid }}" type="range" min="-1" max="1" step="1" value="{{ range }}"/>
+        <div class="container-bottom-left">
+            <div class="black-box flex-small-pad">
+                <div class="box-fake-overlay">
+                    <div class="box-ceopardy">
+                        {# TODO add tooltip for these to avoid confusion #}
+                        <div class="container-controls form-color" style="width: 60px; justify-content: center;">
+                            <div id="team-roulette" class="form-icon form-click" style="align-self: center;">
+                                <i class="fa fa-spinner fa-2x fa-fw"></i>
+                                </div>
+                            <div id="buzz-lock" class="form-icon form-click" style="align-self: center;">
+                                <i class="fa fa-lock fa-2x fa-fw"></i>
+                            </div>
+                            <div id="results-submit" class="form-icon form-click" style="align-self: center;">
+                                <i class="fa fa-check-square-o fa-2x"></i>
+                            </div>
+                            <div id="finish-game" class="form-icon form-click" style="align-self: center;">
+                                <i class="fa fa-sign-out fa-2x"></i>
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
-                    <input type="submit" style="display: none;">
-                </form>
-            </div>
-            
-            <div class="container-controls form-color" style="width: 60px; display: flex; justify-content: center;">
-                <div id="results-submit" class="form-icon form-click" style="align-self: center;"><i class="fa fa-check-square-o fa-2x"></i></div>
-            </div>
-            
-            <div class="container-controls" style="width: calc(20% - 60px);">
-                <div id="finish-game" class="form-icon form-click" style="align-self: center;">
-                    <i class="fa fa-sign-out fa-2x"></i><p>finish the game</p>
                 </div>
             </div>
         </div>
         
+        {# TODO: consider migrating this to a flask-wtform #}
+        <form id="form-question-normal" class="container-bottom-middle">
+            {% set results = questions.get(select_qid, {}) %}
+            {% set select_tid = state.get('team', '') %}
+            {% for name, score in scores.items() %}
+            {% set tid = 'team{}'.format(loop.index) %}
+            <div class="container-bottom-team" style="height: 100%;">
+                <div team="{{ tid }}" id="{{ tid }}-other" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }}" style="width: 100%; margin: auto;">
+                    
+                    <div class="row-ceopardy col-ceopardy flex-small-pad" style="height: 100%;">
+                        <div class="box-ceopardy">
+                            <div class="box-team-side">
+                                
+                                <div class="box-answer-team form-color" style="display: flex; vertical-align: middle; margin: auto;">
+                                    <div class="form-icon form-click team-select">
+                                        <i class="fa fa-crosshairs fa-2x"></i>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <div class="box-team-middle">
+                                <div style="height: 50%;">
+                                    <div id="{{ tid }}-name" class="box-ceopardy box-team-host {{ tid }}-font">
+                                        <p>{{ name }}</p>
+                                    </div>
+                                    <div class="box-answer-range">
+                                        {% set score = results.get(tid, 0) %}
+                                        {% if score > 0 %}
+                                            {% set range = 1 %}
+                                        {% elif score == 0 %}
+                                            {% set range = 0 %}
+                                        {% else %}
+                                            {% set range = -1 %}
+                                        {% endif %}
+                                        <input id="{{ tid }}-range" class="team-range" name="{{ tid }}" type="range" min="-1" max="1" step="1" value="{{ range }}"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="box-team-side">
+                                <div id="{{ tid }}-score" class="box-ceopardy-colorless box-score"><p>${{ scores.get(name, 0) }}</p></div>
+                            </div>
+                        </div>
+                    </div> 
+                    
+                </div>
+            </div>
+            {% endfor %}
+            <input id="question-id" type="hidden" name="id" value="{{ select_qid }}">
+            <input type="submit" style="display: none;">
+        </form>
         
-        <div id="answer-controls" class="no-display">
+        <div class="container-bottom-right">
+            <div class="black-box flex-small-pad">
+                <div class="box-fake-overlay">
+                    <div id="question" class="box-ceopardy box-question-host">{{ state.get('overlay-small', '')|safe }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!--<div id="answer-controls" class="no-display">
             <div id="question-context"></div>
             {# TODO: daily doubles should be handled at some point #}
             <div class="question-daily-double no-display">
                 <input id="{{ tid }}" type="range" min="0" max="500000000" step="{{ SCORE_TICK }}"/>
             </div>
-        </div>
+        </div>-->
     </div>
+    
     
     <!--For now...this is a place holder for the space occupied by the arrow-->
     <div class="container-all container-light" style="height: 35px;"></div>
     
+    
+    <!----------------------------BOTTOM SLIDER------------------------>
     <div class="container-footer container-slider flex-border-footer container-light {{ state.get('container-footer', '') }}">
     
         <div class="container-arrow container-dark">
@@ -310,7 +351,7 @@
                     var teams = data['teams'];
                     for (var team in teams) {
                         if (teams.hasOwnProperty(team)) {
-                            $(`#form-question-normal label[for=${team}]`).html(teams[team]);
+                            $(`#${team}-name > p`).text(teams[team]);
                         }
                     }
                 }
@@ -330,6 +371,12 @@
                 }
             }
         });
+    }
+    
+    function SelectTeam(id) {
+        // Change this...
+        $(".team-selected").removeClass("team-selected");
+        $(`#${id}-other`).addClass("team-selected");
     }
     
     function ClickQuestion(event) {
@@ -357,8 +404,8 @@
                 $(`#${key}-range`).val(data.answer[key]);
             }
             
-            $("#question-context").html("<p>" + id + " / " + data.question + "</p>");
-            $("#answer-controls").removeClass("no-display");
+            $("#question").html(data.question);
+            //$("#answer-controls").removeClass("no-display");
             $("#question-id").val(id);
             UnlockBuzzers();
         });
@@ -370,13 +417,13 @@
         socket.emit('question', {action: "deselect", id: id}, function(data) {
             // Reset form values
             $('#form-question-normal input[type=range]').val(0);
+            $("#question").empty();
             LockBuzzers();
         });
     }
 
     {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
     function SubmitResults(event) {
-        console.log("submit");
         var url = "{{ url_for('answer') }}";
         $.ajax({
             type: "POST",
@@ -389,15 +436,26 @@
                     var id = $('#question-id').val();
                     $('.box-selected').addClass("box-answered");
                     DeselectQuestion(id);
+                    // Populate the little boxes with question scores
                     for (var key in data.answers) {
                         if (!data.answers.hasOwnProperty(key)) {
                             continue;
                         }
                         var team = key;
                         var score = data.answers[key];
-                        var selector = '#' + id + team;
+                        var selector = `#${id}${team}`;
                         $(selector).addClass(team + '-color');
                         $(selector + '> span').text(score);
+                    }
+                    // Populate the bigger boxes with team scores
+                    for (var key in data.teams) {
+                        if (!data.answers.hasOwnProperty(key)) {
+                            continue;
+                        }
+                        var team = key;
+                        var score = data.teams[key];
+                        var selector = `#${team}-score > p`;
+                        $(selector).text('$' + score)
                     }
                 }
                 else {
@@ -502,7 +560,7 @@
     }
     
     $(document).ready(function() {
-        $(".box-ceopardy").on("click", ClickQuestion);
+        $(".box-question-host").on("click", ClickQuestion);
         
         $('.container-header > .container-arrow').on("click", function() {
             ShowContainer('header', 'down');
@@ -520,14 +578,15 @@
         });
         
         $('#team-roulette').on("click", function() {
-            socket.emit('team', {action: "roulette"});
+            socket.emit('team', {action: "roulette"}, SelectTeam);
         });
 
         $('#buzz-lock').on("click", ToggleBuzzers);
 
         $('.team-select').on("click", function() {
-            var id = $(this).parent().find('label').attr('for');
-            socket.emit('team', {action: "select", id: id});
+            // Change this...
+            var id = $(this).closest('.black-box').attr('team');
+            socket.emit('team', {action: "select", id: id}, SelectTeam);
         });
         
         $('.team-range').on("click", function() {
@@ -563,7 +622,6 @@
             // Matches numerical keyboard keys 1, 2 and 3
             // Buzzers emulate a usb keyboard, this will be changed eventually
             if ([49, 50, 51].includes(e.keyCode)) {
-                console.log(e.key);
                 HandleBuzzer(e);
             }
         });

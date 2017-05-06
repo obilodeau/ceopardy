@@ -40,7 +40,7 @@
     
     <div class="container-results">
         {% set select_tid = state.get('team', '') %}
-        {% for name, score in teams.items() %}
+        {% for name, score in scores.items() %}
         {% set tid = 'team{}'.format(loop.index) %}
         <div class="container-team">
                 <div id="{{ tid }}" class="black-box flex-pad {{ 'team-selected' if select_tid == tid }}" style="width: 80%; max-width:250px; margin: auto;">
@@ -119,7 +119,6 @@
     
     socket.on('team', function(data) {
         if ((data.action == "name") || (data.action == "score")) {
-            console.log(data.args);
             for (var key in data.args) {
                 if (!data.args.hasOwnProperty(key)) {
                     continue;
@@ -140,7 +139,6 @@
                 var id = data.args.shift();
                 $(".team-selected").removeClass("team-selected");
                 $("#" + id).addClass("team-selected");
-                console.log("#" + id);
                 if (data.args.length == 0) {
                     clearInterval(rouletteId);
                     rouletteId = null;

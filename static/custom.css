@@ -115,6 +115,54 @@ body {
 
 .container-bottom {
   height: calc(50% - 35px);
+  display: flex;
+}
+
+.container-bottom-left {
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+  padding-right: 10px;
+}
+
+.container-bottom-middle {
+  display: flex;
+  flex-direction: column;
+  width: calc(50% - 100px);
+  padding-right: 10px;
+}
+
+.container-bottom-middle > * {
+  margin-top: 10px;
+}
+
+.container-bottom-middle > *:first-child {
+  margin-top: 0px;
+}
+
+.container-bottom-team {
+  flex-grow: 1;
+}
+
+.box-team-side {
+  display: flex;
+  flex-direction: column;
+  background-color: #000181;
+  width: 20%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.box-team-middle {
+  display: flex;
+  flex-direction: column;
+  background-color: #0001a1;
+  width: 60%;
+  height: 100%;
+}
+
+.container-bottom-right {
+  width: 50%;
 }
 
 .container-header-control {
@@ -358,7 +406,7 @@ svg:hover polygon {
 }
 
 .box-answer-range {
-  width: 20%;
+  width: 100%;
   flex-grow: 0;
 }
 
@@ -437,10 +485,9 @@ svg:hover polygon {
   background-color: #0001df !important;
 }
 
-/*
 .box-answered > .box-question-right {
-  background-color: #0001df !important;
-}*/
+  background-color: #000181;
+}
 
 .box-ceopardy {
   background-color: #0001a1;
@@ -453,7 +500,23 @@ svg:hover polygon {
   border-radius: .25rem;
 }
 
+.box-ceopardy-colorless {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: .25rem;
+}
+
 .box-ceopardy p {
+  display: table-cell; 
+  vertical-align: middle;
+  text-align: center;
+  margin: auto;
+}
+
+.box-ceopardy-colorless p {
   display: table-cell; 
   vertical-align: middle;
   text-align: center;
@@ -494,10 +557,12 @@ svg:hover polygon {
 }
 
 .box-question-right {
-  display: table;
+  display: flex;
+  flex-direction: column;
   background-color: #0001a1;
   width: 70%;
   height: 100%;
+  overflow: hidden;
 }
 
 .box-question-status {
@@ -540,9 +605,20 @@ svg:hover polygon {
   height: 100%;
 }
 
+.box-fake-overlay {
+  padding: calc(0.2vh + 0.1vw);
+  height: 100%;
+}
+
 .box-team p {
   color: #ffffff;
-  font-size: 2.5vw;
+  font-size: calc(1.5vh + 1vw);
+  line-height: 90%;
+}
+
+.box-team-host p {
+  color: #ffffff;
+  font-size: calc(1vh + 0.5vw);
   line-height: 90%;
 }
 
@@ -679,7 +755,10 @@ svg:hover polygon {
     font-size: 60px;
   }
   .box-team p {
-    font-size: 30px;
+    font-size: 28px;
+  }
+  .box-team-host p {
+    font-size: 20px;
   }
   .box-score p {
     font-size: 30px;
@@ -689,6 +768,12 @@ svg:hover polygon {
   }
   .form-text {
     font-size: 30px;
+  }
+    .box-overlay {
+    padding: 8px;
+  }
+  .box-fake-overlay {
+    padding: 4px;
   }
 }
 
@@ -738,6 +823,9 @@ svg:hover polygon {
   .box-team p {
     font-size: 3vh;
   }
+  .box-team-host p {
+    font-size: 1.5vh;
+  }
   .box-score p {
     font-size: 3vh;
   }
@@ -746,6 +834,12 @@ svg:hover polygon {
   }
   .flex-small-pad {
     padding: 0.3vh;
+  }
+  .box-overlay {
+    padding: 0.6vh;
+  }
+  .box-fake-overlay {
+    padding: 0.6vh;
   }
 }
 

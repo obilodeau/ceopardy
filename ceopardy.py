@@ -51,13 +51,12 @@ def inject_config():
 @app.route('/viewer')
 def viewer():
     controller = get_controller()
-    teams = controller.get_teams_score()
+    scores = controller.get_teams_score()
     categories = controller.get_categories()
     questions = controller.get_questions_status_for_viewer()
     state = controller.get_complete_state()
-    return render_template('viewer.html', teams=teams, categories=categories,
+    return render_template('viewer.html', scores=scores, categories=categories,
                            questions=questions, state=state)
-    # FIXME: fchar: is there a way to socketio a board update right after this?
 
 
 # TODO we must kill all client-side state on server load.
@@ -74,14 +73,17 @@ def host():
         return render_template('start.html', must_init=must_init,
                                roundfiles=roundfiles)
 
+    # TODO these objects need a major clean up for improved consistency
+    # and reduced overhead
+    scores = controller.get_teams_score()
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
     categories = controller.get_categories()
     questions = controller.get_questions_status_for_host()
     state = controller.get_complete_state()
 
-    return render_template('host.html', teams=teams, form=form, categories=categories,
-                           questions=questions, state=state)
+    return render_template('host.html', scores=scores, teams=teams, form=form, 
+                           categories=categories, questions=questions, state=state)
 
 
 # For now, this will give un an initial state which will avoid complications when
@@ -171,7 +173,7 @@ def answer():
     question_status = controller.get_questions_status_for_host()
     teams = controller.get_teams_score_by_tid()
     emit("team", {"action": "score", "args": teams}, namespace='/viewer', broadcast=True)
-    return jsonify(result="success", answers=question_status[data["id"]])
+    return jsonify(result="success", answers=question_status[data["id"]], teams=teams)
     
 
 @socketio.on('question', namespace='/host')
@@ -221,8 +223,9 @@ def handle_message(data):
 def handle_team(data):
     controller = get_controller()
     if data["action"] == "select":
-        data["args"] = data["id"]
-        controller.set_state("team", data["id"])
+        team = data["id"]
+        data["args"] = team
+        controller.set_state("team", team)
     elif data["action"] == "roulette":
         nb = controller.get_nb_teams()
         l = []
@@ -233,8 +236,9 @@ def handle_team(data):
         data["args"] = l
         controller.set_state("team", team)
     else:
-        return
+        return ""
     emit("team", data, namespace='/viewer', broadcast=True)
+    return team
 
 
 @socketio.on('slider', namespace='/host')
