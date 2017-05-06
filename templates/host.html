@@ -530,6 +530,12 @@
         }
     }
 
+	$('#form-question-normal input[type=range]').on('input', function() {
+        if ($(this)[0].value == -1) {
+            UnlockBuzzers();
+        }
+	});
+
     var buzzersLocked = true;
     function HandleBuzzer(event) {
         if (buzzersLocked) 
