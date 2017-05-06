@@ -169,11 +169,20 @@ def answer():
     answers.pop('id')
     if not controller.answer_normal(col, row, answers):
         return jsonify(result="failure", error="Answer submission failed!")
+
     # TODO this is grossly inefficient
     question_status = controller.get_questions_status_for_host()
     teams = controller.get_teams_score_by_tid()
     emit("team", {"action": "score", "args": teams}, namespace='/viewer', broadcast=True)
-    return jsonify(result="success", answers=question_status[data["id"]], teams=teams)
+
+    # someone answered correctly? identify team in control
+    ctl_team = controller.get_good_answer_team(col, row)
+    # highlight team in control and persist that state
+    controller.set_state("team", ctl_team)
+    emit("team", {'action': 'select', 'args': ctl_team}, namespace='/viewer', broadcast=True)
+
+    return jsonify(result="success", answers=question_status[data["id"]],
+                   teams=teams, ctl_team=ctl_team)
     
 
 @socketio.on('question', namespace='/host')

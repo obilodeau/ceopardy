@@ -372,13 +372,16 @@
             }
         });
     }
-    
+
     function SelectTeam(id) {
-        // Change this...
         $(".team-selected").removeClass("team-selected");
         $(`#${id}-other`).addClass("team-selected");
     }
-    
+
+    function DeselectAllTeams() {
+        $('#form-question-normal div').removeClass('team-selected');
+    }
+
     function ClickQuestion(event) {
         var id = $(this).attr('id');
         if ($(this).hasClass("box-selected")) {
@@ -436,6 +439,11 @@
                     var id = $('#question-id').val();
                     $('.box-selected').addClass("box-answered");
                     DeselectQuestion(id);
+                    if (data.ctl_team == null) {
+                        DeselectAllTeams();
+                    } else {
+                        SelectTeam(data.ctl_team);
+                    }
                     // Populate the little boxes with question scores
                     for (var key in data.answers) {
                         if (!data.answers.hasOwnProperty(key)) {

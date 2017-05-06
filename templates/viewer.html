@@ -84,6 +84,16 @@
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/viewer');
     var rouletteId = null;
 
+    function SelectTeam(id) {
+        clearInterval(rouletteId);
+        $(".team-selected").removeClass("team-selected");
+        $("#" + id).addClass("team-selected");
+    }
+
+    function DeselectAllTeams() {
+        $('.container-team div').removeClass('team-selected');
+    }
+
     socket.on('connect', function() {
         socket.emit('refresh');
     });
@@ -128,9 +138,12 @@
             }
         }
         else if (data.action == "select") {
-            clearInterval(rouletteId);
-            $(".team-selected").removeClass("team-selected");
-            $("#" + data.args).addClass("team-selected");
+            if (data.args == null) {
+                DeselectAllTeams();
+            }
+            else {
+                SelectTeam(data.args);
+            }
         }
         else if (data.action == "roulette") {
             // We might have to rethink this because a browser tab could be asleep

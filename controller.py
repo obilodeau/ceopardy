@@ -234,6 +234,20 @@ class Controller():
 
 
     @staticmethod
+    def get_good_answer_team(col, row):
+        """
+        Returns the team id of the team who correctly answered the specified question
+        """
+        team = db.session.query(Team).join(Answer, Question).filter(
+            and_(Question.col == col, Question.row == row,
+                 Answer.response == Response.good)).first()
+        if team:
+            return team.tid
+        else:
+            None
+
+
+    @staticmethod
     def get_teams_for_form():
         """Get list of teams
         If there are no teams, then return place holder teams. This is useful
@@ -403,7 +417,10 @@ class Controller():
     def set_state(name, value):
         result = State.query.filter_by(name=name).one_or_none()
         if result is not None:
-            result.value = value
+            if value is None:
+                result.value = ''
+            else:
+                result.value = value
         else:
             db.session.add(State(name, value))
         db.session.commit()
