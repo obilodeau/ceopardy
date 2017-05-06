@@ -51,8 +51,8 @@ def inject_config():
 @app.route('/viewer')
 def viewer():
     controller = get_controller()
-    categories = controller.get_categories()
     teams = controller.get_teams_score()
+    categories = controller.get_categories()
     questions = controller.get_questions_status_for_viewer()
     state = controller.get_complete_state()
     return render_template('viewer.html', teams=teams, categories=categories,
@@ -76,10 +76,11 @@ def host():
 
     teams = controller.get_teams_for_form()
     form = TeamNamesForm(data=teams)
+    categories = controller.get_categories()
     questions = controller.get_questions_status_for_host()
     state = controller.get_complete_state()
 
-    return render_template('host.html', form=form, teams=teams,
+    return render_template('host.html', teams=teams, form=form, categories=categories,
                            questions=questions, state=state)
 
 
@@ -120,6 +121,16 @@ def init():
     controller.set_state("overlay-big", content)
     emit("overlay", {"action": "show", "id": "big", "html": content},
          namespace='/viewer', broadcast=True)
+    
+    # Just to be on the safe side
+    controller.set_state("question", "")
+    controller.set_state("overlay-small", "")
+    emit("overlay", {"action": "hide", "id": "small", "html": ""},
+         namespace='/viewer', broadcast=True)
+    
+    # Also as a precaution, the initialization might have caused something
+    # to change below the big overlay
+    emit("redirect", {"url": "/"}, namespace='/viewer', broadcast=True)
 
     return jsonify(result="success")
 
@@ -181,7 +192,8 @@ def handle_question(data):
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("overlay", {"action": "hide", "id": "small", "html": ""}, namespace='/viewer', broadcast=True)
+        emit("overlay", {"action": "hide", "id": "small", "html": ""}, 
+             namespace='/viewer', broadcast=True)
         controller.set_state("question", "")
         controller.set_state("overlay-small", "")
         return {}

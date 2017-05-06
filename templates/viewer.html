@@ -5,12 +5,12 @@
 {% set height = (100 / QUESTIONS_PER_CATEGORY)|int %}
 <div class="container-game container-all container-light">
 
-    <div class="container-categories">
-        <div class="black-box">
+    <div class="container-categories-viewer">
+        <div class="black-box flex-pad">
             <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
                 {% for name in categories %}
                 <div class="col-ceopardy flex-horizontal-pad">
-                    <div id="c{{ loop.index }}" class="box-ceopardy box-category"><p>{{ name }}</p></div>
+                    <div id="c{{ loop.index }}" class="box-ceopardy box-category-viewer"><p>{{ name }}</p></div>
                 </div>
                 {% endfor %}
             </div>
@@ -19,14 +19,14 @@
     
     <div class="container-separator-h"></div>
     
-    <div class="container-questions">
-        <div class="black-box">
+    <div class="container-questions-viewer">
+        <div class="black-box flex-pad">
             {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
             <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
                 {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
                 {% set answered = questions['c{}q{}'.format(_c, _r)] == True %}
                 <div class="col-ceopardy flex-horizontal-pad">
-                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question" role="button">
+                    <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question-viewer" role="button">
                         <p class="{{ 'answered' if answered }}">${{ _r * SCORE_TICK }}</p>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
         {% for name, score in teams.items() %}
         {% set tid = 'team{}'.format(loop.index) %}
         <div class="container-team">
-                <div id="{{ tid }}" class="black-box {{ 'team-selected' if select_tid == tid }}" style="width: 80%; max-width:250px; margin: auto;">
+                <div id="{{ tid }}" class="black-box flex-pad {{ 'team-selected' if select_tid == tid }}" style="width: 80%; max-width:250px; margin: auto;">
                     <div class="col-player flex-horizontal-pad">
                         <div class="row-player flex-vertical-pad" style="height: 30%;">
                             <div id="{{ tid }}-score" class="box-ceopardy box-score"><p>${{ score }}</p></div>
@@ -60,9 +60,9 @@
 
 <div id="small-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-small', '') == '' }}">
     <div class="small-container-overlay">
-        <div class="black-box">
+        <div class="black-box flex-pad">
             <div class="box-overlay">
-                <div id="small-overlay-content" class="box-ceopardy box-question">{{ state.get('overlay-small', '')|safe }}</div>
+                <div id="small-overlay-content" class="box-ceopardy box-question-viewer">{{ state.get('overlay-small', '')|safe }}</div>
             </div>
         </div>
     </div>
@@ -70,9 +70,9 @@
 
 <div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-big', '') == '' }}">
     <div class="big-container-overlay">
-        <div class="black-box">
+        <div class="black-box flex-pad">
             <div class="box-overlay">
-                <div id="big-overlay-content" class="box-ceopardy box-question">{{ state.get('overlay-big', '')|safe }}</div>
+                <div id="big-overlay-content" class="box-ceopardy box-question-viewer">{{ state.get('overlay-big', '')|safe }}</div>
             </div>
         </div>
     </div>
@@ -100,6 +100,10 @@
                 }
             }
         }
+    });
+    
+    socket.on('redirect', function(data) {
+        location.href = data["url"];
     });
     
     socket.on('overlay', function(data) {

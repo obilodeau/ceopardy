@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+{% set height = (100 / QUESTIONS_PER_CATEGORY)|int %}
 <div class="container-host">
 
     <div class="container-header container-slider flex-border-header container-light {{ state.get('container-header', '') }}">
@@ -59,35 +60,58 @@
     <div class="container-all container-light" style="height: 35px;"></div>
     
     <div class="container-top container-all container-light">
-        {% set select_qid = state.get('question', '') %}
-        {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
-        <div class="row-ceopardy flex-vertical-pad {{ select_qid }}">
-            {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
-            <div class="col-ceopardy flex-horizontal-pad">
-                {% set qid = 'c{}q{}'.format(_c, _r) %}
-                <div id="{{ qid }}" class="box-ceopardy box-question">
-                    <div class="box-question-left">
-                        {# FIXME I feel bad for this #}
-                        {% for _t in range(1, NB_TEAMS + 1) %}
-                            {% set tid = 'team{}'.format(_t) %}
-                            {% set score = questions[qid][tid]|string %}
-                            {% set class = "" %}
-                            {% if score|length > 0 %}
-                                {% set class = tid + '-color' %}
-                            {% endif %}
-                        <div id="{{ qid }}{{ tid }}" class="box-question-status {{ class }}">
-                            <span>{{ score }}</span>
-                        </div>
-                        {% endfor %}
+        
+        <div class="container-categories-host">
+            <div class="black-box flex-small-pad">
+                <div class="row-ceopardy flex-vertical-small-pad" style="height: 100%;">
+                    {% for name in categories %}
+                    <div class="col-ceopardy flex-horizontal-small-pad">
+                        <div id="c{{ loop.index }}" class="box-ceopardy box-category-host"><p>{{ name }}</p></div>
                     </div>
-                    <div class="box-question-right {{ 'box-selected' if qid == select_qid }}">
-                        <p>${{ _r * SCORE_TICK }}</p>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-        {% endfor %}
+        
+        <div class="container-separator-h"></div>
+        
+        <div class="container-questions-host">
+            <div class="black-box flex-small-pad">
+                {% set select_qid = state.get('question', '') %}
+                {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+                <div class="row-ceopardy flex-vertical-small-pad {{ select_qid }}" style="height: {{ height }}%;">
+                    {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
+                    <div class="col-ceopardy flex-horizontal-small-pad">
+                        {% set qid = 'c{}q{}'.format(_c, _r) %}
+                        <div id="{{ qid }}" class="box-ceopardy box-question-host {{ 'box-selected' if qid == select_qid }} {{ 'box-answered' if questions[qid] }}">
+                            <div class="box-question-left">
+                                {# FIXME I feel bad for this #}
+                                {% for _t in range(1, NB_TEAMS + 1) %}
+                                    {% set tid = 'team{}'.format(_t) %}
+                                    {% set score = questions[qid][tid]|string %}
+                                    {% set class = "" %}
+                                    {% if score|length > 0 %}
+                                        {% set class = tid + '-color' %}
+                                    {% endif %}
+                                <div id="{{ qid }}{{ tid }}" class="box-question-status {{ class }}">
+                                    <span>{{ score }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="box-question-right">
+                                <p>${{ _r * SCORE_TICK }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="container-bottom container-all container-light">
+        
         
         <div class="row-ceopardy">
             <div class="container-controls" style="width: calc(20% - 60px);">
@@ -137,9 +161,8 @@
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="container-bottom container-all container-light">
+        
+        
         <div id="answer-controls" class="no-display">
             <div id="question-context"></div>
             {# TODO: daily doubles should be handled at some point #}
@@ -310,23 +333,47 @@
     }
     
     function ClickQuestion(event) {
-        var box = $(this).find(".box-question-right")
         var id = $(this).attr('id');
-        if (box.hasClass("box-selected")) {
-            box.removeClass("box-selected");
-            socket.emit('question', {action: "deselect", id: id}, function(data) {
-                DeselectQuestion(data, id);
-            });
+        if ($(this).hasClass("box-selected")) {
+            DeselectQuestion(id);
         }
         else {
-            $(".box-selected").removeClass("box-selected");
-            box.addClass("box-selected");
-            socket.emit('question', {action: "select", id: id}, function(data) {
-                SelectQuestion(data, id);
-            });
+            SelectQuestion(id);
         }
     }
     
+    function SelectQuestion(id) {
+        var box = $(`#${id}`);
+        $(".box-selected").removeClass("box-selected");
+        box.addClass("box-selected");
+        socket.emit('question', {action: "select", id: id}, function(data) {
+            // Reset all to middle
+            $('.team-range').val(0);
+            // Now adjust
+            for (var key in data.answer) {
+                if (!data.answer.hasOwnProperty(key)) {
+                    continue;
+                }
+                $(`#${key}-range`).val(data.answer[key]);
+            }
+            
+            $("#question-context").html("<p>" + id + " / " + data.question + "</p>");
+            $("#answer-controls").removeClass("no-display");
+            $("#question-id").val(id);
+            UnlockBuzzers();
+        });
+    }
+    
+    function DeselectQuestion(id) {
+        var box = $(`#${id}`);
+        box.removeClass("box-selected");
+        socket.emit('question', {action: "deselect", id: id}, function(data) {
+            // Reset form values
+            $('#form-question-normal input[type=range]').val(0);
+            LockBuzzers();
+        });
+    }
+
     {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
     function SubmitResults(event) {
         console.log("submit");
@@ -339,10 +386,9 @@
             success: function (data) {
                 $(".form-error").empty();
                 if (data.result == "success") {
-                    // TODO reset form and deselect question!?!
-                    // Reset form values
-                    //$('#form-question-normal input[type=range]').val(0);
                     var id = $('#question-id').val();
+                    $('.box-selected').addClass("box-answered");
+                    DeselectQuestion(id);
                     for (var key in data.answers) {
                         if (!data.answers.hasOwnProperty(key)) {
                             continue;
@@ -359,35 +405,6 @@
                 }
             }
         });
-    }
-    
-    function SelectQuestion(data, id) {
-        console.log(data.answer);
-        console.log(id);
-        // Reset all to middle
-        $('.team-range').val(0);
-        // Now adjust
-        for (var key in data.answer) {
-            if (!data.answer.hasOwnProperty(key)) {
-                continue;
-            }
-            $(`#${key}-range`).val(data.answer[key]);
-        }
-        
-        $("#question-context").html("<p>" + id + " / " + data.question + "</p>");
-        $("#answer-controls").removeClass("no-display");
-        $("#question-id").val(id);
-        UnlockBuzzers();
-        
-    }
-    
-    function DeselectQuestion(data, id) {
-        console.log(data);
-        console.log(id);
-        LockBuzzers();
-        
-        // Reset form values
-        $('#form-question-normal input[type=range]').val(0);
     }
 
     function DisplayMessage(event) {
@@ -441,34 +458,47 @@
 
     function FinishGame(event) {
         if (window.confirm("Bring the game to final round (if any). Are you sure?")) {
+            // TODO add behavior here
+            // Select winning team and possibly leave this page
 			socket.emit('final', '');
         }
     }
 
-    var buzzers_locked = true;
-    function HandleBuzzer(ev) {
-        if (buzzers_locked) return;
+    var buzzersLocked = true;
+    function HandleBuzzer(event) {
+        if (buzzersLocked) 
+            return;
 
-        socket.emit('team', {action: "select", id: `team${ev.key}`});
-        $('#snd-timeout').get(0).play();
+        socket.emit('team', {action: "select", id: `team${event.key}`});
+        try {
+            //$('#sound-timeout').get(0).play();
+            $('#snd-timeout').get(0).play();
+        }
+        catch(error) {
+            console.log("No sound!");
+        }
         LockBuzzers();
     }
 
     function LockBuzzers() {
         $('#buzz-lock i').removeClass('fa-unlock')
         $('#buzz-lock i').addClass('fa-lock')
-        buzzers_locked = true;
+        buzzersLocked = true;
     }
 
     function UnlockBuzzers() {
         $('#buzz-lock i').removeClass('fa-lock')
         $('#buzz-lock i').addClass('fa-unlock')
-        buzzers_locked = false;
+        buzzersLocked = false;
     }
 
     function ToggleBuzzers() {
-        if (buzzers_locked) UnlockBuzzers();
-        else LockBuzzers();
+        if (buzzersLocked) {
+            UnlockBuzzers();
+        }
+        else {
+            LockBuzzers();
+        }
     }
     
     $(document).ready(function() {
@@ -500,6 +530,11 @@
             socket.emit('team', {action: "select", id: id});
         });
         
+        $('.team-range').on("click", function() {
+            // TODO if question is unanswered, toggle unlock
+            console.log($(this).val());
+        });
+        
         $('#results-submit').on("click", SubmitResults);
         $('#form-question-normal').on("submit", function(e){
             e.preventDefault();
@@ -525,7 +560,8 @@
 
         {# FIXME we only support 3 buzzers for now #}
         $(document).keypress(function(e) {
-            // matches 1, 2 or 3 keys
+            // Matches numerical keyboard keys 1, 2 and 3
+            // Buzzers emulate a usb keyboard, this will be changed eventually
             if ([49, 50, 51].includes(e.keyCode)) {
                 console.log(e.key);
                 HandleBuzzer(e);

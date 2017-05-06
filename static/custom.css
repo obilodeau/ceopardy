@@ -105,6 +105,14 @@ body {
   height: calc(50% - 35px);
 }
 
+.container-categories-host {
+  height: 20%;
+}
+
+.container-questions-host {
+  height: calc(80% - 10px);
+}
+
 .container-bottom {
   height: calc(50% - 35px);
 }
@@ -364,11 +372,11 @@ svg:hover polygon {
   height: 100vh;
 }
 
-.container-categories {
+.container-categories-viewer {
   height: 16%;
 }
 
-.container-questions {
+.container-questions-viewer {
   height: calc(60% - 30px);
 }
 
@@ -425,13 +433,14 @@ svg:hover polygon {
   height: 100%;
 }
 
-.box-selected {
+.box-selected > .box-question-right {
   background-color: #0001df !important;
 }
 
-.box-completed {
-  background-color: #008000 !important;
-}
+/*
+.box-answered > .box-question-right {
+  background-color: #0001df !important;
+}*/
 
 .box-ceopardy {
   background-color: #0001a1;
@@ -451,14 +460,26 @@ svg:hover polygon {
   margin: auto;
 }
 
-.box-category p {
+.box-category-viewer p {
   color: #ffffff;
   text-shadow: 2px 2px 0px #000000;
-  font-size: 2.5vw;
+  font-size: calc(2vh + 1.5vw);
   line-height: 90%;
 }
 
-.box-question {
+.box-question-viewer {
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.box-category-host p {
+  color: #ffffff;
+  text-shadow: 2px 2px 0px #000000;
+  font-size: calc(1.2vh + 0.8vw);
+  line-height: 90%;
+}
+
+.box-question-host {
   cursor: pointer;
   overflow: hidden;
 }
@@ -490,14 +511,20 @@ svg:hover polygon {
   margin: auto;
   text-align: center;
   /* FIXME find a better ratio */
-  font-size: 1.5vh;
+  font-size: calc(1vh + 0.5vw);
   width: 100%;
 }
 
-.box-question p {
+.box-question-host p {
   color: #d9a24f;
   text-shadow: 2px 2px 0px #000000;
-  font-size: 5vw;
+  font-size: calc(1.5vh + 2vw);
+  line-height: 90%;
+}
+.box-question-viewer p {
+  color: #d9a24f;
+  text-shadow: 2px 2px 0px #000000;
+  font-size: calc(3vh + 2vw);
   line-height: 90%;
 }
 .box-question p.answered {
@@ -560,9 +587,16 @@ svg:hover polygon {
 
 .black-box {
   background-color: #000000;
-  padding: calc(0.3vh + 0.3vw);
   border-radius: .50rem;
   height: 100%;
+}
+
+.flex-pad {
+  padding: calc(0.3vh + 0.3vw);
+}
+
+.flex-small-pad {
+  padding: calc(0.2vh + 0.1vw);
 }
 
 .flex-horizontal-pad {
@@ -573,6 +607,16 @@ svg:hover polygon {
 .flex-vertical-pad {
   padding-top: calc(0.3vh + 0.3vw);
   padding-bottom: calc(0.3vh + 0.3vw);
+}
+
+.flex-horizontal-small-pad {
+  padding-left: calc(0.2vh + 0.1vw);
+  padding-right: calc(0.2vh + 0.1vw);
+}
+
+.flex-vertical-small-pad {
+  padding-top: calc(0.2vh + 0.1vw);
+  padding-bottom: calc(0.2vh + 0.1vw);
 }
 
 .flex-border-header {
@@ -597,8 +641,11 @@ svg:hover polygon {
     margin-right: auto !important;
     width: 1200px;
   }
-  .black-box {
+  .flex-pad {
     padding: 8px;
+  }
+  .flex-small-pad {
+    padding: 4px;
   }
   .flex-horizontal-pad {
     padding-left: 8px;
@@ -608,10 +655,27 @@ svg:hover polygon {
     padding-top: 8px;
     padding-bottom: 8px;
   }
-  .box-category p {
+  .flex-horizontal-small-pad {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  .flex-vertical-small-pad {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .box-category-host p {
+    font-size: 20px;
+  }
+  .box-question-host p {
+    font-size: 40px;
+  }
+  .box-question-status span {
+    font-size: 12px;
+  }
+  .box-category-viewer p {
     font-size: 30px;
   }
-  .box-question p {
+  .box-question-viewer p {
     font-size: 60px;
   }
   .box-team p {
@@ -648,10 +712,27 @@ svg:hover polygon {
     padding-top: 0.6vh;
     padding-bottom: 0.6vh;
   }
-  .box-category p {
+  .flex-horizontal-small-pad {
+    padding-left: 0.3vh;
+    padding-right: 0.3vh;
+  }
+  .flex-vertical-small-pad {
+    padding-top: 0.3vh;
+    padding-bottom: 0.3vh;
+  }
+  .box-category-host p {
+    font-size: 3vh;
+  }
+  .box-question-host p {
+    font-size: 3vh;
+  }
+  .box-question-status span {
+    font-size: 10px;
+  }
+  .box-category-viewer p {
     font-size: 4vh;
   }
-  .box-question p {
+  .box-question-viewer p {
     font-size: 4vh;
   }
   .box-team p {
@@ -660,8 +741,11 @@ svg:hover polygon {
   .box-score p {
     font-size: 3vh;
   }
-  .black-box {
+  .flex-pad {
     padding: 0.6vh;
+  }
+  .flex-small-pad {
+    padding: 0.3vh;
   }
 }
 
