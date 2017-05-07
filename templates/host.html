@@ -277,7 +277,7 @@
 
 </div>
 <audio id="snd-timeout" src="/static/sounds/timeout.mp3" type="audio/mp3" preload="auto"></audio>
-<audio id="snd-reveal" src="/static/sounds/category.mp3" type="audio/mp3" preload="auto"></audio>
+<audio id="snd-reveal" src="/static/sounds/reveal.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-thinking" src="/static/sounds/thinking-music.wav" type="audio/wav" preload="auto"></audio>
 {% endblock %}
 
@@ -495,6 +495,10 @@
             hide.hide();
             show.show();
             HideMessage();
+            // TODO fix this ugly hack
+            if (element.text() == "Please wait while the game is being set up...") {
+                play_sound('#snd-reveal');
+            }
         }
     }
     
