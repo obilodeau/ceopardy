@@ -561,7 +561,7 @@
         if (buzzersLocked) 
             return;
 
-        socket.emit('team', {action: "select", id: `team${event.key}`});
+        socket.emit('team', {action: "select", id: `team${event.key}`}, SelectTeam);
         play_sound('#snd-timeout');
         LockBuzzers();
     }
