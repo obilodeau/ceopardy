@@ -536,15 +536,16 @@
         if (window.confirm("Bring the game to final round (if any). Are you sure?")) {
             // TODO add behavior here
             // Select winning team and possibly leave this page
-			socket.emit('final', '');
+            socket.emit('final', '');
         }
     }
 
-	$('#form-question-normal input[type=range]').on('input', function() {
+    $('#form-question-normal input[type=range]').on('input', function() {
+        // automatically unlock buzzers if someone provided a bad answer
         if ($(this)[0].value == -1) {
             UnlockBuzzers();
         }
-	});
+    });
 
     function play_sound(selector) {
         try {
