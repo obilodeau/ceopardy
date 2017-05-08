@@ -147,7 +147,7 @@
         </div>
 
         {# TODO: consider migrating this to a flask-wtform #}
-        <form id="form-question-normal" class="container-bottom-middle">
+        <form id="form-question" class="container-bottom-middle">
             {% set results = questions.get(select_qid, {}) %}
             {% set select_tid = state.get('team', '') %}
             {% for name, score in scores.items() %}
@@ -382,7 +382,7 @@
     }
 
     function DeselectAllTeams() {
-        $('#form-question-normal div').removeClass('team-selected');
+        $('#form-question div').removeClass('team-selected');
     }
 
     function ClickQuestion(event) {
@@ -422,7 +422,7 @@
         box.removeClass("box-selected");
         socket.emit('question', {action: "deselect", id: id}, function(data) {
             // Reset form values
-            $('#form-question-normal input[type=range]').val(0);
+            $('#form-question input[type=range]').val(0);
             $("#question").empty();
             LockBuzzers();
         });
@@ -434,7 +434,7 @@
         $.ajax({
             type: "POST",
             url: url,
-            data: $('#form-question-normal').serialize(),
+            data: $('#form-question').serialize(),
             dataType: 'json',
             success: function (data) {
                 $(".form-error").empty();
@@ -537,7 +537,7 @@
         }
     }
 
-    $('#form-question-normal input[type=range]').on('input', function() {
+    $('#form-question input[type=range]').on('input', function() {
         // automatically unlock buzzers if someone provided a bad answer
         if ($(this)[0].value == -1) {
             UnlockBuzzers();
@@ -620,7 +620,7 @@
         });
         
         $('#results-submit').on("click", SubmitResults);
-        $('#form-question-normal').on("submit", function(e){
+        $('#form-question').on("submit", function(e){
             e.preventDefault();
             SubmitResults(e);
         });
