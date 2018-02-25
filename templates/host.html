@@ -559,7 +559,7 @@
             return;
 
         socket.emit('team', {action: "select", id: `team${event.key}`}, SelectTeam);
-        play_sound('#snd-timeout');
+        //play_sound('#snd-timeout');
         LockBuzzers();
     }
 

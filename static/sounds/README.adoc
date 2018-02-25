@@ -1,1 +1,7 @@
-Add sound files here.
+Add sound files here. Software expects 3 sound files:
+
+reveal.mp3:: Played when categories are revealed (when the game starts)
+
+thinking-music.wav:: Defined but not in use yet
+
+timeout.mp3:: Triggered from the UI
