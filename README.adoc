@@ -7,3 +7,15 @@ You need Python 3 and https://bower.io[Bower].
     pip install -r requirements.txt
     bower install
     python3 ceopardy.py
+
+== Setup
+
+=== Display
+
+You need at least 2 outputs: one for the game host for control and one for the
+public.
+
+At NorthSec 2017, we used 3 outputs because we didn't have the proper gear to
+duplicate the public output for a stage monitor. There is a script in
+`helpers/` that will set 3 outputs using `xrandr`. It didn't work with a GUI
+tool when we tried at that time.
