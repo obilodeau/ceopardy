@@ -6,7 +6,11 @@ The Hacker Jeopardy Game Board we use at NorthSec.
 
 This is what the crowd sees:
 
-image::docs/images/viewer.png[The Viewer Interface]
+image::docs/images/viewer-board.png[The Viewer Interface Displaying the Game Board]
+
+When a clue is displayed:
+
+image::docs/images/viewer-clue.png[The Viewer Interface Displaying a Clue]
 
 This is the host interface, how you control the game:
 
