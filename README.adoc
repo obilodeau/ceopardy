@@ -19,3 +19,24 @@ At NorthSec 2017, we used 3 outputs because we didn't have the proper gear to
 duplicate the public output for a stage monitor. There is a script in
 `helpers/` that will set 3 outputs using `xrandr`. It didn't work with a GUI
 tool when we tried at that time.
+
+== Prepare a game
+
+Game data goes in `data/`. There you should add round files (create a `.round`
+file) and questions in `Questions.cp`. The format is pretty self explanatory.
+Check `data/` for an example.
+
+== Running
+
+    python3 ceopardy.py
+
+Then open http://127.0.0.1:5000/host[the host view] and setup the game.
+http://127.0.0.1:5000/[The players' view] (also known as the viewer) can be
+opened at any time. Nothing will be displayed until the game is started by
+the host.
+
+NOTE: In order to avoid dataloss due to a crash, Ceopardy is backed by a
+database where transactions are pushed when the hosts submit the points. This
+has the flipside requiring games to be finalized before a new one can be
+started. Make sure that you always push the "Game over" button before
+reloading to start a new game.
