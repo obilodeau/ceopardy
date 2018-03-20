@@ -1,4 +1,22 @@
-= README
+= Ceopardy
+
+The Hacker Jeopardy Game Board we use at NorthSec.
+
+== Screenshots
+
+This is what the crowd sees:
+
+image::docs/images/viewer.png[The Viewer Interface]
+
+This is the host interface, how you control the game:
+
+image::docs/images/host.png[The Host Interface]
+
+Note that there are two drawers that can be opened by clicking on the brown
+arrows at the top and at the bottom of the screen. The top drawer contain the
+functions to change team names. The bottom drawer provides functions to
+display a custom message on the board or to pause a game.
+
 
 == First time deployment
 
