@@ -127,8 +127,25 @@ def list_roundfiles():
     return [os.path.basename(_f) for _f in glob.glob(_glob)]
 
 
+def parse_question_id(qid):
+    """
+    Parses a question id in the form category X question Y (cXqY) and 
+    returns a tuple with category, question or None if it didn't work.
+    """
+    match = re.match("c([0-9]+)q([0-9]+)", qid)
+    if match is None:
+        raise InvalidQuestionId("Invalid Question Id: {}".format(qid))
+    col, row = match.groups()
+    return (col, row)
+
+
+class InvalidQuestionId(Exception):
+    pass
+
+
 class QuestionParsingError(Exception):
     pass
+
 
 class GamefileParsingError(Exception):
     pass

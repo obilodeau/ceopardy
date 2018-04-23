@@ -157,12 +157,13 @@ def answer():
     app.logger.debug("Answer form has been submitted with: {}", request.form)
     data = request.form
     controller = get_controller()
+
     app.logger.debug('received data: {}'.format(data["id"]))
-    # FIXME turn this into a function, it's redundant
-    match = re.match("c([0-9]+)q([0-9]+)", data["id"])
-    if match is None:
+    try:
+        col, row = utils.parse_question_id(data["id"])
+    except utils.InvalidQuestionId:
         return jsonify(result="failure", error="Invalid category/question format!")
-    col, row = match.groups()
+
     question_text = controller.get_question(col, row)
     # Send everything but qid as a dict
     answers = request.form.to_dict()
@@ -189,10 +190,7 @@ def answer():
 def handle_question(data):
     controller = get_controller()
     if data["action"] == "select":
-        match = re.match("c([0-9]+)q([0-9]+)", data["id"])
-        if match is None:
-            return ""
-        col, row = match.groups()
+        col, row = utils.parse_question_id(data["id"])
         question = controller.get_question(col, row)
         answer = controller.get_answer(col, row)
         emit("overlay", {"action": "show", "id": "small", "html": question},
