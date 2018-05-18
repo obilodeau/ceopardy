@@ -433,7 +433,7 @@ svg:hover polygon {
   height: 16%;
 }
 
-.container-questions-viewer {
+.container-question-viewer, .container-questions-viewer {
   height: calc(60% - 30px);
 }
 
