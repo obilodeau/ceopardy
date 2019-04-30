@@ -62,22 +62,28 @@
     <div class="container-question-category">
         <div class="black-box flex-pad">
             <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
-                <div class="flex-horizontal-pad">
+                <div class="col-ceopardy flex-horizontal-pad">
                     <div class="box-ceopardy box-category-viewer"><p>Category</p></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="container-separator-h"></div>
+    <!--<div class="container-separator-h"></div>-->
     <div class="container-question-viewer">
         <div class="black-box flex-pad">
+            <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
+                    <div class="box-ceopardy box-category-viewer"><p>Category</p></div>
+            </div>
+            <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
             <div class="box-overlay">
-                <div id="small-overlay-content" class="box-ceopardy box-question-viewer">{{ state.get('overlay-small', '')|safe }}</div>
+                <div id="question-overlay-content" class="box-ceopardy box-question-viewer">{{ state.get('overlay-question', '')|safe }}</div>
+            </div>
             </div>
         </div>
     </div>
 </div>
 
+<!--
 <div id="small-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-small', '') == '' }}">
     <div class="small-container-overlay">
         <div class="black-box flex-pad">
@@ -87,6 +93,7 @@
         </div>
     </div>
 </div>
+-->
 
 <div id="big-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-big', '') == '' }}">
     <div class="big-container-overlay">

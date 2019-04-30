@@ -126,8 +126,8 @@ def init():
     
     # Just to be on the safe side
     controller.set_state("question", "")
-    controller.set_state("overlay-small", "")
-    emit("overlay", {"action": "hide", "id": "small", "html": ""},
+    controller.set_state("overlay-question", "")
+    emit("overlay", {"action": "hide", "id": "question", "html": ""},
          namespace='/viewer', broadcast=True)
     
     # Also as a precaution, the initialization might have caused something
@@ -193,18 +193,18 @@ def handle_question(data):
         col, row = utils.parse_question_id(data["id"])
         question = controller.get_question(col, row)
         answer = controller.get_answer(col, row)
-        emit("overlay", {"action": "show", "id": "small", "html": question},
+        emit("overlay", {"action": "show", "id": "question", "html": question},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
-        controller.set_state("overlay-small", question)
+        controller.set_state("overlay-question", question)
         return {"question": question, "answer": answer}
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("overlay", {"action": "hide", "id": "small", "html": ""}, 
+        emit("overlay", {"action": "hide", "id": "question", "html": ""}, 
              namespace='/viewer', broadcast=True)
         controller.set_state("question", "")
-        controller.set_state("overlay-small", "")
+        controller.set_state("overlay-question", "")
         return {}
 
 
@@ -263,9 +263,9 @@ def move_to_final_round(data):
     else:
         # TODO better highlight winner
         text = "<p>That's all folks! Thanks for playing!</p>"
-        controller.set_state("overlay-small", text)
+        controller.set_state("overlay-question", text)
         controller.finish_game()
-        emit("overlay", {"action": "show", "id": "small", "html": text},
+        emit("overlay", {"action": "show", "id": "question", "html": text},
              namespace='/viewer', broadcast=True)
 
 

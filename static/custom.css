@@ -429,12 +429,22 @@ svg:hover polygon {
   height: 100vh;
 }
 
+/* Board */
 .container-categories-viewer {
   height: 16%;
 }
 
-.container-question-viewer, .container-questions-viewer {
+.container-questions-viewer {
   height: calc(60% - 30px);
+}
+
+/* Single question */
+.container-question-category {
+  height: 16%;
+}
+
+.container-question-viewer {
+  height: calc(70% - 30px);
 }
 
 .container-absolute {
