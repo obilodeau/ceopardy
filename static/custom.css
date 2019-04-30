@@ -442,9 +442,16 @@ svg:hover polygon {
 .container-question-category {
   height: 16%;
 }
+.container-question {
+  height: calc(100% - 16%);
+}
 
 .container-question-viewer {
-  height: calc(70% - 30px);
+  height: calc(78% - 30px);
+}
+
+.question-container-overlay {
+  height: calc(76% - 15px);
 }
 
 .container-absolute {
@@ -457,10 +464,6 @@ svg:hover polygon {
 
 .no-display {
   display: none;
-}
-
-.small-container-overlay {
-  height: calc(76% - 15px);
 }
 
 .big-container-overlay {
