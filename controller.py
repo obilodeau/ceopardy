@@ -26,7 +26,8 @@ from ceopardy import db
 from config import config
 from model import Answer, Game, Team, GameState, Question, Response, State, \
     FinalQuestion
-from utils import parse_questions, parse_gamefile, question_to_html
+from utils import parse_question_id, parse_questions, parse_gamefile, \
+    question_to_html
 
 
 class Controller():
@@ -286,7 +287,17 @@ class Controller():
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        return question_to_html(_q.text)
+        return { "text": question_to_html(_q.text), "category": _q.category }
+
+
+    @staticmethod
+    def get_active_question():
+        _q = {}
+        qid = Controller.get_complete_state().get('question', '')
+        if qid != '':
+            col, row = parse_question_id(qid)
+            _q = Controller.get_question(col, row)
+        return _q
 
 
     @staticmethod

@@ -58,17 +58,17 @@
     </div>
 </div>
 
-<div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('overlay-question', '') == '' }}">
+<div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('question', '') == '' }}">
     <div class="container-question-viewer">
         <div class="black-box flex-pad">
             <div class="container-question-category row-ceopardy flex-vertical-pad">
                 <div class="col-ceopardy flex-horizontal-pad">
-                    <div class="box-ceopardy box-category-viewer"><p>Category</p></div>
+                    <div id="question-overlay-category" class="box-ceopardy box-category-viewer"><p>{{ active_question.get('category', '') }}</p></div>
                 </div>
             </div>
             <div class="container-question row-ceopardy flex-vertical-pad">
                 <div class="col-ceopardy flex-horizontal-pad">
-                    <div id="question-overlay-content" class="box-ceopardy box-question-viewer">{{ state.get('overlay-question', '')|safe }}</div>
+                    <div id="question-overlay-content" class="box-ceopardy box-question-viewer">{{ active_question.get('text', '')|safe }}</div>
                 </div>
             </div>
         </div>
@@ -122,7 +122,20 @@
     socket.on('redirect', function(data) {
         location.href = data["url"];
     });
-    
+
+    socket.on('question', function(question) {
+        if (question.action == "show") {
+            $("#question-overlay-content").html(question.content);
+            $("#question-overlay-category>p").text(question.category);
+            $("#question-overlay").fadeIn(1000);
+        }
+        else {
+            $("#question-overlay").fadeOut(1000);
+            $("#question-overlay-content").html(question.content);
+            $("#question-overlay-category>p").text(question.category);
+        }
+    });
+
     socket.on('overlay', function(data) {
         if (data.action == "show") {
             $("#" + data.id + "-overlay-content").html(data.html);
@@ -133,7 +146,7 @@
              $("#" + data.id + "-overlay-content").html(data.html);
         }
     });
-    
+
     socket.on('team', function(data) {
         if ((data.action == "name") || (data.action == "score")) {
             for (var key in data.args) {

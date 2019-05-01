@@ -55,8 +55,10 @@ def viewer():
     categories = controller.get_categories()
     questions = controller.get_questions_status_for_viewer()
     state = controller.get_complete_state()
+    active_question = controller.get_active_question()
     return render_template('viewer.html', scores=scores, categories=categories,
-                           questions=questions, state=state)
+                           questions=questions, state=state,
+                           active_question=active_question)
 
 
 # TODO we must kill all client-side state on server load.
@@ -81,9 +83,11 @@ def host():
     categories = controller.get_categories()
     questions = controller.get_questions_status_for_host()
     state = controller.get_complete_state()
+    active_question = controller.get_active_question()
 
-    return render_template('host.html', scores=scores, teams=teams, form=form, 
-                           categories=categories, questions=questions, state=state)
+    return render_template('host.html', scores=scores, teams=teams, form=form,
+                           categories=categories, questions=questions,
+                           state=state, active_question=active_question)
 
 
 # For now, this will give un an initial state which will avoid complications when
@@ -164,7 +168,6 @@ def answer():
     except utils.InvalidQuestionId:
         return jsonify(result="failure", error="Invalid category/question format!")
 
-    question_text = controller.get_question(col, row)
     # Send everything but qid as a dict
     answers = request.form.to_dict()
     answers.pop('id')
@@ -193,18 +196,19 @@ def handle_question(data):
         col, row = utils.parse_question_id(data["id"])
         question = controller.get_question(col, row)
         answer = controller.get_answer(col, row)
-        emit("overlay", {"action": "show", "id": "question", "html": question},
+        emit("question", {"action": "show", "id": "question",
+                          "content": question['text'],
+                          "category": question['category']},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
-        controller.set_state("overlay-question", question)
-        return {"question": question, "answer": answer}
+        return {"question": question['text'], "answer": answer}
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("overlay", {"action": "hide", "id": "question", "html": ""}, 
+        emit("question", {"action": "hide", "id": "question", "content": "",
+                         "category": ""},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", "")
-        controller.set_state("overlay-question", "")
         return {}
 
 

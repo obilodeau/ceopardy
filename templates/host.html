@@ -204,7 +204,7 @@
         <div class="container-bottom-right">
             <div class="black-box flex-small-pad">
                 <div class="box-fake-overlay">
-                    <div id="question" class="box-ceopardy box-question-host">{{ state.get('overlay-small', '')|safe }}</div>
+                    <div id="question" class="box-ceopardy box-question-host">{{ active_question.get('text', '')|safe }}</div>
                 </div>
             </div>
         </div>
