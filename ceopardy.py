@@ -87,7 +87,8 @@ def host():
 
     return render_template('host.html', scores=scores, teams=teams, form=form,
                            categories=categories, questions=questions,
-                           state=state, active_question=active_question)
+                           state=state, active_question=active_question,
+                           config=config)
 
 
 # For now, this will give un an initial state which will avoid complications when
@@ -196,19 +197,24 @@ def handle_question(data):
         col, row = utils.parse_question_id(data["id"])
         question = controller.get_question(col, row)
         answer = controller.get_answer(col, row)
+
+        # Daily Double animation
         if question['double'] is True:
             emit("dailydouble", {"qid": data['id']}, namespace="/viewer", broadcast=True)
-            # FIXME handle dailydouble state
             controller.set_state("question", data["id"])
-            return {"question": question['text'], "answer": answer}
+            controller.set_state("dailydouble", True)
+            return {"question": config.get("DAILYDOUBLE_HOST_TEXT")}
 
+        # Regular question
         emit("question", {"action": "show", "id": "question",
                           "content": question['text'],
                           "category": question['category']},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
+        controller.set_state("dailydouble", False)
         return {"question": question['text'], "answer": answer}
 
+    # Return to board
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
@@ -216,6 +222,7 @@ def handle_question(data):
                           "category": ""},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", "")
+        controller.set_state("dailydouble", "")
         return {}
 
 

@@ -35,5 +35,6 @@ config = {
          "text": ""},
     ],
     'BASE_DIR': os.path.dirname(__file__) + '/',
-    'DATABASE_FILENAME': 'ceopardy.db'
+    'DATABASE_FILENAME': 'ceopardy.db',
+    'DAILYDOUBLE_HOST_TEXT': '<p>Daily Double!</br>Please input user bet.</p>'
 }

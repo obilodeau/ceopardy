@@ -204,7 +204,11 @@
         <div class="container-bottom-right">
             <div class="black-box flex-small-pad">
                 <div class="box-fake-overlay">
-                    <div id="question" class="box-ceopardy box-question-host">{{ active_question.get('text', '')|safe }}</div>
+                    {% if state.get('dailydouble') %}
+                        <div id="question" class="box-ceopardy box-question-host">{{ config.get('DAILYDOUBLE_HOST_TEXT')|safe }}</div>
+                    {% else %}
+                        <div id="question" class="box-ceopardy box-question-host">{{ active_question.get('text', '')|safe }}</div>
+                    {% endif %}
                 </div>
             </div>
         </div>

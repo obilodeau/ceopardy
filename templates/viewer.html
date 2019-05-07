@@ -58,7 +58,7 @@
     </div>
 </div>
 
-<div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('question', '') == '' }}">
+<div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('question', '') == '' or state.get('dailydouble') == True }}">
     <div class="container-question-viewer">
         <div class="black-box flex-pad">
             <div class="container-question-category row-ceopardy flex-vertical-pad">
@@ -101,33 +101,13 @@
         $('.container-team div').removeClass('team-selected');
     }
 
-    socket.on('connect', function() {
-        socket.emit('refresh');
-    });
-    
-    socket.on('update-board', function(data) {
-        for (var id in data) {
-            if (data.hasOwnProperty(id)) {
-                var solved = data[id];
-                if (solved) {
-                    $(`#${id}`).children().addClass('answered');
-                }
-                else {
-                    $(`#${id}`).children().removeClass('answered');
-                }
-            }
-        }
-    });
-    
-    socket.on('redirect', function(data) {
-        location.href = data["url"];
-    });
-
-    socket.on('dailydouble', function(data) {
-        var el =  $(`#${data.qid}`).parent();
-        // TODO: use different image
+    // FIXME: hide image when question deselected from back-end
+    function DailyDoubleAnimate(question_id) {
+        var el =  $(`#${question_id}`).parent();
+        // TODO: use different image (daily-double bluebackground)
         newEl = $("<img src='https://cdn-images-1.medium.com/max/2100/0*pK28BGqcH9atFP8_.png' style='height: " + el[0].getBoundingClientRect().height / 2 + "px; width: " + el[0].getBoundingClientRect().width / 2 + "px;' />");
         el.append(newEl);
+        // TODO: don't cover full viewport, only question area
         var scaleFactorX = (document.documentElement.clientWidth / newEl[0].getBoundingClientRect().width) / 360;
         var scaleRatioX = (document.documentElement.clientWidth / newEl[0].getBoundingClientRect().width)
         var scaleFactorY = (document.documentElement.clientHeight / newEl[0].getBoundingClientRect().height) / 360;
@@ -152,6 +132,32 @@
                 });
             }
         });
+    }
+
+    socket.on('connect', function() {
+        socket.emit('refresh');
+    });
+
+    socket.on('update-board', function(data) {
+        for (var id in data) {
+            if (data.hasOwnProperty(id)) {
+                var solved = data[id];
+                if (solved) {
+                    $(`#${id}`).children().addClass('answered');
+                }
+                else {
+                    $(`#${id}`).children().removeClass('answered');
+                }
+            }
+        }
+    });
+
+    socket.on('redirect', function(data) {
+        location.href = data["url"];
+    });
+
+    socket.on('dailydouble', function(data) {
+        DailyDoubleAnimate(data.qid);
     });
 
     socket.on('question', function(question) {
@@ -210,5 +216,11 @@
             }, 100);
         }
     });
+
+    {% if state.get('dailydouble') == True %}
+        // This is to trigger the daily-double on a freshly opened client if
+        // the server is in that state
+        DailyDoubleAnimate("{{ state.get('question') }}");
+    {% endif %}
 </script>
 {% endblock %}
