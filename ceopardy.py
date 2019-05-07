@@ -200,9 +200,13 @@ def handle_question(data):
 
         # Daily Double animation
         if question['double'] is True:
-            emit("dailydouble", {"qid": data['id']}, namespace="/viewer", broadcast=True)
+            emit("question", {"action": "hide", "id": "question", "content": "",
+                              "category": ""},
+                 namespace='/viewer', broadcast=True)
+            emit("dailydouble", {"qid": data['id']}, namespace="/viewer",
+                 broadcast=True)
             controller.set_state("question", data["id"])
-            controller.set_state("dailydouble", True)
+            controller.set_state("dailydouble", "enabled")
             return {"question": config.get("DAILYDOUBLE_HOST_TEXT")}
 
         # Regular question
@@ -211,7 +215,7 @@ def handle_question(data):
                           "category": question['category']},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
-        controller.set_state("dailydouble", False)
+        controller.set_state("dailydouble", "")
         return {"question": question['text'], "answer": answer}
 
     # Return to board

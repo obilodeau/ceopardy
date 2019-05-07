@@ -58,7 +58,7 @@
     </div>
 </div>
 
-<div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('question', '') == '' or state.get('dailydouble') == True }}">
+<div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('question', '') == '' or state.get('dailydouble') == 'enabled' }}">
     <div class="container-question-viewer">
         <div class="black-box flex-pad">
             <div class="container-question-category row-ceopardy flex-vertical-pad">
@@ -101,6 +101,7 @@
         $('.container-team div').removeClass('team-selected');
     }
 
+<<<<<<< HEAD
     function createDailyDoubleOverlay(height, width) {
         var paddedHeight = height * 1.1;
         var paddedWidth = width * 1.1;
@@ -209,6 +210,9 @@
     });
 
     socket.on('question', function(question) {
+        $("#dailydouble-overlay").fadeOut(1000, function() {
+            $(this).remove();
+        });
         if (question.action == "show") {
             $("#question-overlay-content").html(question.content);
             $("#question-overlay-category>p").text(question.category);
@@ -265,7 +269,7 @@
         }
     });
 
-    {% if state.get('dailydouble') == True %}
+    {% if state.get('dailydouble') == 'enabled' %}
         // This is to trigger the daily-double on a freshly opened client if
         // the server is in that state
         DailyDoubleAnimate("{{ state.get('question') }}");
