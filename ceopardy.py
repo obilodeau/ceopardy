@@ -196,17 +196,24 @@ def handle_question(data):
         col, row = utils.parse_question_id(data["id"])
         question = controller.get_question(col, row)
         answer = controller.get_answer(col, row)
+        if question['double'] is True:
+            emit("dailydouble", {"qid": data['id']}, namespace="/viewer", broadcast=True)
+            # FIXME handle dailydouble state
+            controller.set_state("question", data["id"])
+            return {"question": question['text'], "answer": answer}
+
         emit("question", {"action": "show", "id": "question",
                           "content": question['text'],
                           "category": question['category']},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
         return {"question": question['text'], "answer": answer}
+
     elif data["action"] == "deselect":
         state = controller.get_questions_status_for_viewer()
         emit("update-board", state, namespace='/viewer', broadcast=True)
         emit("question", {"action": "hide", "id": "question", "content": "",
-                         "category": ""},
+                          "category": ""},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", "")
         return {}

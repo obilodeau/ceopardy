@@ -105,7 +105,14 @@ class Controller():
             for _col, _cat in enumerate(gamefile, start=1):
                 for _row, _q in enumerate(questions[_cat], start=1):
                     score = _row * config['SCORE_TICK']
-                    question = Question(_q, score, _cat, _row, _col)
+
+                    daily_double = False
+                    if _q.startswith('[dbl]'):
+                        _q = _q.lstrip('[dbl]').lstrip()
+                        daily_double = True
+
+                    question = Question(_q, score, _cat, _row, _col,
+                                        double = daily_double)
                     db.session.add(question)
 
             # Add final question
@@ -287,7 +294,7 @@ class Controller():
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        return { "text": question_to_html(_q.text), "category": _q.category }
+        return { "text": question_to_html(_q.text), "category": _q.category, "double": _q.double }
 
 
     @staticmethod

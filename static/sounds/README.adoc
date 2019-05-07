@@ -5,3 +5,5 @@ reveal.mp3:: Played when categories are revealed (when the game starts)
 thinking-music.wav:: Defined but not in use yet
 
 timeout.mp3:: Triggered from the UI
+
+daily-double.mp3:: Triggered from the UI

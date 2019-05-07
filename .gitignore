@@ -12,6 +12,5 @@ ceopardy*db
 ceopardy.log
 
 # sound files (not provided)
-/static/sounds/reveal.mp3
-/static/sounds/thinking-music.wav
-/static/sounds/timeout.mp3
+/static/sounds/*.mp3
+/static/sounds/*.wav
