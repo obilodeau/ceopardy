@@ -123,6 +123,37 @@
         location.href = data["url"];
     });
 
+    socket.on('dailydouble', function(data) {
+        var el =  $(`#${data.qid}`).parent();
+        // TODO: use different image
+        newEl = $("<img src='https://cdn-images-1.medium.com/max/2100/0*pK28BGqcH9atFP8_.png' style='height: " + el[0].getBoundingClientRect().height / 2 + "px; width: " + el[0].getBoundingClientRect().width / 2 + "px;' />");
+        el.append(newEl);
+        var scaleFactorX = (document.documentElement.clientWidth / newEl[0].getBoundingClientRect().width) / 360;
+        var scaleRatioX = (document.documentElement.clientWidth / newEl[0].getBoundingClientRect().width)
+        var scaleFactorY = (document.documentElement.clientHeight / newEl[0].getBoundingClientRect().height) / 360;
+        var elHeight = el[0].getBoundingClientRect().height;
+        var elWidth = el[0].getBoundingClientRect().width;
+        var finalTop = (document.documentElement.clientHeight / 2) - (newEl[0].getBoundingClientRect().height / 2);
+        var offsetTop = (newEl.offset().top - finalTop) / 360;
+        var finalLeft = (document.documentElement.clientWidth / 2) - (newEl[0].getBoundingClientRect().width / 2);
+        var offsetLeft = (newEl.offset().left - finalLeft) / 360;
+
+        var audio = new Audio('/static/sounds/daily-double.mp3');
+        audio.play();
+
+        $({deg: 0}).animate({deg: -359}, {
+            duration: 2000,
+            step: function(now) {
+                newEl.css({
+                    top: -(offsetTop * -now)+'px',
+                    left: -(offsetLeft * -now)+'px',
+                    position: 'relative',
+                    transform: 'scaleX(' + scaleFactorX * -now + ') scaleY(' + scaleFactorY * -now + ') rotateX(' + now + 'deg)'
+                });
+            }
+        });
+    });
+
     socket.on('question', function(question) {
         if (question.action == "show") {
             $("#question-overlay-content").html(question.content);
