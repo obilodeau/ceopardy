@@ -16,9 +16,9 @@
             </div>
         </div>
     </div>
-    
+
     <div class="container-separator-h"></div>
-    
+
     <div class="container-questions-viewer">
         <div class="black-box flex-pad">
             {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
@@ -35,9 +35,9 @@
             {% endfor %}
         </div>
     </div>
-    
+
     <div class="container-separator-h"></div>
-    
+
     <div class="container-results">
         {% set select_tid = state.get('team', '') %}
         {% for name, score in scores.items() %}
@@ -101,21 +101,66 @@
         $('.container-team div').removeClass('team-selected');
     }
 
-    // FIXME: hide image when question deselected from back-end
-    function DailyDoubleAnimate(question_id) {
-        var el =  $(`#${question_id}`).parent();
-        // TODO: use different image (daily-double bluebackground)
-        newEl = $("<img src='https://cdn-images-1.medium.com/max/2100/0*pK28BGqcH9atFP8_.png' style='height: " + el[0].getBoundingClientRect().height / 2 + "px; width: " + el[0].getBoundingClientRect().width / 2 + "px;' />");
-        el.append(newEl);
-        // TODO: don't cover full viewport, only question area
-        var scaleFactorX = (document.documentElement.clientWidth / newEl[0].getBoundingClientRect().width) / 360;
-        var scaleRatioX = (document.documentElement.clientWidth / newEl[0].getBoundingClientRect().width)
-        var scaleFactorY = (document.documentElement.clientHeight / newEl[0].getBoundingClientRect().height) / 360;
-        var elHeight = el[0].getBoundingClientRect().height;
-        var elWidth = el[0].getBoundingClientRect().width;
-        var finalTop = (document.documentElement.clientHeight / 2) - (newEl[0].getBoundingClientRect().height / 2);
+    function createDailyDoubleOverlay(height, width) {
+        var paddedHeight = height * 1.1;
+        var paddedWidth = width * 1.1;
+
+        var overlay = $("<div>");
+        overlay.attr("id", "dailydouble-overlay");
+        overlay.css("height", paddedHeight);
+        overlay.css("width", paddedWidth);
+        overlay.css("border-radius", "1px");
+        overlay.css("text-align", "center");
+        overlay.css("border", "1px solid black");
+        overlay.css("background-color", "rgb(0, 1, 161)");
+        overlay.css("font-weight", "bolder");
+
+        // We have 1/8 padding top, 1/8 padding top and the 3/4 that are remaining
+        // is used to display the text
+        overlay.css("padding", (paddedHeight / 8) + "px 0px");
+        overlay.css("line-height", ((paddedHeight / 4) * 3) / 2 + "px");
+        overlay.css("font-size", ((paddedHeight / 4) * 3) / 2 + "px");
+
+        var firstLine = $("<span>");
+        firstLine.css("color", "white");
+        firstLine.text("DAILY");
+
+        var secondLine = $("<span>");
+        secondLine.css("color", "white");
+        secondLine.text("DOUBLE");
+
+        overlay.append(firstLine);
+        overlay.append($("<br>"));
+        overlay.append(secondLine);
+
+        return $(overlay);
+    }
+
+    function DailyDoubleAnimate(gameBox) {
+        newEl = createDailyDoubleOverlay(gameBox.get(0).getBoundingClientRect().height / 2, gameBox.get(0).getBoundingClientRect().width / 2);
+        gameBox.append(newEl);
+
+        var windowHeight = document.documentElement.clientHeight;
+        var windowWidth = document.documentElement.clientWidth;
+
+        var overlayHeight = newEl.get(0).getBoundingClientRect().height;
+        var overlayWidth = newEl.get(0).getBoundingClientRect().width;
+
+        var gameContainer = $(".container-game.container-all:not(.no-display)");
+
+        var resultsContainerHeight = $(".container-questions-viewer").get(0).getBoundingClientRect().height;
+        var resultsContainerWidth = $(".container-questions-viewer").get(0).getBoundingClientRect().width;
+
+        var paddingTop = parseInt(gameContainer.css("padding-top")) + $(".container-categories-viewer").get(0).getBoundingClientRect().height + $(".container-separator-h").get(0).getBoundingClientRect().height;
+        var spacingSides = (parseInt(gameContainer.css("padding-left")) + parseInt(gameContainer.css("margin-left"))) * 2;
+
+        var scaleFactorX = (resultsContainerWidth / overlayWidth) / 360;
+        var scaleFactorY = (resultsContainerHeight / overlayHeight) / 360;
+        var elHeight = gameBox.get(0).getBoundingClientRect().height;
+        var elWidth = gameBox.get(0).getBoundingClientRect().width;
+        var finalTop = (resultsContainerHeight - overlayHeight) / 2 + paddingTop;
         var offsetTop = (newEl.offset().top - finalTop) / 360;
-        var finalLeft = (document.documentElement.clientWidth / 2) - (newEl[0].getBoundingClientRect().width / 2);
+        var finalLeft = (windowWidth / 2) - (overlayWidth / 2);
         var offsetLeft = (newEl.offset().left - finalLeft) / 360;
 
         var audio = new Audio('/static/sounds/daily-double.mp3');
@@ -132,6 +177,8 @@
                 });
             }
         });
+
+        return newEl;
     }
 
     socket.on('connect', function() {
@@ -156,8 +203,9 @@
         location.href = data["url"];
     });
 
+    // FIXME: hide image when question deselected from back-end
     socket.on('dailydouble', function(data) {
-        DailyDoubleAnimate(data.qid);
+        DailyDoubleAnimate($(`#${question_id}`).parent());
     });
 
     socket.on('question', function(question) {
