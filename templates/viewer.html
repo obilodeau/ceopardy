@@ -101,7 +101,6 @@
         $('.container-team div').removeClass('team-selected');
     }
 
-<<<<<<< HEAD
     function createDailyDoubleOverlay(height, width) {
         var paddedHeight = height * 1.1;
         var paddedWidth = width * 1.1;
@@ -206,7 +205,7 @@
 
     // FIXME: hide image when question deselected from back-end
     socket.on('dailydouble', function(data) {
-        DailyDoubleAnimate($(`#${question_id}`).parent());
+        DailyDoubleAnimate($(`#${data.qid}`).parent());
     });
 
     socket.on('question', function(question) {
@@ -272,7 +271,8 @@
     {% if state.get('dailydouble') == 'enabled' %}
         // This is to trigger the daily-double on a freshly opened client if
         // the server is in that state
-        DailyDoubleAnimate("{{ state.get('question') }}");
+        var question_id = "{{ state.get('question') }}";
+        DailyDoubleAnimate($(`#${question_id}`).parent());
     {% endif %}
 </script>
 {% endblock %}
