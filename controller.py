@@ -294,7 +294,7 @@ class Controller():
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        return { "text": question_to_html(_q.text), "category": _q.category, "double": _q.double }
+        return { "text": question_to_html(_q.text), "category": _q.category, "dailydouble": _q.double }
 
 
     @staticmethod

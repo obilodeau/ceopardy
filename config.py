@@ -2,7 +2,7 @@
 # https://github.com/obilodeau/ceopardy/
 #
 # Olivier Bilodeau <olivier@bottomlesspit.org>
-# Copyright (C) 2017 Olivier Bilodeau
+# Copyright (C) 2017, 2019 Olivier Bilodeau
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify

@@ -199,7 +199,7 @@ def handle_question(data):
         answer = controller.get_answer(col, row)
 
         # Daily Double animation
-        if question['double'] is True:
+        if question['dailydouble'] is True:
             emit("question", {"action": "hide", "id": "question", "content": "",
                               "category": ""},
                  namespace='/viewer', broadcast=True)
@@ -209,9 +209,12 @@ def handle_question(data):
             controller.set_state("dailydouble", "enabled")
             return {"question": config.get("DAILYDOUBLE_HOST_TEXT")}
 
-        # Regular question
+        # Question
+        # FIXME: passdown dailydouble info to socketio on the host side, fix the JS accordingly
+        #        keep the UI in sync if we ever refresh
         emit("question", {"action": "show", "id": "question",
                           "content": question['text'],
+                          "dailydouble": question["dailydouble"],
                           "category": question['category']},
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
