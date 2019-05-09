@@ -280,6 +280,7 @@
 <audio id="snd-timeout" src="/static/sounds/timeout.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-reveal" src="/static/sounds/reveal.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-thinking" src="/static/sounds/thinking-music.wav" type="audio/wav" preload="auto"></audio>
+<audio id="snd-dailydouble" src="/static/sounds/daily-double.mp3" type="audio/mp3" preload="auto"></audio>
 {% endblock %}
 
 {% block ui %}
@@ -404,20 +405,30 @@
         $(".box-selected").removeClass("box-selected");
         box.addClass("box-selected");
         socket.emit('question', {action: "select", id: id}, function(data) {
-            // Reset all to middle
-            $('.team-range').val(0);
-            // Now adjust
-            for (var key in data.answer) {
-                if (!data.answer.hasOwnProperty(key)) {
-                    continue;
-                }
-                $(`#${key}-range`).val(data.answer[key]);
+
+            if (data.dailydouble == true) {
+                play_sound('#snd-dailydouble');
             }
-            
-            $("#question").html(data.question);
-            //$("#answer-controls").removeClass("no-display");
-            $("#question-id").val(id);
-            UnlockBuzzers();
+
+            // Regular question
+            else {
+
+                // Reset all to middle
+                $('.team-range').val(0);
+                // Now adjust
+                for (var key in data.answer) {
+                    if (!data.answer.hasOwnProperty(key)) {
+                        continue;
+                    }
+                    $(`#${key}-range`).val(data.answer[key]);
+                }
+
+                $("#question").html(data.question);
+                //$("#answer-controls").removeClass("no-display");
+                $("#question-id").val(id);
+
+                UnlockBuzzers();
+            }
         });
     }
     

@@ -163,12 +163,6 @@
         var finalLeft = (windowWidth / 2) - (overlayWidth / 2);
         var offsetLeft = (newEl.offset().left - finalLeft) / 360;
 
-        // TODO: sound on the viewer works right now as we run both on the same
-        //       laptop but if we start using distributed viewers, it needs to
-        //       be moved on the host side
-        var audio = new Audio('/static/sounds/daily-double.mp3');
-        audio.play();
-
         $({deg: 0}).animate({deg: -359}, {
             duration: 2000,
             step: function(now) {

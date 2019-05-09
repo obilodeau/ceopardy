@@ -207,7 +207,8 @@ def handle_question(data):
                  broadcast=True)
             controller.set_state("question", data["id"])
             controller.set_state("dailydouble", "enabled")
-            return {"question": config.get("DAILYDOUBLE_HOST_TEXT")}
+            return {"question": config.get("DAILYDOUBLE_HOST_TEXT"),
+                    "dailydouble": True}
 
         # Question
         # FIXME: passdown dailydouble info to socketio on the host side, fix the JS accordingly
@@ -219,7 +220,8 @@ def handle_question(data):
              namespace='/viewer', broadcast=True)
         controller.set_state("question", data["id"])
         controller.set_state("dailydouble", "")
-        return {"question": question['text'], "answer": answer}
+        return {"question": question['text'], "answer": answer,
+                "dailydouble": False}
 
     # Return to board
     elif data["action"] == "deselect":
