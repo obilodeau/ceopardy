@@ -438,16 +438,13 @@ svg:hover polygon {
   height: calc(60% - 30px);
 }
 
-/* Single question */
-.container-question-category {
-  height: 16%;
-}
 .container-question {
-  height: calc(100% - 16%);
+  height: 100%;
 }
 
 .container-question-viewer {
   height: calc(78% - 30px);
+  padding-top: 17vh;
 }
 
 .question-container-overlay {
@@ -460,10 +457,6 @@ svg:hover polygon {
   left: 0;
   right: 0;
   background-color: transparent !important;
-}
-
-.no-display {
-  display: none;
 }
 
 .big-container-overlay {
@@ -954,4 +947,8 @@ input[type=range]:focus::-ms-fill-lower {
 }
 input[type=range]:focus::-ms-fill-upper {
   background: #d5c19c;
+}
+
+.no-display {
+  display: none;
 }

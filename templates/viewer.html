@@ -7,12 +7,19 @@
 
     <div class="container-categories-viewer">
         <div class="black-box flex-pad">
-            <div class="row-ceopardy flex-vertical-pad" style="height: 100%;">
+            <div id="game-categories" class="row-ceopardy flex-vertical-pad {{ 'no-display' if state.get('question', '') != '' or state.get('dailydouble', '') == 'enabled' }}" style="height: 100%;">
                 {% for name in categories %}
                 <div class="col-ceopardy flex-horizontal-pad">
                     <div id="c{{ loop.index }}" class="box-ceopardy box-category-viewer"><p>{{ name }}</p></div>
                 </div>
                 {% endfor %}
+            </div>
+            <div id="question-category" class="row-ceopardy flex-vertical-pad {{ 'no-display' if state.get('question', '') == '' }}" style="height: 100%;">
+                <div class="col-ceopardy flex-horizontal-pad">
+                    <div id="question-category-content" class="box-ceopardy box-category-viewer">
+                        <p>{{ active_question.get('category', '') }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -61,11 +68,6 @@
 <div id="question-overlay" class="container-game container-absolute container-all {{ 'no-display' if state.get('question', '') == '' or state.get('dailydouble') == 'enabled' }}">
     <div class="container-question-viewer">
         <div class="black-box flex-pad">
-            <div class="container-question-category row-ceopardy flex-vertical-pad">
-                <div class="col-ceopardy flex-horizontal-pad">
-                    <div id="question-overlay-category" class="box-ceopardy box-category-viewer"><p>{{ active_question.get('category', '') }}</p></div>
-                </div>
-            </div>
             <div class="container-question row-ceopardy flex-vertical-pad">
                 <div class="col-ceopardy flex-horizontal-pad">
                     <div id="question-overlay-content" class="box-ceopardy box-question-viewer">{{ active_question.get('text', '')|safe }}</div>
@@ -99,6 +101,20 @@
 
     function DeselectAllTeams() {
         $('.container-team div').removeClass('team-selected');
+    }
+
+    // TODO Max: cross-fading between question category and game categories would be nice
+    function showQuestionCategory(text) {
+        $("#game-categories").addClass("no-display");
+        $("#question-category").removeClass("no-display");
+        $("#question-category-content>p").text(text);
+    }
+
+    // TODO Max: cross-fading between question category and game categories would be nice
+    function showGameCategories() {
+        $("#question-category").addClass("no-display");
+        $("#game-categories").removeClass("no-display");
+        $("#question-category-content>p").text("");
     }
 
     function createDailyDoubleOverlay(height, width) {
@@ -200,8 +216,8 @@
         location.href = data["url"];
     });
 
-    // FIXME: hide image when question deselected from back-end
     socket.on('dailydouble', function(data) {
+        showQuestionCategory(data.category);
         DailyDoubleAnimate($(`#${data.qid}`).parent());
     });
 
@@ -210,14 +226,14 @@
             $(this).remove();
         });
         if (question.action == "show") {
+            showQuestionCategory(question.category);
             $("#question-overlay-content").html(question.content);
-            $("#question-overlay-category>p").text(question.category);
             $("#question-overlay").fadeIn(1000);
         }
         else {
+            showGameCategories();
             $("#question-overlay").fadeOut(1000);
             $("#question-overlay-content").html(question.content);
-            $("#question-overlay-category>p").text(question.category);
         }
     });
 

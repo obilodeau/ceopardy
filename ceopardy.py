@@ -203,7 +203,9 @@ def handle_question(data):
             emit("question", {"action": "hide", "id": "question", "content": "",
                               "category": ""},
                  namespace='/viewer', broadcast=True)
-            emit("dailydouble", {"qid": data['id']}, namespace="/viewer",
+            emit("dailydouble", {"qid": data['id'],
+                                 "category": question["category"]},
+                 namespace="/viewer",
                  broadcast=True)
             controller.set_state("question", data["id"])
             controller.set_state("dailydouble", "enabled")
