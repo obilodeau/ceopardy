@@ -149,10 +149,11 @@
         <form id="form-question" class="container-bottom-middle">
             {% set results = questions.get(select_qid, {}) %}
             {% set select_tid = state.get('team', '') %}
+            {% set dailydouble = state.get('dailydouble', '') %}
             {% for name, score in scores.items() %}
             {% set tid = 'team{}'.format(loop.index) %}
             <div class="container-bottom-team" style="height: 100%;">
-                <div team="{{ tid }}" id="{{ tid }}-scoring" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }}" style="width: 100%; margin: auto;">
+                <div team="{{ tid }}" id="{{ tid }}-scoring" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }} {{ 'disabled' if select_tid != tid and dailydouble == 'enabled' }}" style="width: 100%; margin: auto;">
                     
                     <div class="row-ceopardy col-ceopardy flex-small-pad" style="height: 100%;">
                         <div class="box-ceopardy">
