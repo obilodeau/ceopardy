@@ -268,6 +268,11 @@ class Controller():
 
 
     @staticmethod
+    def get_team_in_control():
+        return Team.query.filter(Team.tid == Controller.get_state("team")).one()
+
+
+    @staticmethod
     def teams_exists():
         if Team.query.all():
             return True

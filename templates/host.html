@@ -152,7 +152,7 @@
             {% for name, score in scores.items() %}
             {% set tid = 'team{}'.format(loop.index) %}
             <div class="container-bottom-team" style="height: 100%;">
-                <div team="{{ tid }}" id="{{ tid }}-other" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }}" style="width: 100%; margin: auto;">
+                <div team="{{ tid }}" id="{{ tid }}-scoring" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }}" style="width: 100%; margin: auto;">
                     
                     <div class="row-ceopardy col-ceopardy flex-small-pad" style="height: 100%;">
                         <div class="box-ceopardy">
@@ -199,6 +199,7 @@
             <input id="question-id" type="hidden" name="id" value="{{ select_qid }}">
             <input type="submit" style="display: none;">
         </form>
+
 
         <!-- TODO: replace with iframe of real view (just like in bottom drawer) -->
         <div class="container-bottom-right">
@@ -383,7 +384,7 @@
 
     function SelectTeam(id) {
         $(".team-selected").removeClass("team-selected");
-        $(`#${id}-other`).addClass("team-selected");
+        $(`#${id}-scoring`).addClass("team-selected");
     }
 
     function DeselectAllTeams() {
@@ -399,6 +400,24 @@
             SelectQuestion(id);
         }
     }
+
+    function DailyDoubleScoring(team_id) {
+        $(".container-bottom-team>div").filter(function() {
+            return this.id.match(/team\d-scoring/);
+            }).each(function() {
+                if ($(this).attr("team") != team_id) {
+                    $(this).addClass("disabled")
+                }
+            });
+    }
+
+    function ReallowScoring() {
+        $(".container-bottom-team>div").filter(function() {
+            return this.id.match(/team\d-scoring/);
+            }).each(function() {
+                $(this).removeClass("disabled")
+            });
+    }
     
     function SelectQuestion(id) {
         var box = $(`#${id}`);
@@ -406,11 +425,16 @@
         box.addClass("box-selected");
         socket.emit('question', {action: "select", id: id}, function(data) {
 
+            // Daily Double
+            // Team in control bets and clue is displayed after the bet
             if (data.dailydouble == true) {
                 play_sound('#snd-dailydouble');
+                $("#question").html(data.question);
+                DailyDoubleScoring(data.team);
             }
 
             // Regular question
+            // Show the question, unlock the buzzers, all teams can play
             else {
 
                 // Reset all to middle
@@ -424,7 +448,6 @@
                 }
 
                 $("#question").html(data.question);
-                //$("#answer-controls").removeClass("no-display");
                 $("#question-id").val(id);
 
                 UnlockBuzzers();
@@ -441,6 +464,7 @@
             $("#question").empty();
             LockBuzzers();
         });
+        ReallowScoring();
     }
 
     {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
@@ -598,7 +622,7 @@
             LockBuzzers();
         }
     }
-    
+
     $(document).ready(function() {
         $(".box-question-host").on("click", ClickQuestion);
         
