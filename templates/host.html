@@ -488,6 +488,8 @@
             if (!data.hasOwnProperty('answer') || !data.answer.hasOwnProperty(data.team)) {
                 $(`#${data.team}-range-dailydouble`).val(data.dbl_waige_max);
             }
+            // reflect slider value on the label
+            $(`#${data.team}-waiger`).text($(`#${data.team}-range-dailydouble`).val());
         }
     }
     
@@ -495,6 +497,7 @@
         var box = $(`#${id}`);
         $(".box-selected").removeClass("box-selected");
         box.addClass("box-selected");
+        NormalScoring();
         socket.emit('question', {action: "select", id: id}, function(data) {
 
             // Daily Double
