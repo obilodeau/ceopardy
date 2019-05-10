@@ -192,12 +192,10 @@
                                     {# Answer box for daily double questions #}
                                     <div id="{{ tid }}-answer-dailydouble" class="box-answer-range {{ 'no-display' if dailydouble != 'enabled' }}">
                                         {% set score = results.get(tid, 0) %}
-                                        {% if score > 0 %}
-                                            {% set range = 1 %}
-                                        {% elif score == 0 %}
-                                            {% set range = 0 %}
+                                        {% if score == 0 %}
+                                            {% set range = dbl_waige_max %}
                                         {% else %}
-                                            {% set range = -1 %}
+                                            {% set range = score %}
                                         {% endif %}
                                         <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-dailydouble" type="range" min="{{ dbl_waige_min }}" max="{{ dbl_waige_max }}" step="1" value="{{ range }}"/>
                                         <div class="box-answer-range-label">
@@ -459,10 +457,37 @@
             return this.id.match(/team\d-answer-dailydouble$/); }).each(function() {
                 $(this).addClass("no-display");
             });
-
         // reset values
-        $(`#${data.team}-range-dailydouble`).attr('min', 0);
-        $(`#${data.team}-range-dailydouble`).attr('max', 0);
+        $("div.box-answer-range>input").filter(function() {
+            return this.id.match(/team\d-range-dailydouble$/); }).each(function() {
+                $(this).attr('min', 0);
+                $(this).attr('max', 0);
+            });
+    }
+
+    function ResetScoreSliders(data) {
+        // Reset all to middle
+        $('.team-range').val(0);
+
+        // Now adjust to answers given by server
+        for (var key in data.answer) {
+            if (!data.answer.hasOwnProperty(key)) {
+                continue;
+            }
+            if (data.dailydouble == true) {
+                $(`#${key}-dailydouble-range`).val(data.answer[key]);
+            }
+            else {
+                $(`#${key}-range`).val(data.answer[key]);
+            }
+        }
+
+        // dailydouble: if no answer default to all-in
+        if (data.dailydouble == true) {
+            if (!data.hasOwnProperty('answer') || !data.answer.hasOwnProperty(data.team)) {
+                $(`#${data.team}-range-dailydouble`).val(data.dbl_waige_max);
+            }
+        }
     }
     
     function SelectQuestion(id) {
@@ -483,21 +508,13 @@
             // Show the question, unlock the buzzers, all teams can play
             else {
 
-                // Reset all to middle
-                $('.team-range').val(0);
-                // Now adjust
-                for (var key in data.answer) {
-                    if (!data.answer.hasOwnProperty(key)) {
-                        continue;
-                    }
-                    $(`#${key}-range`).val(data.answer[key]);
-                }
-
                 $("#question").html(data.question);
                 $("#question-id").val(id);
 
                 UnlockBuzzers();
             }
+
+            ResetScoreSliders(data);
         });
     }
     
