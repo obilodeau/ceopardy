@@ -273,6 +273,14 @@ class Controller():
 
 
     @staticmethod
+    def get_dailydouble_waiger_range(team_id):
+        _min = config.get('DAILYDOUBLE_WAIGER_MIN')
+        scores = Controller.get_teams_score_by_tid()
+        _max = scores[team_id]
+        return (_min, _max)
+
+
+    @staticmethod
     def teams_exists():
         if Team.query.all():
             return True

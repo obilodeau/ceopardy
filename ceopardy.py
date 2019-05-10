@@ -85,10 +85,18 @@ def host():
     state = controller.get_complete_state()
     active_question = controller.get_active_question()
 
+    if state.get("dailydouble", "") == "enabled":
+        ctrl_team = controller.get_team_in_control()
+        dbl_waige_min, dbl_waige_max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
+    else:
+        dbl_waige_min = 0
+        dbl_waige_max = 0
+
     return render_template('host.html', scores=scores, teams=teams, form=form,
                            categories=categories, questions=questions,
                            state=state, active_question=active_question,
-                           config=config)
+                           config=config, dbl_waige_min=dbl_waige_min,
+                           dbl_waige_max=dbl_waige_max)
 
 
 # For now, this will give un an initial state which will avoid complications when
