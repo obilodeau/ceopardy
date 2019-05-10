@@ -170,7 +170,9 @@
                                     <div id="{{ tid }}-name" class="box-ceopardy box-team-host {{ tid }}-font">
                                         <p>{{ name }}</p>
                                     </div>
-                                    <div class="box-answer-range">
+
+                                    {# Answer box for normal questions #}
+                                    <div id="{{ tid }}-answer" class="box-answer-range {{ 'no-display' if dailydouble == 'enabled' }}">
                                         {% set score = results.get(tid, 0) %}
                                         {% if score > 0 %}
                                             {% set range = 1 %}
@@ -184,6 +186,23 @@
                                             <div><p>Bad</p></div>
                                             <div><p>No Answer<p></div>
                                             <div><p>Good</p></div>
+                                        </div>
+                                    </div>
+
+                                    {# Answer box for daily double questions #}
+                                    <div id="{{ tid }}-answer-dailydouble" class="box-answer-range {{ 'no-display' if dailydouble != 'enabled' }}">
+                                        {% set score = results.get(tid, 0) %}
+                                        {% if score > 0 %}
+                                            {% set range = 1 %}
+                                        {% elif score == 0 %}
+                                            {% set range = 0 %}
+                                        {% else %}
+                                            {% set range = -1 %}
+                                        {% endif %}
+                                        <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-dailydouble" type="range" min="{{ dbl_waige_min }}" max="{{ dbl_waige_max }}" step="1" value="{{ range }}"/>
+                                        <div class="box-answer-range-label">
+                                            <div><p>Minimum</p></div>
+                                            <div><p>All-in!</p></div>
                                         </div>
                                     </div>
                                 </div>
@@ -202,7 +221,6 @@
         </form>
 
 
-        <!-- TODO: replace with iframe of real view (just like in bottom drawer) -->
         <div class="container-bottom-right">
             <div class="black-box flex-small-pad">
                 <div class="box-fake-overlay">
@@ -403,20 +421,36 @@
     }
 
     function DailyDoubleScoring(team_id) {
+        // disabling teams not in control
         $(".container-bottom-team>div").filter(function() {
-            return this.id.match(/team\d-scoring/);
-            }).each(function() {
+            return this.id.match(/team\d-scoring/); }).each(function() {
                 if ($(this).attr("team") != team_id) {
-                    $(this).addClass("disabled")
+                    $(this).addClass("disabled");
                 }
+            });
+        $(".box-team-middle>div>div").filter(function() {
+            return this.id.match(/team\d-answer$/); }).each(function() {
+                $(this).addClass("no-display");
+            });
+        $(".box-team-middle>div>div").filter(function() {
+            return this.id.match(/team\d-answer-dailydouble$/); }).each(function() {
+                $(this).removeClass("no-display");
             });
     }
 
-    function ReallowScoring() {
+    function NormalScoring() {
+        // re-enabling normal scoring
         $(".container-bottom-team>div").filter(function() {
-            return this.id.match(/team\d-scoring/);
-            }).each(function() {
-                $(this).removeClass("disabled")
+            return this.id.match(/team\d-scoring/); }).each(function() {
+                $(this).removeClass("disabled");
+            });
+        $(".box-team-middle>div>div").filter(function() {
+            return this.id.match(/team\d-answer$/); }).each(function() {
+                $(this).removeClass("no-display");
+            });
+        $(".box-team-middle>div>div").filter(function() {
+            return this.id.match(/team\d-answer-dailydouble$/); }).each(function() {
+                $(this).addClass("no-display");
             });
     }
     
@@ -465,7 +499,7 @@
             $("#question").empty();
             LockBuzzers();
         });
-        ReallowScoring();
+        NormalScoring();
     }
 
     {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}

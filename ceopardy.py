@@ -169,11 +169,17 @@ def answer():
     except utils.InvalidQuestionId:
         return jsonify(result="failure", error="Invalid category/question format!")
 
+    _q = controller.get_question(col, row)
+
     # Send everything but qid as a dict
     answers = request.form.to_dict()
     answers.pop('id')
-    if not controller.answer_normal(col, row, answers):
-        return jsonify(result="failure", error="Answer submission failed!")
+
+    if _q['dailydouble'] is False:
+
+        answers = utils.filter_answer_form(answers, dailydouble=False)
+        if not controller.answer_normal(col, row, answers):
+            return jsonify(result="failure", error="Answer submission failed!")
 
     # TODO this is grossly inefficient
     question_status = controller.get_questions_status_for_host()

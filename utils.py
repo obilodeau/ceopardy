@@ -139,6 +139,19 @@ def parse_question_id(qid):
     return (col, row)
 
 
+def filter_answer_form(data, dailydouble=False):
+    answers = {}
+    for key, value in data.items():
+        if dailydouble is False:
+            if not key.endswith("-dailydouble"):
+                answers[key] = value
+        else:
+            if key.endswith("-dailydouble"):
+                key = key.rstrip("-dailydouble")
+                answers[key] = value
+    return answers
+
+
 class InvalidQuestionId(Exception):
     pass
 
