@@ -1,4 +1,4 @@
-Add sound files here. Software expects 4 sound files:
+Add sound files here. Software expects 4 copyrighted sound files:
 
 daily-double.mp3:: Triggered from the UI
 
@@ -7,3 +7,17 @@ reveal.mp3:: Played when categories are revealed (when the game starts)
 thinking-music.wav:: Defined but not in use yet
 
 timeout.mp3:: Triggered from the UI
+
+These sound files below are provided due to their friendly licensing:
+
+buzzer1.wav:: Quiz Show Buzzer 3 (Rising) by JapanYoshiTheGamer,
+              licensed under CC-BY 3.0
+              https://freesound.org/people/JapanYoshiTheGamer/sounds/423218/
+
+buzzer2.wav:: Quiz Show Buzzer 2 by JapanYoshiTheGamer,
+              licensed under CC-BY 3.0
+              https://freesound.org/people/JapanYoshiTheGamer/sounds/423219/
+
+buzzer3.wav:: Quiz Show Buzzer 1 (8-bit) by JapanYoshiTheGamer,
+              licensed under CC-BY 3.0
+              https://freesound.org/people/JapanYoshiTheGamer/sounds/423220/

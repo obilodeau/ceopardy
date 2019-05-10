@@ -296,6 +296,7 @@
     </div>
 
 </div>
+<audio id="snd-buzzer1" src="/static/sounds/buzzer1.wav" type="audio/wav" preload="auto"></audio>
 <audio id="snd-timeout" src="/static/sounds/timeout.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-reveal" src="/static/sounds/reveal.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-thinking" src="/static/sounds/thinking-music.wav" type="audio/wav" preload="auto"></audio>
@@ -661,7 +662,7 @@
             return;
 
         socket.emit('team', {action: "select", id: `team${event.key}`}, SelectTeam);
-        //play_sound('#snd-timeout');
+        play_sound('#snd-buzzer1');
         LockBuzzers();
     }
 

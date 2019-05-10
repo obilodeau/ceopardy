@@ -14,3 +14,5 @@ ceopardy.log
 # sound files (not provided)
 /static/sounds/*.mp3
 /static/sounds/*.wav
+# these are creative commons sounds
+!/static/sounds/buzzer*.wav
