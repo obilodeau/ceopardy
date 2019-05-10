@@ -277,6 +277,8 @@ class Controller():
         _min = config.get('DAILYDOUBLE_WAIGER_MIN')
         scores = Controller.get_teams_score_by_tid()
         _max = scores[team_id]
+        if _max < config.get('DAILYDOUBLE_WAIGER_MAX_MIN'):
+            _max = config.get('DAILYDOUBLE_WAIGER_MAX_MIN')
         return (_min, _max)
 
 

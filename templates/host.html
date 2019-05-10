@@ -202,6 +202,7 @@
                                         <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-dailydouble" type="range" min="{{ dbl_waige_min }}" max="{{ dbl_waige_max }}" step="1" value="{{ range }}"/>
                                         <div class="box-answer-range-label">
                                             <div><p>Minimum</p></div>
+                                            <div><p id="{{ tid }}-waiger">{{ dbl_waige_max }}</p></div>
                                             <div><p>All-in!</p></div>
                                         </div>
                                     </div>
@@ -420,14 +421,19 @@
         }
     }
 
-    function DailyDoubleScoring(team_id) {
+    function DailyDoubleScoring(data) {
+        // set scores
+        $(`#${data.team}-range-dailydouble`).attr('min', data.dbl_waige_min);
+        $(`#${data.team}-range-dailydouble`).attr('max', data.dbl_waige_max);
+
         // disabling teams not in control
         $(".container-bottom-team>div").filter(function() {
             return this.id.match(/team\d-scoring/); }).each(function() {
-                if ($(this).attr("team") != team_id) {
+                if ($(this).attr("team") != data.team) {
                     $(this).addClass("disabled");
                 }
             });
+        // swapping score boxes
         $(".box-team-middle>div>div").filter(function() {
             return this.id.match(/team\d-answer$/); }).each(function() {
                 $(this).addClass("no-display");
@@ -444,6 +450,7 @@
             return this.id.match(/team\d-scoring/); }).each(function() {
                 $(this).removeClass("disabled");
             });
+        // swapping score boxes
         $(".box-team-middle>div>div").filter(function() {
             return this.id.match(/team\d-answer$/); }).each(function() {
                 $(this).removeClass("no-display");
@@ -452,6 +459,10 @@
             return this.id.match(/team\d-answer-dailydouble$/); }).each(function() {
                 $(this).addClass("no-display");
             });
+
+        // reset values
+        $(`#${data.team}-range-dailydouble`).attr('min', 0);
+        $(`#${data.team}-range-dailydouble`).attr('max', 0);
     }
     
     function SelectQuestion(id) {
@@ -465,7 +476,7 @@
             if (data.dailydouble == true) {
                 play_sound('#snd-dailydouble');
                 $("#question").html(data.question);
-                DailyDoubleScoring(data.team);
+                DailyDoubleScoring(data);
             }
 
             // Regular question
@@ -728,6 +739,24 @@
             }
         });
 
+        {# TODO assumption about number of players here #}
+        // FIXME couldn't get the for to work here in a timely fashion
+        //for(i = 1; i <= 3; i++) {
+        $(`#team1-range-dailydouble`).on("change mousemove", function() {
+            $(`#team1-waiger`).text($(this).val());
+        });
+        $(`#team2-range-dailydouble`).on("change mousemove", function() {
+            $(`#team2-waiger`).text($(this).val());
+        });
+        $(`#team3-range-dailydouble`).on("change mousemove", function() {
+            $(`#team3-waiger`).text($(this).val());
+        });
+
+        {% if state.get('dailydouble') == 'enabled' %}
+            // This is to trigger the daily-double sound on a freshly opened
+            // host if the server is in that state
+            play_sound('#snd-dailydouble');
+        {% endif %}
     });
 
 </script>

@@ -215,6 +215,7 @@ def handle_question(data):
         # Daily Double animation
         if question['dailydouble'] is True:
             ctrl_team = controller.get_team_in_control()
+            dbl_waige_min, dbl_waige_max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
             emit("question", {"action": "hide", "id": "question", "content": "",
                               "category": ""},
                  namespace='/viewer', broadcast=True)
@@ -225,7 +226,8 @@ def handle_question(data):
             controller.set_state("question", data["id"])
             controller.set_state("dailydouble", "enabled")
             return {"question": config.get("DAILYDOUBLE_HOST_TEXT"),
-                    "dailydouble": True, "team": ctrl_team.tid}
+                    "dailydouble": True, "team": ctrl_team.tid,
+                    "dbl_waige_min": dbl_waige_min, "dbl_waige_max": dbl_waige_max}
 
         # Question
         # FIXME: passdown dailydouble info to socketio on the host side, fix the JS accordingly
