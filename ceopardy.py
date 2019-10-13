@@ -184,9 +184,16 @@ def answer():
     answers.pop('id')
 
     if _q['dailydouble'] is False:
-
         answers = utils.filter_answer_form(answers, dailydouble=False)
         if not controller.answer_normal(col, row, answers):
+            return jsonify(result="failure", error="Answer submission failed!")
+
+    else:
+        answers = utils.filter_answer_form(answers, dailydouble=True)
+        team = controller.get_team_in_control()
+        answer = answers[team.tid+'-answer']
+        waiger = answers[team.tid+'-waiger']
+        if not controller.answer_dailydouble(col, row, team, answer, waiger):
             return jsonify(result="failure", error="Answer submission failed!")
 
     # TODO this is grossly inefficient
@@ -230,8 +237,6 @@ def handle_question(data):
                     "dbl_waige_min": dbl_waige_min, "dbl_waige_max": dbl_waige_max}
 
         # Question
-        # FIXME: passdown dailydouble info to socketio on the host side, fix the JS accordingly
-        #        keep the UI in sync if we ever refresh
         emit("question", {"action": "show", "id": "question",
                           "content": question['text'],
                           "dailydouble": question["dailydouble"],

@@ -381,6 +381,27 @@ class Controller():
 
 
     @staticmethod
+    def answer_dailydouble(column, row, team, answer, waiger):
+        app.logger.info("Daily Double Answer submitted for question ({}, {}) by {}: {} waiger: {}."
+                        .format(column, row, team.tid, answer, waiger))
+
+        condition = and_(Question.row == row, Question.col == column)
+        _q = Question.query.filter(condition).one()
+
+        # Delete existing answers
+        Answer.query.filter(Answer.question_id == _q.id).delete()
+
+        # Create a new one
+        question = Question.query.get(_q.id)
+        response = Response(int(answer))
+        _answer = Answer(response, team, question)
+        _answer.score_attributed = waiger
+        db.session.add(_answer)
+
+        db.session.commit()
+        return True
+
+    @staticmethod
     def _get_questions_status():
         """Full status about all questions"""
         questions = db.session.query(Question.row, Question.col, Answer)\

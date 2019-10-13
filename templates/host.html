@@ -194,14 +194,21 @@
                                         {% set score = results.get(tid, 0) %}
                                         {% if score == 0 %}
                                             {% set range = dbl_waige_max %}
+                                            {% set correct = -1 %}
                                         {% else %}
                                             {% set range = score %}
+                                            {% set correct = 1 %}
                                         {% endif %}
-                                        <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-dailydouble" type="range" min="{{ dbl_waige_min }}" max="{{ dbl_waige_max }}" step="1" value="{{ range }}"/>
+                                        <input id="{{ tid }}-range-dailydouble-waiger" class="team-range" name="{{ tid }}-waiger-dailydouble" type="range" min="{{ dbl_waige_min }}" max="{{ dbl_waige_max }}" step="1" value="{{ range }}"/>
                                         <div class="box-answer-range-label">
                                             <div><p>Minimum</p></div>
                                             <div><p id="{{ tid }}-waiger">{{ dbl_waige_max }}</p></div>
                                             <div><p>All-in!</p></div>
+                                        </div>
+                                        <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-answer-dailydouble" type="range" min="-1" max="1" step="2" value="{{ correct }}"/>
+                                        <div class="box-answer-range-label">
+                                            <div><p>Bad / No Answer</p></div>
+                                            <div><p>Good</p></div>
                                         </div>
                                     </div>
                                 </div>
@@ -296,7 +303,7 @@
     </div>
 
 </div>
-<audio id="snd-buzzer1" src="/static/sounds/buzzer1.wav" type="audio/wav" preload="auto"></audio>
+<audio id="snd-buzzer1" src="/static/sounds/buzzer1-new.wav" type="audio/wav" preload="auto"></audio>
 <audio id="snd-timeout" src="/static/sounds/timeout.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-reveal" src="/static/sounds/reveal.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-thinking" src="/static/sounds/thinking-music.wav" type="audio/wav" preload="auto"></audio>
@@ -422,8 +429,8 @@
 
     function DailyDoubleScoring(data) {
         // set scores
-        $(`#${data.team}-range-dailydouble`).attr('min', data.dbl_waige_min);
-        $(`#${data.team}-range-dailydouble`).attr('max', data.dbl_waige_max);
+        $(`#${data.team}-range-dailydouble-waiger`).attr('min', data.dbl_waige_min);
+        $(`#${data.team}-range-dailydouble-waiger`).attr('max', data.dbl_waige_max);
 
         // disabling teams not in control
         $(".container-bottom-team>div").filter(function() {
@@ -460,7 +467,7 @@
             });
         // reset values
         $("div.box-answer-range>input").filter(function() {
-            return this.id.match(/team\d-range-dailydouble$/); }).each(function() {
+            return this.id.match(/team\d-range-dailydouble-waiger$/); }).each(function() {
                 $(this).attr('min', 0);
                 $(this).attr('max', 0);
             });
@@ -486,10 +493,10 @@
         // dailydouble: if no answer default to all-in
         if (data.dailydouble == true) {
             if (!data.hasOwnProperty('answer') || !data.answer.hasOwnProperty(data.team)) {
-                $(`#${data.team}-range-dailydouble`).val(data.dbl_waige_max);
+                $(`#${data.team}-range-dailydouble-waiger`).val(data.dbl_waige_max);
             }
             // reflect slider value on the label
-            $(`#${data.team}-waiger`).text($(`#${data.team}-range-dailydouble`).val());
+            $(`#${data.team}-waiger`).text($(`#${data.team}-range-dailydouble-waiger`).val());
         }
     }
     
@@ -505,6 +512,7 @@
             if (data.dailydouble == true) {
                 play_sound('#snd-dailydouble');
                 $("#question").html(data.question);
+                $("#question-id").val(id);
                 DailyDoubleScoring(data);
             }
 
@@ -763,13 +771,13 @@
         {# TODO assumption about number of players here #}
         // FIXME couldn't get the for to work here in a timely fashion
         //for(i = 1; i <= 3; i++) {
-        $(`#team1-range-dailydouble`).on("change mousemove", function() {
+        $(`#team1-range-dailydouble-waiger`).on("change mousemove", function() {
             $(`#team1-waiger`).text($(this).val());
         });
-        $(`#team2-range-dailydouble`).on("change mousemove", function() {
+        $(`#team2-range-dailydouble-waiger`).on("change mousemove", function() {
             $(`#team2-waiger`).text($(this).val());
         });
-        $(`#team3-range-dailydouble`).on("change mousemove", function() {
+        $(`#team3-range-dailydouble-waiger`).on("change mousemove", function() {
             $(`#team3-waiger`).text($(this).val());
         });
 
