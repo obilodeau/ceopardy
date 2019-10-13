@@ -29,7 +29,7 @@ import utils
 from config import config
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
-VERSION = "0.1.0"
+VERSION = "0.3.0"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Alex Trebek forever!'
