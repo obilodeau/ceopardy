@@ -242,6 +242,26 @@ class Controller():
 
 
     @staticmethod
+    def get_team_score_by_tid(team_id):
+        answers = db.session.query(Team.id, Team.tid, Answer.response,
+                                   Answer.score_attributed)\
+                            .join(Answer).filter(Team.tid == team_id).all()
+
+        # No answers, 0 score
+        if not answers:
+            return 0
+
+        score = 0
+        # Sum all answers with negative scoring handled for bad answers
+        for answer in answers:
+            _id, _tid, _response, _score = answer
+
+            # bad: -1, nop: 0 and good: 1 multiplied with score gives result
+            score += _response.value * _score
+        return score
+
+
+    @staticmethod
     def get_good_answer_team(col, row):
         """
         Returns the team id of the team who correctly answered the specified question

@@ -223,11 +223,15 @@ def handle_question(data):
         if question['dailydouble'] is True:
             ctrl_team = controller.get_team_in_control()
             dbl_waige_min, dbl_waige_max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
+            ctrl_team_score = controller.get_team_score_by_tid(ctrl_team.tid)
             emit("question", {"action": "hide", "id": "question", "content": "",
                               "category": ""},
                  namespace='/viewer', broadcast=True)
             emit("dailydouble", {"qid": data['id'],
-                                 "category": question["category"]},
+                                 "category": question["category"],
+                                 "team_name": ctrl_team.name,
+                                 "team_id": ctrl_team.tid,
+                                 "team_score": ctrl_team_score},
                  namespace="/viewer",
                  broadcast=True)
             controller.set_state("question", data["id"])

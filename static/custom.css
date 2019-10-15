@@ -480,6 +480,13 @@ svg:hover polygon {
   padding-right: 5px;
 }
 
+.container-display-waiger {
+  flex-grow: 1;
+  flex-basis: 0;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
 .row-ceopardy {
   display: flex;
 }
@@ -683,6 +690,11 @@ svg:hover polygon {
 
 .black-box {
   background-color: #000000;
+  border-radius: .50rem;
+  height: 100%;
+}
+
+.dd-box {
   border-radius: .50rem;
   height: 100%;
 }

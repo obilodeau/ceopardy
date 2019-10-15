@@ -45,7 +45,7 @@
 
     <div class="container-separator-h"></div>
 
-    <div class="container-results">
+    <div id="teams-hud" class="container-results {{ 'no-display' if state.get('dailydouble') == 'enabled' }}">
         {% set select_tid = state.get('team', '') %}
         {% for name, score in scores.items() %}
         {% set tid = 'team{}'.format(loop.index) %}
@@ -62,6 +62,45 @@
                 </div>
         </div>
         {% endfor %}
+    </div>
+    {# if in DailyDouble mode #}
+    {% if state.get('dailydouble') == 'enabled' %}
+        {% set dd = namespace() %}
+        {% set dd.team_id = state.get('team') %}
+        {% for name, score in scores.items() %}
+            {% if dd.team_id == 'team{}'.format(loop.index) %}
+                {% set dd.name = name %}
+                {% set dd.score = score %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <div id="dailydouble-hud" class="container-results {{ 'no-display' if state.get('dailydouble', '') != 'enabled' }}">
+        <div class="container-team">
+            <div id="dailydouble-team" class="black-box flex-pad team-selected" style="width: 80%; max-width:250px; margin: auto;">
+                <div class="col-player flex-horizontal-pad">
+                    <div class="row-player flex-vertical-pad" style="height: 30%;">
+                        <div id="dailydouble-team-score" class="box-ceopardy box-score"><p>${{ dd.score }}</p></div>
+                    </div>
+                    <div class="row-player flex-vertical-pad" style="height: 70%;">
+                        <div id="dailydouble-team-name" class="box-ceopardy box-team {{ dd.team_id ~ '-font' if state.get('dailydouble') == 'enabled' }}"><p>{{ dd.name }}</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="container-display-waiger" class="container-display-waiger">
+                <div class="dd-box flex-pad" style="width: 80%; margin: auto;">
+                    <div class="col-player flex-horizontal-pad">
+                        <div class="row-player flex-vertical-pad" style="height: 30%;">
+                            <div class="box-ceopardy box-team"><p>Waiger</p></div>
+                        </div>
+                        <div class="row-player flex-vertical-pad" style="height: 70%;">
+                            <div id="dailydouble-waiger-score" class="box-ceopardy box-score"><p>9000</p></div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
     </div>
 </div>
 
@@ -194,6 +233,18 @@
         return newEl;
     }
 
+    function DailyDoubleTeamWaiger(data) {
+        $('#teams-hud').addClass("no-display");
+        $('#dailydouble-hud').removeClass("no-display");
+        $('#dailydouble-team-name>p').text(data.team_name);
+        // remove all previously applied team fonts
+        $('#dailydouble-team-name').removeClass (function (index, className) {
+            return (className.match (/^[a-z0-9]+-font$/g) || []).join(' ');
+        });
+        $('#dailydouble-team-name').addClass(data.team_id + '-font');
+        $('#dailydouble-team-score>p').text(data.team_score);
+    }
+
     socket.on('connect', function() {
         socket.emit('refresh');
     });
@@ -219,6 +270,7 @@
     socket.on('dailydouble', function(data) {
         showQuestionCategory(data.category);
         DailyDoubleAnimate($(`#${data.qid}`).parent());
+        DailyDoubleTeamWaiger(data);
     });
 
     socket.on('question', function(question) {
