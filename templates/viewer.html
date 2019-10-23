@@ -63,9 +63,9 @@
         </div>
         {% endfor %}
     </div>
+    {% set dd = namespace() %}
     {# if in DailyDouble mode #}
     {% if state.get('dailydouble') == 'enabled' %}
-        {% set dd = namespace() %}
         {% set dd.team_id = state.get('team') %}
         {% for name, score in scores.items() %}
             {% if dd.team_id == 'team{}'.format(loop.index) %}
