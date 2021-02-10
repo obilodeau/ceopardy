@@ -152,8 +152,8 @@
             {% set dailydouble = state.get('dailydouble', '') %}
             {% for name, score in scores.items() %}
             {% set tid = 'team{}'.format(loop.index) %}
-            <div class="container-bottom-team" style="height: 100%;">
-                <div team="{{ tid }}" id="{{ tid }}-scoring" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }} {{ 'disabled' if select_tid != tid and dailydouble == 'enabled' }}" style="width: 100%; margin: auto;">
+            <div id="{{ tid }}-scoring-box" class="container-bottom-team {{ 'no-display' if select_tid != tid and dailydouble == 'enabled' }}" style="height: 100%;">
+                <div team="{{ tid }}" id="{{ tid }}-scoring" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }}" style="width: 100%; margin: auto;">
                     
                     <div class="row-ceopardy col-ceopardy flex-small-pad" style="height: 100%;">
                         <div class="box-ceopardy">
@@ -433,10 +433,10 @@
         $(`#${data.team}-range-dailydouble-waiger`).attr('max', data.dbl_waige_max);
 
         // disabling teams not in control
-        $(".container-bottom-team>div").filter(function() {
-            return this.id.match(/team\d-scoring/); }).each(function() {
-                if ($(this).attr("team") != data.team) {
-                    $(this).addClass("disabled");
+        $(".container-bottom-middle>div").filter(function() {
+            return this.id.match(/team\d-scoring-box/); }).each(function() {
+                if ($(this).children("div").attr("team") != data.team) {
+                    $(this).addClass("no-display");
                 }
             });
         // swapping score boxes
@@ -452,9 +452,9 @@
 
     function NormalScoring() {
         // re-enabling normal scoring
-        $(".container-bottom-team>div").filter(function() {
-            return this.id.match(/team\d-scoring/); }).each(function() {
-                $(this).removeClass("disabled");
+        $(".container-bottom-middle>div").filter(function() {
+            return this.id.match(/team\d-scoring-box/); }).each(function() {
+                $(this).removeClass("no-display");
             });
         // swapping score boxes
         $(".box-team-middle>div>div").filter(function() {
