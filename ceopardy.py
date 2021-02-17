@@ -280,6 +280,12 @@ def handle_message(data):
     controller.set_state("message", mid)
     controller.set_state("overlay-big", content)
 
+@socketio.on('dailydouble-waiger', namespace='/host')
+def handle_ddbet(data):
+    """Passes DailyDouble bet information to viewers"""
+    controller = get_controller()
+    emit("dailydouble-waiger", data, namespace='/viewer', broadcast=True)
+
 
 @socketio.on('team', namespace='/host')
 def handle_team(data):

@@ -273,6 +273,10 @@
         DailyDoubleTeamWaiger(data);
     });
 
+    socket.on('dailydouble-waiger', function(data) {
+        $('#dailydouble-waiger-score>p').text(data);
+    });
+
     socket.on('question', function(question) {
         $("#dailydouble-overlay").fadeOut(1000, function() {
             $(this).remove();

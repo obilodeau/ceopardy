@@ -773,12 +773,15 @@
         //for(i = 1; i <= 3; i++) {
         $(`#team1-range-dailydouble-waiger`).on("change mousemove", function() {
             $(`#team1-waiger`).text($(this).val());
+            socket.emit('dailydouble-waiger', $(this).val());
         });
         $(`#team2-range-dailydouble-waiger`).on("change mousemove", function() {
             $(`#team2-waiger`).text($(this).val());
+            socket.emit('dailydouble-waiger', $(this).val());
         });
         $(`#team3-range-dailydouble-waiger`).on("change mousemove", function() {
             $(`#team3-waiger`).text($(this).val());
+            socket.emit('dailydouble-waiger', $(this).val());
         });
 
         {% if state.get('dailydouble') == 'enabled' %}
