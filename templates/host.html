@@ -145,23 +145,27 @@
             </div>
         </div>
 
-        {# TODO: consider migrating this to a flask-wtform #}
-        <form id="form-question" class="container-bottom-middle">
+        {% set dailydouble = state.get('dailydouble', '') %}
+        <form id="form-question" class="container-bottom-middle" data-state="{{ 'dailydouble' if dailydouble == 'enabled' else 'normal' }}">
             {% set results = questions.get(select_qid, {}) %}
             {% set select_tid = state.get('team', '') %}
-            {% set dailydouble = state.get('dailydouble', '') %}
             {% for name, score in scores.items() %}
             {% set tid = 'team{}'.format(loop.index) %}
-            <div id="{{ tid }}-scoring-box" class="container-bottom-team {{ 'no-display' if select_tid != tid and dailydouble == 'enabled' }}" style="height: 100%;">
+            <div id="{{ tid }}-scoring-box" class="container-bottom-team" style="height: 100%;">
                 <div team="{{ tid }}" id="{{ tid }}-scoring" class="black-box flex-small-pad {{ 'team-selected' if select_tid == tid }}" style="width: 100%; margin: auto;">
                     
                     <div class="row-ceopardy col-ceopardy flex-small-pad" style="height: 100%;">
                         <div class="box-ceopardy">
                             <div class="box-team-side">
                                 
-                                <div class="box-answer-team form-color" style="display: flex; vertical-align: middle; margin: auto;">
-                                    <div class="form-icon form-click team-select">
+                                <div class="box-answer-team form-color">
+                                    <div class="form-icon form-click team-select" title="Select team">
                                         <i class="fa fa-crosshairs fa-2x"></i>
+                                    </div>
+                                    <div id="waiger-submit" class="form-icon form-click team-waiger-submit
+                                        {{ 'no-display' if dailydouble != 'enabled' or (select_tid != tid and dailydouble == 'enabled')}}"
+                                        title="Submit waiger">
+                                        <i class="fa fa-check-square-o fa-2x"></i>
                                     </div>
                                 </div>
                             </div>
@@ -190,7 +194,7 @@
                                     </div>
 
                                     {# Answer box for daily double questions #}
-                                    <div id="{{ tid }}-answer-dailydouble" class="box-answer-range {{ 'no-display' if dailydouble != 'enabled' }}">
+                                    <div id="{{ tid }}-answer-dailydouble" class="box-answer-range">
                                         {% set score = results.get(tid, 0) %}
                                         {% if score == 0 %}
                                             {% set range = dbl_waige_max %}
@@ -205,11 +209,13 @@
                                             <div><p id="{{ tid }}-waiger">{{ dbl_waige_max }}</p></div>
                                             <div><p>All-in!</p></div>
                                         </div>
+                                        <!--
                                         <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-answer-dailydouble" type="range" min="-1" max="1" step="2" value="{{ correct }}"/>
                                         <div class="box-answer-range-label">
                                             <div><p>Bad / No Answer</p></div>
                                             <div><p>Good</p></div>
                                         </div>
+                                        //-->
                                     </div>
                                 </div>
                             </div>
@@ -433,12 +439,12 @@
         $(`#${data.team}-range-dailydouble-waiger`).attr('max', data.dbl_waige_max);
 
         // disabling teams not in control
-        $(".container-bottom-middle>div").filter(function() {
-            return this.id.match(/team\d-scoring-box/); }).each(function() {
-                if ($(this).children("div").attr("team") != data.team) {
-                    $(this).addClass("no-display");
-                }
-            });
+        //$(".container-bottom-middle>div").filter(function() {
+        //    return this.id.match(/team\d-scoring-box/); }).each(function() {
+        //        if ($(this).children("div").attr("team") != data.team) {
+        //            $(this).addClass("no-display");
+        //        }
+        //    });
         // swapping score boxes
         $(".box-team-middle>div>div").filter(function() {
             return this.id.match(/team\d-answer$/); }).each(function() {
@@ -734,9 +740,15 @@
         });
         
         $('#results-submit').on("click", SubmitResults);
+        $('#waiger-submit').on("click", SubmitWaiger);
         $('#form-question').on("submit", function(e){
             e.preventDefault();
-            SubmitResults(e);
+            if (e.target.dataset.state == 'dailydouble') {
+                SubmitResults(e);
+            }
+            else {
+                SubmitWaiger(e);
+            }
         });
         
         $('.message-display').on("click", DisplayMessage);

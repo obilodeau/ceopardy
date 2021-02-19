@@ -407,7 +407,7 @@ svg:hover polygon {
 }*/
 
 .box-answer-team {
-  flex-grow: 1;
+  margin: auto;
 }
 
 .box-answer-range {
