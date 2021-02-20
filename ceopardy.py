@@ -211,6 +211,27 @@ def answer():
                    teams=teams, ctl_team=ctl_team)
     
 
+@app.route('/dailydouble_waiger', methods=["POST"])
+def dailydouble_waiger():
+    # TODO is is still incomplete
+    # id: question id in format ex: c2q3
+    # teamX-waiger-dailydouble: amount selected
+    # team in control can be trusted from db
+    # FIXME this form isn't CSRF protected
+    app.logger.debug("DailyDouble Waiger was submitted: {}", request.form)
+    data = request.form
+    controller = get_controller()
+
+    waiging_team = controller.get_state("team")
+    waiger = data[f'{waiging_team}-waiger-dailydouble']
+    # TODO server needs to validate if bet is within min-max allowed
+    controller.set_state("dailydouble_waiger", waiger)
+
+    # TODO bring front-end back to question view
+    #emit("team", {'action': 'select', 'args': ctl_team}, namespace='/viewer', broadcast=True)
+    return jsonify(result="success", waiger=waiger)
+
+
 @socketio.on('question', namespace='/host')
 def handle_question(data):
     controller = get_controller()

@@ -146,7 +146,7 @@
         </div>
 
         {% set dailydouble = state.get('dailydouble', '') %}
-        <form id="form-question" class="container-bottom-middle" data-state="{{ 'dailydouble' if dailydouble == 'enabled' else 'normal' }}">
+        <form id="form-question" class="container-bottom-middle" data-state="{{ 'dailydouble-waiger' if dailydouble == 'enabled' else 'normal' }}">
             {% set results = questions.get(select_qid, {}) %}
             {% set select_tid = state.get('team', '') %}
             {% for name, score in scores.items() %}
@@ -194,7 +194,7 @@
                                     </div>
 
                                     {# Answer box for daily double questions #}
-                                    <div id="{{ tid }}-answer-dailydouble" class="box-answer-range">
+                                    <div id="{{ tid }}-waiger-dailydouble" class="box-answer-range">
                                         {% set score = results.get(tid, 0) %}
                                         {% if score == 0 %}
                                             {% set range = dbl_waige_max %}
@@ -204,18 +204,20 @@
                                             {% set correct = 1 %}
                                         {% endif %}
                                         <input id="{{ tid }}-range-dailydouble-waiger" class="team-range" name="{{ tid }}-waiger-dailydouble" type="range" min="{{ dbl_waige_min }}" max="{{ dbl_waige_max }}" step="1" value="{{ range }}"/>
-                                        <div class="box-answer-range-label">
+                                        <div id="{{ tid }}-range-dailydouble-waiger-labels" class="box-answer-range-label">
                                             <div><p>Minimum</p></div>
                                             <div><p id="{{ tid }}-waiger">{{ dbl_waige_max }}</p></div>
                                             <div><p>All-in!</p></div>
                                         </div>
-                                        <!--
-                                        <input id="{{ tid }}-range-dailydouble" class="team-range" name="{{ tid }}-answer-dailydouble" type="range" min="-1" max="1" step="2" value="{{ correct }}"/>
-                                        <div class="box-answer-range-label">
+                                    </div>
+                                    <div id="{{ tid }}-answer-dailydouble" class="box-answer-range {{ 'no-display' if dailydouble == 'enabled' }}">
+                                        <input id="{{ tid }}-range-dailydouble-answer" class="team-range" 
+                                                name="{{ tid }}-answer-dailydouble" type="range" min="-1" max="1" step="2" value="{{ correct }}" />
+                                        <div id="{{ tid }}-range-dailydouble-answer-labels" class="box-answer-range-label">
                                             <div><p>Bad / No Answer</p></div>
+                                            <div><p id="dailydouble-waiger"></p></div>
                                             <div><p>Good</p></div>
                                         </div>
-                                        //-->
                                     </div>
                                 </div>
                             </div>
@@ -596,6 +598,41 @@
         });
     }
 
+    {# FIXME: not CSRF protected but what are the odds of clicking on a link during a game ;) #}
+    function SubmitWaiger(event) {
+        var url = "{{ url_for('dailydouble_waiger') }}";
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $('#form-question').serialize(),
+            dataType: 'json',
+            success: function (data) {
+                $(".form-error").empty();
+                if (data.result == "success") {
+                    $("#dailydouble-waiger").text(data.waiger)
+                    DailyDoubleWaigerToAnswer();
+                    // TODO lockout other teams
+                    // TODO show clue
+                }
+                else {
+                   console.log("You fucked it up! ;)");
+                }
+            }
+        });
+    }
+
+    function DailyDoubleWaigerToAnswer() {
+
+        $("div.box-answer-range").filter(function() {
+        return this.id.match(/team\d-waiger-dailydouble$/); }).each(function() {
+            $(this).addClass("no-display");
+        });
+        $("div.box-answer-range").filter(function() {
+        return this.id.match(/team\d-answer-dailydouble$/); }).each(function() {
+            $(this).removeClass("no-display");
+        });
+    }
+
     function DisplayMessage(event) {
         var show = $(this).find('.message-show');
         var hide = $(this).find('.message-hide');
@@ -743,11 +780,11 @@
         $('#waiger-submit').on("click", SubmitWaiger);
         $('#form-question').on("submit", function(e){
             e.preventDefault();
-            if (e.target.dataset.state == 'dailydouble') {
-                SubmitResults(e);
+            if (e.target.dataset.state == 'dailydouble-waiger') {
+                SubmitWaiger(e);
             }
             else {
-                SubmitWaiger(e);
+                SubmitResults(e);
             }
         });
         
