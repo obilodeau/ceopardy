@@ -91,6 +91,7 @@ a:active {
     });
         
     $('.action-button').on("click", function(e) {
+        e.preventDefault()
         var url = "{{ url_for('init') }}";
         $.ajax({
             type: "POST",
@@ -103,7 +104,6 @@ a:active {
                 }
                 else {
                    console.log(data.error);
-                   e.preventDefault()
                 }
             }
         });
