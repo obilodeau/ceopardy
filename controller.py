@@ -246,7 +246,7 @@ class Controller():
         """
         Returns the team id of the team who correctly answered the specified question
         """
-        team = db.session.query(Team).join(Answer, Question).filter(
+        team = db.session.query(Team).join(Answer).join(Question).filter(
             and_(Question.col == col, Question.row == row,
                  Answer.response == Response.good)).first()
         if team:
