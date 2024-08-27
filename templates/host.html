@@ -303,11 +303,15 @@
     </div>
 
 </div>
-<audio id="snd-buzzer1" src="/static/sounds/buzzer1-new.wav" type="audio/wav" preload="auto"></audio>
+
+<audio id="snd-buzzer1" src="/static/sounds/buzzer1.wav" type="audio/wav" preload="auto"></audio>
+<audio id="snd-buzzer2" src="/static/sounds/buzzer2.wav" type="audio/wav" preload="auto"></audio>
+<audio id="snd-buzzer3" src="/static/sounds/buzzer3.wav" type="audio/wav" preload="auto"></audio>
 <audio id="snd-timeout" src="/static/sounds/timeout.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-reveal" src="/static/sounds/reveal.mp3" type="audio/mp3" preload="auto"></audio>
 <audio id="snd-thinking" src="/static/sounds/thinking-music.wav" type="audio/wav" preload="auto"></audio>
 <audio id="snd-dailydouble" src="/static/sounds/daily-double.mp3" type="audio/mp3" preload="auto"></audio>
+
 {% endblock %}
 
 {% block ui %}
@@ -660,7 +664,9 @@
 
     function play_sound(selector) {
         try {
-            $(selector).get(0).play();
+            /*$(selector).get(0).play();*/
+            var sound = new Audio($(selector).get(0).src);
+            sound.play();
         }
         catch(error) {
             console.log("No sound!");
@@ -673,7 +679,7 @@
             return;
 
         socket.emit('team', {action: "select", id: `team${event.key}`}, SelectTeam);
-        play_sound('#snd-buzzer1');
+        play_sound('#snd-buzzer' + event.key);
         LockBuzzers();
     }
 
