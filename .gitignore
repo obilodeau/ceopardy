@@ -1,11 +1,13 @@
 # Python
 __pycache__/
+/.venv/
 
 # IDE files
 /.idea/
 
-# dependencies managed by Bower
+# dependencies managed by npm
 /static/vendor/
+/node_modules/
 
 # project files
 ceopardy*db
