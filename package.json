@@ -15,8 +15,8 @@
     "url": "git+https://github.com/obilodeau/ceopardy.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Olivier Bilodeau",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/obilodeau/ceopardy/issues"
   },
