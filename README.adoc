@@ -24,10 +24,13 @@ display a custom message on the board or to pause a game.
 
 == First time deployment
 
-You need Python 3 and https://bower.io[Bower].
+You need Python 3, pip, virtualenv and npm. The tl;dr:
 
+    python -m venv .venv/
+    source .venv/bin/activate
     pip install -r requirements.txt
-    bower install
+    npm install
+    npm run copy-assets
     python3 ceopardy.py
 
 == Setup

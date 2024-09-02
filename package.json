@@ -1,0 +1,32 @@
+{
+  "name": "ceopardy",
+  "version": "1.0.0",
+  "description": "Ceopardy Static Front-End Assets",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "copy-assets": "helpers/copy-static-assets.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obilodeau/ceopardy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/obilodeau/ceopardy/issues"
+  },
+  "homepage": "https://github.com/obilodeau/ceopardy#readme",
+  "dependencies": {
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.7.1",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1"
+  }
+}
