@@ -4,6 +4,7 @@ __pycache__/
 
 # IDE files
 /.idea/
+/.vscode/
 
 # dependencies managed by npm
 /static/vendor/
