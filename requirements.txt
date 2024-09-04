@@ -1,6 +1,6 @@
 Flask==2.3.3
-Werkzeug==3.0.4
-Flask-SocketIO==5.3.2
+Flask-SocketIO==5.3.7
 Flask-SQLAlchemy==2.5.1
+Flask-WTF==1.2.1
 SQLAlchemy==1.4
-Flask-WTF==1.0.1
+Werkzeug==3.0.4
