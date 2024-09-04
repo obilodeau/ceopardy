@@ -100,7 +100,7 @@ a:active {
             dataType: 'json',
             success: function (data) {
                 if (data.result == "success") {
-                    
+                    location.reload();
                 }
                 else {
                    console.log(data.error);
