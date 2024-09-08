@@ -26,6 +26,7 @@ from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
 import utils
+from api.api_routes import api_bp
 from config import config
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
@@ -36,6 +37,8 @@ app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + config['DATABASE_FILENAME']
 # To supress warnings about a feature we don't use
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Register the API Blueprint
+app.register_blueprint(api_bp)
 
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
