@@ -22,6 +22,7 @@ import re
 import sys
 
 from flask import g, Flask, render_template, redirect, jsonify, request
+from flask_cors import CORS
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
@@ -42,6 +43,7 @@ app.register_blueprint(api_bp)
 
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
+CORS(app)
 
 
 @app.context_processor
