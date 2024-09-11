@@ -23,3 +23,13 @@ api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 def get_categories():
     categories = app.controller.get_categories()
     return jsonify(categories)
+
+
+@api_bp.route('/current_question', methods=['GET'])
+def get_active_question():
+    return jsonify(app.controller.get_active_question())
+
+
+@api_bp.route('/questions/grid', methods=['GET'])
+def get_game_grid():
+    return jsonify(app.controller.get_questions_status_for_viewer())

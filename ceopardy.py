@@ -352,6 +352,7 @@ def create_app():
         _ctl = getattr(g, '_ctl', None)
         if _ctl is None:
             _ctl = g._ctl = Controller()
+        # TODO would be nice if this could get type hints
         app.controller = _ctl
 
         @app.teardown_appcontext
