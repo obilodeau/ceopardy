@@ -17,13 +17,13 @@
 #
 import os
 
+from dotenv import dotenv_values
+
+
 config = {
     'NB_TEAMS': 3,
     'VARIABLE_TEAMS': False,
-    'CATEGORIES_PER_GAME': 5,
-    'QUESTIONS_PER_CATEGORY': 5,
     'QUESTIONS_FILENAME': 'data/Questions.cp',
-    'SCORE_TICK': 100,
     'MESSAGES': [\
         {"title": "Game not started",
          "text": "Please wait while the game is being set up..."},
@@ -40,3 +40,8 @@ config = {
     'DAILYDOUBLE_WAIGER_MIN': 5,
     'DAILYDOUBLE_WAIGER_MAX_MIN': 500
 }
+
+env_config = dotenv_values(".env")
+
+# eventually we can replace with Python's 3.9+ config = config | env_config
+config = {**config, **env_config}
