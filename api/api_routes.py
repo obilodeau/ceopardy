@@ -33,3 +33,13 @@ def get_active_question():
 @api_bp.route('/questions/grid', methods=['GET'])
 def get_game_grid():
     return jsonify(app.controller.get_questions_status_for_viewer())
+
+
+@api_bp.route('/state', methods=['GET'])
+def get_state():
+    return jsonify(app.controller.get_complete_state())
+
+
+@api_bp.route('/scores', methods=['GET'])
+def get_scores():
+    return jsonify(app.controller.get_teams_score())
