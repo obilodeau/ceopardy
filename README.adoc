@@ -65,3 +65,14 @@ database where transactions are pushed when the hosts submit the points. This
 has the flipside requiring games to be finalized before a new one can be
 started. Make sure that you always push the "Game over" button before
 reloading to start a new game.
+
+== Dev
+
+Use appropriate node version. A `.nvmrc` file exists to ease setup.
+Once you have https://github.com/nvm-sh/nvm#nvmrc[installed nvm adequately] (or https://github.com/jorgebucaran/nvm.fish[with fish]):
+
+    nvm use
+
+=== Front-End
+
+    npm run dev

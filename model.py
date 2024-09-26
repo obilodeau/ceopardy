@@ -20,7 +20,7 @@ from enum import Enum
 
 from flask import current_app as app
 
-from ceopardy import db, VERSION
+from ceopardy import VERSION
 
 
 SCHEMA_VERSION = 1
@@ -36,12 +36,12 @@ class GameState(Enum):
     finished = 3
 
 
-class Game(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    state = db.Column(db.Enum(GameState))
-    ceopardy_version = db.Column(db.String(16))
-    schema_version = db.Column(db.Integer)
-    round_filename = db.Column(db.String(255))
+class Game(app.db.Model):
+    id = app.db.Column(app.db.Integer, primary_key=True)
+    state = app.db.Column(app.db.Enum(GameState))
+    ceopardy_version = app.db.Column(app.db.String(16))
+    schema_version = app.db.Column(app.db.Integer)
+    round_filename = app.db.Column(app.db.String(255))
 
     def __init__(self):
         self.state = GameState.uninitialized
@@ -52,13 +52,13 @@ class Game(db.Model):
         return '<Game in state %r>' % self.state
 
 
-class Team(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    tid = db.Column(db.String(7), unique=True)
-    name = db.Column(db.String(80), unique=True)
-    handicap = db.Column(db.Integer)
+class Team(app.db.Model):
+    id = app.db.Column(app.db.Integer, primary_key=True)
+    tid = app.db.Column(app.db.String(7), unique=True)
+    name = app.db.Column(app.db.String(80), unique=True)
+    handicap = app.db.Column(app.db.Integer)
 
-    answers = db.relationship('Answer', back_populates='team')
+    answers = app.db.relationship('Answer', back_populates='team')
 
     def __init__(self, tid, name, handicap=0):
         self.tid = tid
@@ -71,17 +71,17 @@ class Team(db.Model):
         return '<Team %r>' % self.name
 
 
-class Question(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(255))
-    score_original = db.Column(db.Integer)
-    category = db.Column(db.String(80))
-    final = db.Column(db.Boolean)
-    double = db.Column(db.Boolean)
-    row = db.Column(db.Integer)
-    col = db.Column(db.Integer)
+class Question(app.db.Model):
+    id = app.db.Column(app.db.Integer, primary_key=True)
+    text = app.db.Column(app.db.String(255))
+    score_original = app.db.Column(app.db.Integer)
+    category = app.db.Column(app.db.String(80))
+    final = app.db.Column(app.db.Boolean)
+    double = app.db.Column(app.db.Boolean)
+    row = app.db.Column(app.db.Integer)
+    col = app.db.Column(app.db.Integer)
 
-    answers = db.relationship('Answer', back_populates="question")
+    answers = app.db.relationship('Answer', back_populates="question")
 
     def __init__(self, text, score_original, category, row, col, final=False,
                  double=False):
@@ -110,16 +110,16 @@ class Response(Enum):
     good = 1
 
 
-class Answer(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    score_attributed = db.Column(db.Integer)
-    response = db.Column(db.Enum(Response))
+class Answer(app.db.Model):
+    id = app.db.Column(app.db.Integer, primary_key=True)
+    score_attributed = app.db.Column(app.db.Integer)
+    response = app.db.Column(app.db.Enum(Response))
 
-    team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
-    team = db.relationship('Team', back_populates="answers")
+    team_id = app.db.Column(app.db.Integer, app.db.ForeignKey('team.id'))
+    team = app.db.relationship('Team', back_populates="answers")
 
-    question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
-    question = db.relationship('Question', back_populates="answers")
+    question_id = app.db.Column(app.db.Integer, app.db.ForeignKey('question.id'))
+    question = app.db.relationship('Question', back_populates="answers")
 
     def __init__(self, response, team, question):
         """Meant to be used on normal questions where score is not changeable"""
@@ -140,10 +140,10 @@ class Category():
         self.column = column
 
 
-class State(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(10), unique=True)
-    value = db.Column(db.String(4096))
+class State(app.db.Model):
+    id = app.db.Column(app.db.Integer, primary_key=True)
+    name = app.db.Column(app.db.String(10), unique=True)
+    value = app.db.Column(app.db.String(4096))
 
     def __init__(self, name, value):
         self.name = name
@@ -154,4 +154,4 @@ class State(db.Model):
 
 
 # This creates the database if it doesn't already exist
-db.create_all()
+app.db.create_all()

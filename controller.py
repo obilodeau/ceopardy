@@ -22,7 +22,6 @@ from datetime import datetime
 from flask import current_app as app
 from sqlalchemy import and_
 
-from ceopardy import db
 from config import config
 from model import Answer, Game, Team, GameState, Question, Response, State, \
     FinalQuestion
@@ -44,15 +43,15 @@ class Controller():
         # If there's not a game state, create one
         if Game.query.one_or_none() is None:
             game = Game()
-            db.session.add(game)
+            app.db.session.add(game)
             # Default overlay state for a new game
-            db.session.add(State("overlay-small", ""))
-            db.session.add(State("overlay-big", "<p>There is currently no host running the show!</p>"))
+            app.db.session.add(State("overlay-small", ""))
+            app.db.session.add(State("overlay-big", "<p>There is currently no host running the show!</p>"))
             # No question is selected, the game hasn't started
-            db.session.add(State("question", ""))
-            db.session.add(State("container-header", "slide-down"))
-            db.session.add(State("container-footer", "slide-up"))
-            db.session.commit()
+            app.db.session.add(State("question", ""))
+            app.db.session.add(State("container-header", "slide-down"))
+            app.db.session.add(State("container-footer", "slide-up"))
+            app.db.session.commit()
 
 
     @staticmethod
@@ -76,8 +75,8 @@ class Controller():
         if game.state == GameState.uninitialized:
             for _tid, _tn in teamnames.items():
                 team = Team(_tid, _tn)
-                db.session.add(team)
-            db.session.commit()
+                app.db.session.add(team)
+            app.db.session.commit()
         else:
             raise GameProblem("Trying to setup a game that is already started")
         return True
@@ -88,8 +87,8 @@ class Controller():
         """Teamnames is {teamid: team_name} dict"""
         app.logger.info("Update teams: {}".format(teamnames))
         for _id, _name in teamnames.items():
-            db.session.query(Team).filter_by(tid=_id).update({"name": _name})
-        db.session.commit()
+            app.db.session.query(Team).filter_by(tid=_id).update({"name": _name})
+        app.db.session.commit()
 
 
     @staticmethod
@@ -113,18 +112,18 @@ class Controller():
 
                     question = Question(_q, score, _cat, _row, _col,
                                         double = daily_double)
-                    db.session.add(question)
+                    app.db.session.add(question)
 
             # Add final question
             if final is not None:
                 final = FinalQuestion(**final)
                 question = Question(final.question, 0, final.category, 0, 0, final=True)
-                db.session.add(question)
+                app.db.session.add(question)
 
             # Once everything loaded successfully, identify round file and commit
             game.round_filename = round_file
-            db.session.add(game)
-            db.session.commit()
+            app.db.session.add(game)
+            app.db.session.commit()
 
         else:
             raise GameProblem("Trying to setup a game that is already started")
@@ -139,7 +138,7 @@ class Controller():
             # Yes, mark game as started
             game = Game.query.one()
             game.state = GameState.in_round
-            db.session.commit()
+            app.db.session.commit()
             return True
 
         else:
@@ -154,7 +153,7 @@ class Controller():
         # Mark as finished
         game = Game.query.one()
         game.state = GameState.finished
-        db.session.commit()
+        app.db.session.commit()
         return True
 
 
@@ -171,7 +170,7 @@ class Controller():
 
         game = Game.query.one()
         game.state = GameState.in_round
-        db.session.commit()
+        app.db.session.commit()
         scores = Controller.get_teams_score()
         app.logger.info("A game has been resumed. Current teams / scores: {}"
                         .format(scores))
@@ -186,14 +185,14 @@ class Controller():
     @staticmethod
     def get_teams_score():
         if Controller.is_game_initialized():
-            answers = db.session.query(Team.id, Team.name, Answer.response,
+            answers = app.db.session.query(Team.id, Team.name, Answer.response,
                                        Answer.score_attributed)\
                                 .join(Answer).order_by(Team.id).all()
 
             results = OrderedDict()
             # Handle case when there are no answers: names with 0 score
             if not answers:
-                for _team in db.session.query(Team).order_by(Team.id).all():
+                for _team in app.db.session.query(Team).order_by(Team.id).all():
                     results[_team.name] = 0
                 return results
 
@@ -218,14 +217,14 @@ class Controller():
     # Temporary fix, find a way to merge with the function above!
     @staticmethod
     def get_teams_score_by_tid():
-        answers = db.session.query(Team.id, Team.tid, Answer.response,
+        answers = app.db.session.query(Team.id, Team.tid, Answer.response,
                                    Answer.score_attributed)\
                             .join(Answer).order_by(Team.id).all()
 
         results = OrderedDict()
         # Handle case when there are no answers: names with 0 score
         if not answers:
-            for _team in db.session.query(Team).order_by(Team.id).all():
+            for _team in app.db.session.query(Team).order_by(Team.id).all():
                 results[_team.tid] = 0
             return results
 
@@ -246,7 +245,7 @@ class Controller():
         """
         Returns the team id of the team who correctly answered the specified question
         """
-        team = db.session.query(Team).join(Answer).join(Question).filter(
+        team = app.db.session.query(Team).join(Answer).join(Question).filter(
             and_(Question.col == col, Question.row == row,
                  Answer.response == Response.good)).first()
         if team:
@@ -297,7 +296,7 @@ class Controller():
     @staticmethod
     def get_categories():
         return [_q.category for _q in
-                db.session.query(Question.category).distinct()
+                app.db.session.query(Question.category).distinct()
                   .filter(Question.final == False)
                   .order_by(Question.col)]
 
@@ -366,7 +365,7 @@ class Controller():
         if prev_answers:
             for _answer in prev_answers:
                 _answer.response = Response(int(answers[_answer.team.tid]))
-                db.session.add(_answer)
+                app.db.session.add(_answer)
 
         # Otherwise create new ones
         else:
@@ -374,9 +373,9 @@ class Controller():
                 team = Team.query.filter(Team.tid == tid).one()
                 question = Question.query.get(_q.id)
                 response = Response(int(points))
-                db.session.add(Answer(response, team, question))
+                app.db.session.add(Answer(response, team, question))
 
-        db.session.commit()
+        app.db.session.commit()
         return True
 
 
@@ -396,15 +395,15 @@ class Controller():
         response = Response(int(answer))
         _answer = Answer(response, team, question)
         _answer.score_attributed = waiger
-        db.session.add(_answer)
+        app.db.session.add(_answer)
 
-        db.session.commit()
+        app.db.session.commit()
         return True
 
     @staticmethod
     def _get_questions_status():
         """Full status about all questions"""
-        questions = db.session.query(Question.row, Question.col, Answer)\
+        questions = app.db.session.query(Question.row, Question.col, Answer)\
                                     .outerjoin(Answer).all()
         return questions
 
@@ -476,8 +475,8 @@ class Controller():
             else:
                 result.value = value
         else:
-            db.session.add(State(name, value))
-        db.session.commit()
+            app.db.session.add(State(name, value))
+        app.db.session.commit()
 
 
     @staticmethod
@@ -491,11 +490,11 @@ class Controller():
         _bkp = 'ceopardy_{}_{}.db'.format(datetime.now().strftime('%Y-%m-%d_%H%M'),
                                           previous_roundfile)
         app.logger.info('Backing up current game to {}'.format(_bkp))
-        db.engine.dispose()
+        app.db.engine.dispose()
         os.rename(config['BASE_DIR'] + config['DATABASE_FILENAME'],
                   config['BASE_DIR'] + _bkp)
-        db.session = db.create_scoped_session()
-        db.create_all()
+        app.db.session = app.db.create_scoped_session()
+        app.db.create_all()
         Controller._init()
         app.logger.info('SQL Engine reconnected, empty database recreated.' +
                         'We are ready to go!')

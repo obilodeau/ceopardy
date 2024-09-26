@@ -22,10 +22,12 @@ import re
 import sys
 
 from flask import g, Flask, render_template, redirect, jsonify, request
+from flask_cors import CORS
 from flask_socketio import SocketIO, emit, disconnect
 from flask_sqlalchemy import SQLAlchemy
 
 import utils
+from api.api_routes import api_bp
 from config import config
 from forms import TeamNamesForm, TEAM_FIELD_ID
 
@@ -36,9 +38,12 @@ app.config['SECRET_KEY'] = 'Alex Trebek forever!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + config['DATABASE_FILENAME']
 # To supress warnings about a feature we don't use
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Register the API Blueprint
+app.register_blueprint(api_bp)
 
 socketio = SocketIO(app)
 db = SQLAlchemy(app)
+CORS(app)
 
 
 @app.context_processor
@@ -50,12 +55,11 @@ def inject_config():
 @app.route('/')
 @app.route('/viewer')
 def viewer():
-    controller = get_controller()
-    scores = controller.get_teams_score()
-    categories = controller.get_categories()
-    questions = controller.get_questions_status_for_viewer()
-    state = controller.get_complete_state()
-    active_question = controller.get_active_question()
+    scores = app.controller.get_teams_score()
+    categories = app.controller.get_categories()
+    questions = app.controller.get_questions_status_for_viewer()
+    state = app.controller.get_complete_state()
+    active_question = app.controller.get_active_question()
     return render_template('viewer.html', scores=scores, categories=categories,
                            questions=questions, state=state,
                            active_question=active_question)
@@ -67,7 +71,7 @@ def viewer():
 # TODO add authentication here
 @app.route('/host')
 def host():
-    controller = get_controller()
+    controller = app.controller
 
     if not controller.is_game_in_progress():
         must_init = controller.is_game_initialized() is False
@@ -104,7 +108,7 @@ def host():
 @app.route('/init', methods=["POST"])
 def init():
     """Init can resume a finished game or start a new one"""
-    controller = get_controller()
+    controller = app.controller
 
     if request.form['action'] == "new":
         roundfile = request.form['name']
@@ -152,7 +156,7 @@ def init():
 
 @app.route('/setup', methods=["POST"])
 def setup():
-    controller = get_controller()
+    controller = app.controller
     form = TeamNamesForm()
     # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
     if not form.validate_on_submit():
@@ -169,7 +173,7 @@ def answer():
     # FIXME this form isn't CSRF protected
     app.logger.debug("Answer form has been submitted with: {}", request.form)
     data = request.form
-    controller = get_controller()
+    controller = app.controller
 
     app.logger.debug('received data: {}'.format(data["id"]))
     try:
@@ -213,7 +217,7 @@ def answer():
 
 @socketio.on('question', namespace='/host')
 def handle_question(data):
-    controller = get_controller()
+    controller = app.controller
     if data["action"] == "select":
         col, row = utils.parse_question_id(data["id"])
         question = controller.get_question(col, row)
@@ -261,7 +265,7 @@ def handle_question(data):
 
 @socketio.on('message', namespace='/host')
 def handle_message(data):
-    controller = get_controller()
+    controller = app.controller
     # FIXME Temporary XSS!!!
     if data["action"] == "show":
         content = "<p>{0}</p>".format(data["text"])
@@ -279,7 +283,7 @@ def handle_message(data):
 
 @socketio.on('team', namespace='/host')
 def handle_team(data):
-    controller = get_controller()
+    controller = app.controller
     if data["action"] == "select":
         team = data["id"]
         data["args"] = team
@@ -301,13 +305,12 @@ def handle_team(data):
 
 @socketio.on('slider', namespace='/host')
 def handle_slider(data):
-    controller = get_controller()
-    controller.set_state(data["id"], data["value"])
+    app.controller.set_state(data["id"], data["value"])
 
 
 @socketio.on('final', namespace='/host')
 def move_to_final_round(data):
-    controller = get_controller()
+    controller = app.controller
     if controller.is_final_question():
         # TODO implement
         pass
@@ -322,34 +325,35 @@ def move_to_final_round(data):
 
 @socketio.on('refresh', namespace='/viewer')
 def handle_refresh():
-    controller = get_controller()
     # FIXME
-    #state = controller.dictionize_questions_solved()
+    #state = app.controller.dictionize_questions_solved()
     state = {}
     emit("update-board", state)
 
 
-if __name__ == '__main__':
+def create_app():
 
-    # Logging
-    file_handler = logging.FileHandler('ceopardy.log')
-    #file_handler.setLevel(logging.INFO)
-    file_handler.setLevel(logging.DEBUG)
-    fmt = logging.Formatter(
-        '{asctime} {levelname}: {message} [in {pathname}:{lineno}]', style='{')
-    file_handler.setFormatter(fmt)
-    app.logger.addHandler(file_handler)
-
-    # Cleaner controller access
-    # Unsure if required once we have a db back-end
     with app.app_context():
 
+        # Logging
+        file_handler = logging.FileHandler('ceopardy.log')
+        #file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.DEBUG)
+        fmt = logging.Formatter(
+            '{asctime} {levelname}: {message} [in {pathname}:{lineno}]', style='{')
+        file_handler.setFormatter(fmt)
+        app.logger.addHandler(file_handler)
+
+        # Database
+        app.db = db
+
+        # Controller
         from controller import Controller
-        def get_controller():
-            _ctl = getattr(g, '_ctl', None)
-            if _ctl is None:
-                _ctl = g._ctl = Controller()
-            return _ctl
+        _ctl = getattr(g, '_ctl', None)
+        if _ctl is None:
+            _ctl = g._ctl = Controller()
+        # TODO would be nice if this could get type hints
+        app.controller = _ctl
 
         @app.teardown_appcontext
         def teardown_controller(exception):
@@ -361,3 +365,7 @@ if __name__ == '__main__':
     # WARNING: This app is not ready to be exposed on the network.
     #          Game host interface would be exposed.
     socketio.run(app, host="127.0.0.1", debug=True)
+
+
+if __name__ == '__main__':
+    create_app()

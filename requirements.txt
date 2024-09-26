@@ -1,6 +1,8 @@
 Flask==2.3.3
+Flask-CORS==5.0.0
 Flask-SocketIO==5.3.7
 Flask-SQLAlchemy==2.5.1
 Flask-WTF==1.2.1
+python-dotenv==0.19.2
 SQLAlchemy==1.4
 Werkzeug==3.0.4

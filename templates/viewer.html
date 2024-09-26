@@ -2,7 +2,7 @@
 {% block title %}Game Board{% endblock %}
 
 {% block content %}
-{% set height = (100 / QUESTIONS_PER_CATEGORY)|int %}
+{% set height = (100 / (QUESTIONS_PER_CATEGORY | int)) | int %}
 <div class="container-game container-all container-light">
 
     <div class="container-categories-viewer">
@@ -28,13 +28,13 @@
 
     <div class="container-questions-viewer">
         <div class="black-box flex-pad">
-            {% for _r in range(1, QUESTIONS_PER_CATEGORY + 1) %}
+            {% for _r in range(1, (QUESTIONS_PER_CATEGORY | int) + 1) %}
             <div class="row-ceopardy flex-vertical-pad" style="height: {{ height }}%;">
-                {% for _c in range(1, CATEGORIES_PER_GAME + 1) %}
+                {% for _c in range(1, (CATEGORIES_PER_GAME | int) + 1) %}
                 {% set answered = questions['c{}q{}'.format(_c, _r)] == True %}
                 <div class="col-ceopardy flex-horizontal-pad">
                     <div id="c{{ _c }}q{{ _r }}" class="box-ceopardy box-question-viewer" role="button">
-                        <p class="{{ 'answered' if answered }}">${{ _r * SCORE_TICK }}</p>
+                        <p class="{{ 'answered' if answered }}">${{ _r * (SCORE_TICK | int) }}</p>
                     </div>
                 </div>
                 {% endfor %}
