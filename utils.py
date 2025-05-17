@@ -113,6 +113,19 @@ def question_to_html(question_text):
         # TODO push style into CSS
         return '<img src="/static/game-media/{}" width="100%" style="max-height: 100%; max-width: 100%; object-fit: contain;">'.format(m.group(1))
 
+    # Parsing videos
+    m = re.search(r'^\[video:([^\]]*)\]$', question_text)
+    if m:
+        # TODO file names will have to be hard to guess if we go multi-client
+        # TODO push style into CSS
+        return '''
+            <video src="/static/game-media/{}"
+                autoplay
+                controls
+                style="max-height: 100%; max-width: 100%; object-fit: contain;">
+            </video>
+        '''.format(m.group(1))
+
     # Transform new lines into <br>
     question_text = re.sub(r'\n', '<br/>', question_text)
 
