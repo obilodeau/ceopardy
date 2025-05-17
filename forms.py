@@ -37,7 +37,7 @@ class TeamNamesForm(FlaskForm):
 class UniqueTeamName():
     """A validator that ensures that each field of a given field set is unique."""
     # We use WTForms' flags to identify team name entries so that they can be dynamic
-    field_flags = (TEAM_FIELD_ID,)
+    field_flags = {TEAM_FIELD_ID: True}
 
     def __call__(self, form, field):
         for otherfield in form._fields.values():
