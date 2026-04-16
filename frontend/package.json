@@ -1,0 +1,23 @@
+{
+  "name": "ceopardy-frontend",
+  "private": true,
+  "version": "0.5.0",
+  "type": "module",
+  "description": "Ceopardy front-end built with Vite + Vue 3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "pinia": "^2.2.2",
+    "socket.io-client": "^4.7.5",
+    "vue": "^3.4.38",
+    "vue-router": "^4.4.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.3",
+    "vite": "^5.4.3"
+  }
+}
