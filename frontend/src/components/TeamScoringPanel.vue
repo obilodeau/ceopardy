@@ -80,66 +80,64 @@ const teamFontClass = `team${props.idx + 1}-font`
             </div>
           </div>
           <div class="box-team-middle">
-            <div style="height: 100%">
-              <div class="box-ceopardy box-team-host" :class="teamFontClass">
-                <p>{{ team.name }}</p>
-              </div>
+            <div class="box-ceopardy box-team-host" :class="teamFontClass">
+              <p>{{ team.name }}</p>
+            </div>
 
-              <!-- Normal scoring -->
-              <div
-                v-if="!dailydouble"
-                class="box-answer-range"
-              >
-                <input
-                  class="team-range"
-                  :name="tid"
-                  type="range"
-                  min="-1"
-                  max="1"
-                  step="1"
-                  :value="answerVal"
-                  @input="updateAnswer(Number($event.target.value))"
-                />
-                <div class="box-answer-range-label">
-                  <div><p>Bad</p></div>
-                  <div><p>No Answer</p></div>
-                  <div><p>Good</p></div>
-                </div>
+            <!-- Normal scoring -->
+            <div
+              v-if="!dailydouble"
+              class="box-answer-range"
+            >
+              <input
+                class="team-range"
+                :name="tid"
+                type="range"
+                min="-1"
+                max="1"
+                step="1"
+                :value="answerVal"
+                @input="updateAnswer(Number($event.target.value))"
+              />
+              <div class="box-answer-range-label">
+                <div><p>Bad</p></div>
+                <div><p>No Answer</p></div>
+                <div><p>Good</p></div>
               </div>
+            </div>
 
-              <!-- Daily double scoring -->
-              <div v-else class="box-answer-range">
-                <input
-                  class="team-range"
-                  :name="`${tid}-waiger-dailydouble`"
-                  type="range"
-                  :min="game.dailydouble_range.min"
-                  :max="game.dailydouble_range.max"
-                  step="1"
-                  :value="waigerVal"
-                  @input="updateWaiger(Number($event.target.value))"
-                />
-                <div class="box-answer-range-label">
-                  <div><p>Minimum</p></div>
-                  <div>
-                    <p>{{ waigerVal }}</p>
-                  </div>
-                  <div><p>All-in!</p></div>
+            <!-- Daily double scoring -->
+            <div v-else class="box-answer-range">
+              <input
+                class="team-range"
+                :name="`${tid}-waiger-dailydouble`"
+                type="range"
+                :min="game.dailydouble_range.min"
+                :max="game.dailydouble_range.max"
+                step="1"
+                :value="waigerVal"
+                @input="updateWaiger(Number($event.target.value))"
+              />
+              <div class="box-answer-range-label">
+                <div><p>Minimum</p></div>
+                <div>
+                  <p>{{ waigerVal }}</p>
                 </div>
-                <input
-                  class="team-range"
-                  :name="`${tid}-answer-dailydouble`"
-                  type="range"
-                  min="-1"
-                  max="1"
-                  step="2"
-                  :value="doubleVal"
-                  @input="updateDouble(Number($event.target.value))"
-                />
-                <div class="box-answer-range-label">
-                  <div><p>Bad / No Answer</p></div>
-                  <div><p>Good</p></div>
-                </div>
+                <div><p>All-in!</p></div>
+              </div>
+              <input
+                class="team-range"
+                :name="`${tid}-answer-dailydouble`"
+                type="range"
+                min="-1"
+                max="1"
+                step="2"
+                :value="doubleVal"
+                @input="updateDouble(Number($event.target.value))"
+              />
+              <div class="box-answer-range-label">
+                <div><p>Bad / No Answer</p></div>
+                <div><p>Good</p></div>
               </div>
             </div>
           </div>
