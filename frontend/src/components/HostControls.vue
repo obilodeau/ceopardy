@@ -7,6 +7,7 @@ const props = defineProps({
 const emit = defineEmits([
   'roulette',
   'timeout',
+  'thinking',
   'toggle-buzzers',
   'submit',
   'finish',
@@ -42,6 +43,13 @@ function hoverSpinner(state) {
               @click="emit('timeout')"
             >
               <i class="fa-regular fa-clock fa-2x" />
+            </div>
+            <div
+              class="form-icon form-click"
+              title="Thinking music"
+              @click="emit('thinking')"
+            >
+              <i class="fa-solid fa-music fa-2x" />
             </div>
             <div
               class="form-icon form-click"

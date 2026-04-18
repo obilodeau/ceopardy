@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
 import { useGameStore } from '@/stores/game'
@@ -119,12 +119,30 @@ const soundUrls = {
   thinking: '/static/sounds/thinking-music.wav',
   dailydouble: '/static/sounds/daily-double.mp3',
 }
+const preloaded = {}
+for (const [name, url] of Object.entries(soundUrls)) {
+  const a = new Audio(url)
+  a.preload = 'auto'
+  preloaded[name] = a
+}
+
+let thinkingAudio = null
 function playSound(name) {
   try {
     const audio = new Audio(soundUrls[name])
     audio.play().catch(() => {})
   } catch {
     /* ignore */
+  }
+}
+function toggleThinking() {
+  if (thinkingAudio && !thinkingAudio.paused) {
+    thinkingAudio.pause()
+    thinkingAudio.currentTime = 0
+    thinkingAudio = null
+  } else {
+    thinkingAudio = new Audio(soundUrls.thinking)
+    thinkingAudio.play().catch(() => {})
   }
 }
 
@@ -143,13 +161,6 @@ watch(
   { deep: true },
 )
 
-// ---- Active question HTML (for the preview panel) ----
-const activeHtml = computed(() => {
-  if (game.isDailyDouble) {
-    return '<p>Daily Double!<br/>Please input user bet.</p>'
-  }
-  return game.active_question?.text ?? ''
-})
 </script>
 
 <template>
@@ -166,6 +177,7 @@ const activeHtml = computed(() => {
         :buzzers-locked="buzzersLocked"
         @roulette="onRoulette"
         @timeout="playTimeout"
+        @thinking="toggleThinking"
         @toggle-buzzers="toggleBuzzers"
         @submit="submitAnswers"
         @finish="onFinish"
@@ -186,13 +198,8 @@ const activeHtml = computed(() => {
       </form>
 
       <div class="container-bottom-right">
-        <div class="black-box flex-small-pad">
-          <div class="box-fake-overlay">
-            <div
-              class="box-ceopardy box-question-host"
-              v-html="activeHtml"
-            />
-          </div>
+        <div class="black-box flex-small-pad" style="height: 100%">
+          <iframe class="iframe-viewer" src="/" />
         </div>
       </div>
     </div>
