@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
 import { useGameStore } from '@/stores/game'
@@ -161,6 +161,12 @@ watch(
   { deep: true },
 )
 
+const activeHtml = computed(() => {
+  if (game.isDailyDouble) {
+    return '<p>Daily Double!<br/>Please input user bet.</p>'
+  }
+  return game.active_question?.text ?? ''
+})
 </script>
 
 <template>
@@ -198,8 +204,13 @@ watch(
       </form>
 
       <div class="container-bottom-right">
-        <div class="black-box flex-small-pad" style="height: 100%">
-          <iframe class="iframe-viewer" src="/" />
+        <div class="black-box flex-small-pad">
+          <div class="box-fake-overlay">
+            <div
+              class="box-ceopardy box-question-host"
+              v-html="activeHtml"
+            />
+          </div>
         </div>
       </div>
     </div>
