@@ -28,6 +28,7 @@ now only does three things:
 For development run Flask (`python ceopardy.py`) and Vite (`npm run dev`)
 side by side. Vite proxies /api and /socket.io to Flask.
 """
+import json
 import logging
 import os
 import sys
@@ -38,7 +39,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 from config import config
 
-VERSION = "0.5.0"
+with open(os.path.join(os.path.dirname(__file__), "package.json")) as _f:
+    VERSION = json.load(_f)["version"]
 
 # The Vite build drops its output here. `npm run build` writes the production
 # bundle; during dev Vite serves directly on :5173 and proxies /api to us.

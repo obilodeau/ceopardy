@@ -7,15 +7,7 @@ import { getSocket } from '@/socket'
 export const useGameStore = defineStore('game', {
   state: () => ({
     initialized: false,
-    config: {
-      NB_TEAMS: 3,
-      CATEGORIES_PER_GAME: 5,
-      QUESTIONS_PER_CATEGORY: 5,
-      SCORE_TICK: 100,
-      VARIABLE_TEAMS: false,
-      DAILYDOUBLE_WAIGER_MIN: 5,
-      DAILYDOUBLE_WAIGER_MAX_MIN: 500,
-    },
+    config: {},  // populated from /api/v1/state on connect
     game_state: 'uninitialized',
     teams: [], // [{tid, name, score}]
     categories: [], // ['Cat1', ...]
