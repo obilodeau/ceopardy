@@ -28,7 +28,7 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
-      '/static/game-media': {
+      '/static': {
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
