@@ -1,0 +1,62 @@
+/* Custom Jeopardy fonts. The TTF/OTF/WOFF2 assets live in Flask's
+   /static/fonts and are served as-is in dev and prod. */
+
+@font-face {
+  font-family: 'Gyparody';
+  src: url('/static/fonts/gyparody.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Woodlands';
+  src: url('/static/fonts/woodlands.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Dancing';
+  src: url('/static/fonts/dancing.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Variane';
+  src: url('/static/fonts/variane.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Little Days';
+  src: url('/static/fonts/littledays.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Pacifico';
+  src: url('/static/fonts/pacifico.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Oleo Script';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Oleo Script'), local('OleoScript-Regular'),
+    url('/static/fonts/oleo.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+@font-face {
+  font-family: 'Berkshire Swash';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Berkshire Swash'), local('BerkshireSwash-Regular'),
+    url('/static/fonts/berkshire.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+@font-face {
+  font-family: 'Merienda One';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Merienda One'), local('MeriendaOne-Regular'),
+    url('/static/fonts/merienda.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}

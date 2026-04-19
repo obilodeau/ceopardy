@@ -2,7 +2,7 @@
 # https://github.com/obilodeau/ceopardy/
 #
 # Olivier Bilodeau <olivier@bottomlesspit.org>
-# Copyright (C) 2017-2024 Olivier Bilodeau
+# Copyright (C) 2017-2026 Olivier Bilodeau
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,349 +15,156 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-import functools
+"""
+Flask back-end for Ceopardy.
+
+Since v0.5 the front-end has been rewritten as a Vite + Vue SPA. This module
+now only does three things:
+
+  * expose a REST API under /api/v1 (see api.routes)
+  * broadcast realtime state changes on the /game Socket.IO namespace
+  * serve the built SPA (and some legacy static assets)
+
+For development run Flask (`python ceopardy.py`) and Vite (`npm run dev`)
+side by side. Vite proxies /api and /socket.io to Flask.
+"""
+import json
 import logging
-import random
-import re
+import os
 import sys
 
-from flask import g, Flask, render_template, redirect, jsonify, request
-from flask_socketio import SocketIO, emit, disconnect
+from flask import Flask, g, jsonify, send_from_directory
+from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
-import utils
 from config import config
-from forms import TeamNamesForm, TEAM_FIELD_ID
 
-VERSION = "0.4.0"
+with open(os.path.join(os.path.dirname(__file__), "package.json")) as _f:
+    VERSION = json.load(_f)["version"]
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Alex Trebek forever!'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + config['DATABASE_FILENAME']
-# To supress warnings about a feature we don't use
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# The Vite build drops its output here. `npm run build` writes the production
+# bundle; during dev Vite serves directly on :5173 and proxies /api to us.
+FRONTEND_DIST = os.path.join(config["BASE_DIR"], "static", "dist")
 
-socketio = SocketIO(app)
+
+app = Flask(
+    __name__,
+    static_folder="static",
+    static_url_path="/static",
+)
+app.config["SECRET_KEY"] = "Alex Trebek forever!"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + config["DATABASE_FILENAME"]
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# CORS for dev so that http://localhost:5173 can hit http://127.0.0.1:5000.
+# We deliberately don't make this configurable — the app isn't meant to be
+# exposed over a network.
+try:
+    from flask_cors import CORS
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+except ImportError:
+    # flask-cors is optional; prod serves everything from the same origin.
+    pass
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading",
+)
 db = SQLAlchemy(app)
 
 
-@app.context_processor
-def inject_config():
-    """Injects ceopardy configuration for the template system"""
-    return config
+# ---------------------------------------------------------------------------
+# SPA hosting
+# ---------------------------------------------------------------------------
+SPA_ROUTES = {"", "viewer", "host", "start"}
 
 
-@app.route('/')
-@app.route('/viewer')
-def viewer():
-    controller = get_controller()
-    scores = controller.get_teams_score()
-    categories = controller.get_categories()
-    questions = controller.get_questions_status_for_viewer()
-    state = controller.get_complete_state()
-    active_question = controller.get_active_question()
-    return render_template('viewer.html', scores=scores, categories=categories,
-                           questions=questions, state=state,
-                           active_question=active_question)
+def _spa_response():
+    """Return the SPA's index.html if it has been built, otherwise a hint."""
+    index = os.path.join(FRONTEND_DIST, "index.html")
+    if os.path.exists(index):
+        return send_from_directory(FRONTEND_DIST, "index.html")
+    return (
+        "<h1>Ceopardy front-end not built.</h1>"
+        "<p>Run <code>cd frontend && npm install && npm run build</code>,"
+        " or use <code>npm run dev</code> and browse"
+        " <a href='http://localhost:5173/'>http://localhost:5173/</a>.</p>",
+        503,
+    )
 
 
-# TODO we must kill all client-side state on server load.
-# To reproduce: Not-reloading a host view and reloading server causes mismatch
-# between client and server states. Client is out of sync.
-# TODO add authentication here
-@app.route('/host')
-def host():
-    controller = get_controller()
-
-    if not controller.is_game_in_progress():
-        must_init = controller.is_game_initialized() is False
-        roundfiles = utils.list_roundfiles()
-        return render_template('start.html', must_init=must_init,
-                               roundfiles=roundfiles)
-
-    # TODO these objects need a major clean up for improved consistency
-    # and reduced overhead
-    scores = controller.get_teams_score()
-    teams = controller.get_teams_for_form()
-    form = TeamNamesForm(data=teams)
-    categories = controller.get_categories()
-    questions = controller.get_questions_status_for_host()
-    state = controller.get_complete_state()
-    active_question = controller.get_active_question()
-
-    if state.get("dailydouble", "") == "enabled":
-        ctrl_team = controller.get_team_in_control()
-        dbl_waige_min, dbl_waige_max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
-    else:
-        dbl_waige_min = 0
-        dbl_waige_max = 0
-
-    return render_template('host.html', scores=scores, teams=teams, form=form,
-                           categories=categories, questions=questions,
-                           state=state, active_question=active_question,
-                           config=config, dbl_waige_min=dbl_waige_min,
-                           dbl_waige_max=dbl_waige_max)
+@app.route("/")
+@app.route("/viewer")
+@app.route("/host")
+@app.route("/start")
+def serve_spa():
+    return _spa_response()
 
 
-# For now, this will give un an initial state which will avoid complications when
-# rendering the host board
-@app.route('/init', methods=["POST"])
-def init():
-    """Init can resume a finished game or start a new one"""
-    controller = get_controller()
-
-    if request.form['action'] == "new":
-        roundfile = request.form['name']
-        app.logger.info("New game requested with round file: {}"
-                        .format(roundfile))
-
-        # We want to start a new game, is there already one in the db?
-        if controller.is_game_initialized():
-            controller.db_backup_and_create_new()
-
-        # Let's start a game!
-        teamnames = {}
-        for i in range(1, config['NB_TEAMS'] + 1):
-            teamnames['team{}'.format(i)] = 'Team {}'.format(i)
-        try:
-            controller.setup_teams(teamnames)
-            controller.setup_questions(roundfile)
-            controller.start_game()
-        except:
-            app.logger.exception("Initialization error!")
-            return jsonify(result="failure", error="Initialization error!")
-
-    elif request.form['action'] == "resume":
-        controller.resume_game()
-
-    # This is kind of dirty, not sure I like it
-    content = "<p>{}</p>".format(config["MESSAGES"][0]["text"])
-    controller.set_state("message", "message1")
-    controller.set_state("overlay-big", content)
-    emit("overlay", {"action": "show", "id": "big", "html": content},
-         namespace='/viewer', broadcast=True)
-    
-    # Just to be on the safe side
-    controller.set_state("question", "")
-    controller.set_state("overlay-question", "")
-    emit("overlay", {"action": "hide", "id": "question", "html": ""},
-         namespace='/viewer', broadcast=True)
-    
-    # Also as a precaution, the initialization might have caused something
-    # to change below the big overlay
-    emit("redirect", {"url": "/"}, namespace='/viewer', broadcast=True)
-
-    return jsonify(result="success")
+@app.route("/assets/<path:filename>")
+def serve_spa_asset(filename):
+    return send_from_directory(os.path.join(FRONTEND_DIST, "assets"), filename)
 
 
-@app.route('/setup', methods=["POST"])
-def setup():
-    controller = get_controller()
-    form = TeamNamesForm()
-    # TODO: [LOW] csrf token errors are not logged (and return 200 which contradicts docs)
-    if not form.validate_on_submit():
-        return jsonify(result="failure", errors=form.errors)
-    teamnames = {field.id: field.data for field in form
-                 if TEAM_FIELD_ID in field.flags}
-    controller.update_teams(teamnames)
-    emit("team", {"action": "name", "args": teamnames}, namespace='/viewer', broadcast=True)
-    return jsonify(result="success", teams=teamnames)
+@app.route("/api/v1/version")
+def version():
+    return jsonify(version=VERSION)
 
 
-@app.route('/answer', methods=["POST"])
-def answer():
-    # FIXME this form isn't CSRF protected
-    app.logger.debug("Answer form has been submitted with: {}", request.form)
-    data = request.form
-    controller = get_controller()
-
-    app.logger.debug('received data: {}'.format(data["id"]))
-    try:
-        col, row = utils.parse_question_id(data["id"])
-    except utils.InvalidQuestionId:
-        return jsonify(result="failure", error="Invalid category/question format!")
-
-    _q = controller.get_question(col, row)
-
-    # Send everything but qid as a dict
-    answers = request.form.to_dict()
-    answers.pop('id')
-
-    if _q['dailydouble'] is False:
-        answers = utils.filter_answer_form(answers, dailydouble=False)
-        if not controller.answer_normal(col, row, answers):
-            return jsonify(result="failure", error="Answer submission failed!")
-
-    else:
-        answers = utils.filter_answer_form(answers, dailydouble=True)
-        team = controller.get_team_in_control()
-        answer = answers[team.tid+'-answer']
-        waiger = answers[team.tid+'-waiger']
-        if not controller.answer_dailydouble(col, row, team, answer, waiger):
-            return jsonify(result="failure", error="Answer submission failed!")
-
-    # TODO this is grossly inefficient
-    question_status = controller.get_questions_status_for_host()
-    teams = controller.get_teams_score_by_tid()
-    emit("team", {"action": "score", "args": teams}, namespace='/viewer', broadcast=True)
-
-    # someone answered correctly? identify team in control
-    ctl_team = controller.get_good_answer_team(col, row)
-    # highlight team in control and persist that state
-    controller.set_state("team", ctl_team)
-    emit("team", {'action': 'select', 'args': ctl_team}, namespace='/viewer', broadcast=True)
-
-    return jsonify(result="success", answers=question_status[data["id"]],
-                   teams=teams, ctl_team=ctl_team)
-    
-
-@socketio.on('question', namespace='/host')
-def handle_question(data):
-    controller = get_controller()
-    if data["action"] == "select":
-        col, row = utils.parse_question_id(data["id"])
-        question = controller.get_question(col, row)
-        answer = controller.get_answer(col, row)
-
-        # Daily Double animation
-        if question['dailydouble'] is True:
-            ctrl_team = controller.get_team_in_control()
-            dbl_waige_min, dbl_waige_max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
-            emit("question", {"action": "hide", "id": "question", "content": "",
-                              "category": ""},
-                 namespace='/viewer', broadcast=True)
-            emit("dailydouble", {"qid": data['id'],
-                                 "category": question["category"]},
-                 namespace="/viewer",
-                 broadcast=True)
-            controller.set_state("question", data["id"])
-            controller.set_state("dailydouble", "enabled")
-            return {"question": config.get("DAILYDOUBLE_HOST_TEXT"),
-                    "dailydouble": True, "team": ctrl_team.tid,
-                    "dbl_waige_min": dbl_waige_min, "dbl_waige_max": dbl_waige_max}
-
-        # Question
-        emit("question", {"action": "show", "id": "question",
-                          "content": question['text'],
-                          "dailydouble": question["dailydouble"],
-                          "category": question['category']},
-             namespace='/viewer', broadcast=True)
-        controller.set_state("question", data["id"])
-        controller.set_state("dailydouble", "")
-        return {"question": question['text'], "answer": answer,
-                "dailydouble": False}
-
-    # Return to board
-    elif data["action"] == "deselect":
-        state = controller.get_questions_status_for_viewer()
-        emit("update-board", state, namespace='/viewer', broadcast=True)
-        emit("question", {"action": "hide", "id": "question", "content": "",
-                          "category": ""},
-             namespace='/viewer', broadcast=True)
-        controller.set_state("question", "")
-        controller.set_state("dailydouble", "")
-        return {}
+# ---------------------------------------------------------------------------
+# Socket.IO - single namespace both host and viewer listen on
+# ---------------------------------------------------------------------------
+GAME_NS = "/game"
 
 
-@socketio.on('message', namespace='/host')
-def handle_message(data):
-    controller = get_controller()
-    # FIXME Temporary XSS!!!
-    if data["action"] == "show":
-        content = "<p>{0}</p>".format(data["text"])
-        mid = data["id"]
-        emit("overlay", {"action": "show", "id": "big", "html": content}, 
-            namespace='/viewer', broadcast=True)
-    else:
-        content = ""
-        mid = ""
-        emit("overlay", {"action": "hide", "id": "big", "html": ""}, 
-            namespace='/viewer', broadcast=True)
-    controller.set_state("message", mid)
-    controller.set_state("overlay-big", content)
+@socketio.on("connect", namespace=GAME_NS)
+def on_connect():
+    # Initial state is fetched over REST; nothing to do here.
+    pass
 
 
-@socketio.on('team', namespace='/host')
-def handle_team(data):
-    controller = get_controller()
-    if data["action"] == "select":
-        team = data["id"]
-        data["args"] = team
-        controller.set_state("team", team)
-    elif data["action"] == "roulette":
-        nb = controller.get_nb_teams()
-        l = []
-        team = "team" + str(random.randrange(1, nb + 1))
-        for i in range(12):
-            l.append("team" + str(i % nb + 1))
-        l.append(team)
-        data["args"] = l
-        controller.set_state("team", team)
-    else:
-        return ""
-    emit("team", data, namespace='/viewer', broadcast=True)
-    return team
+@socketio.on("disconnect", namespace=GAME_NS)
+def on_disconnect():
+    pass
 
 
-@socketio.on('slider', namespace='/host')
-def handle_slider(data):
-    controller = get_controller()
-    controller.set_state(data["id"], data["value"])
-
-
-@socketio.on('final', namespace='/host')
-def move_to_final_round(data):
-    controller = get_controller()
-    if controller.is_final_question():
-        # TODO implement
-        pass
-    else:
-        # TODO better highlight winner
-        text = "<p>That's all folks! Thanks for playing!</p>"
-        controller.set_state("overlay-question", text)
-        controller.finish_game()
-        emit("overlay", {"action": "show", "id": "question", "html": text},
-             namespace='/viewer', broadcast=True)
-
-
-@socketio.on('refresh', namespace='/viewer')
-def handle_refresh():
-    controller = get_controller()
-    # FIXME
-    #state = controller.dictionize_questions_solved()
-    state = {}
-    emit("update-board", state)
-
-
-if __name__ == '__main__':
-
+def create_app():
     # Logging
-    file_handler = logging.FileHandler('ceopardy.log')
-    #file_handler.setLevel(logging.INFO)
+    file_handler = logging.FileHandler("ceopardy.log")
     file_handler.setLevel(logging.DEBUG)
     fmt = logging.Formatter(
-        '{asctime} {levelname}: {message} [in {pathname}:{lineno}]', style='{')
+        "{asctime} {levelname}: {message} [in {pathname}:{lineno}]", style="{"
+    )
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
 
-    # Cleaner controller access
-    # Unsure if required once we have a db back-end
     with app.app_context():
+        # Hand a couple of things on the app object so modules that don't
+        # import from here can still reach them.
+        app.db = db
+        app.socketio = socketio
 
         from controller import Controller
-        def get_controller():
-            _ctl = getattr(g, '_ctl', None)
-            if _ctl is None:
-                _ctl = g._ctl = Controller()
-            return _ctl
+
+        app.controller = Controller()
+
+        # Register the REST blueprint. It depends on app.controller being set.
+        from api.routes import api_bp
+
+        app.register_blueprint(api_bp)
 
         @app.teardown_appcontext
-        def teardown_controller(exception):
-            #app.logger.debug("Controller teardown requested")
-            _ctl = getattr(g, '_ctl', None)
+        def teardown_controller(exception):  # noqa: ARG001
+            _ctl = getattr(g, "_ctl", None)
             if _ctl is not None:
                 _ctl = None
 
+    return app
+
+
+if __name__ == "__main__":
+    create_app()
     # WARNING: This app is not ready to be exposed on the network.
     #          Game host interface would be exposed.
-    socketio.run(app, host="127.0.0.1", debug=True)
+    socketio.run(app, host="127.0.0.1", port=5000, debug=True)

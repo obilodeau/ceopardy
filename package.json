@@ -1,32 +1,13 @@
 {
-  "name": "ceopardy",
-  "version": "1.0.0",
-  "description": "Ceopardy Static Front-End Assets",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "name": "ceopardy-workspace",
+  "private": true,
+  "version": "0.5.0",
+  "description": "Ceopardy workspace - scripts that delegate to frontend/",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "copy-assets": "helpers/copy-static-assets.sh"
+    "install:frontend": "npm --prefix frontend install",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/obilodeau/ceopardy.git"
-  },
-  "keywords": [],
-  "author": "Olivier Bilodeau",
-  "license": "GPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/obilodeau/ceopardy/issues"
-  },
-  "homepage": "https://github.com/obilodeau/ceopardy#readme",
-  "dependencies": {
-    "font-awesome": "^4.7.0",
-    "jquery": "^3.7.1",
-    "socket.io-client": "^4.7.5"
-  },
-  "devDependencies": {
-    "copyfiles": "^2.4.1"
-  }
+  "license": "GPL-3.0-or-later"
 }

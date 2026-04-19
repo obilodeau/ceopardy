@@ -17,21 +17,50 @@ This is the host interface, how you control the game:
 image::docs/images/host.png[The Host Interface]
 
 Note that there are two drawers that can be opened by clicking on the brown
-arrows at the top and at the bottom of the screen. The top drawer contain the
-functions to change team names. The bottom drawer provides functions to
+arrows at the top and at the bottom of the screen. The top drawer contains
+the functions to change team names. The bottom drawer provides functions to
 display a custom message on the board or to pause a game.
+
+
+== Architecture
+
+Starting with v0.5, Ceopardy is split in two parts:
+
+* A Python/Flask back-end that exposes a small REST API (`/api/v1/...`) and
+  broadcasts state changes over a single Socket.IO namespace (`/game`).
+* A Vite + Vue 3 front-end (in `frontend/`) that powers the crowd-facing
+  viewer, the host UI, and the start screen.
 
 
 == First time deployment
 
-You need Python, pip, virtualenv and npm. The tl;dr:
+You need Python, pip, virtualenv and Node.js (LTS). The tl;dr:
 
     python -m venv .venv/
     source .venv/bin/activate
     pip install -r requirements.txt
-    npm install
-    npm run copy-assets
+    npm install --prefix frontend
+    npm run build --prefix frontend
     python ceopardy.py
+
+Then open http://127.0.0.1:5000/host[the host view] to set up the game.
+http://127.0.0.1:5000/[The players' view] (also known as the viewer) can be
+opened at any time.
+
+
+== Development
+
+Run Flask and Vite side by side. Vite hot-reloads the UI and proxies
+`/api` and `/socket.io` to Flask.
+
+    # terminal 1 - Flask
+    python ceopardy.py
+
+    # terminal 2 - Vite dev server
+    npm run dev --prefix frontend
+
+Then open http://localhost:5173/.
+
 
 == Setup
 
@@ -50,15 +79,6 @@ tool when we tried at that time.
 Game data goes in `data/`. There you should add round files (create a `.round`
 file) and questions in `Questions.cp`. The format is pretty self explanatory.
 Check `data/` for an example.
-
-== Running
-
-    python ceopardy.py
-
-Then open http://127.0.0.1:5000/host[the host view] and setup the game.
-http://127.0.0.1:5000/[The players' view] (also known as the viewer) can be
-opened at any time. Nothing will be displayed until the game is started by
-the host.
 
 NOTE: In order to avoid dataloss due to a crash, Ceopardy is backed by a
 database where transactions are pushed when the hosts submit the points. This
