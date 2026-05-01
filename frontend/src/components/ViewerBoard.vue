@@ -1,28 +1,28 @@
 <script setup>
-import { computed } from 'vue'
-import { useGameStore } from '@/stores/game'
+import { computed } from "vue";
+import { useGameStore } from "@/stores/game";
 
-const game = useGameStore()
+const game = useGameStore();
 
 const rowHeight = computed(
   () => `${Math.floor(100 / game.config.QUESTIONS_PER_CATEGORY)}%`,
-)
+);
 
 const showCategoriesRow = computed(
   () => !game.activeQuestionId && !game.isDailyDouble,
-)
-const activeCategory = computed(() => game.active_question?.category ?? '')
+);
+const activeCategory = computed(() => game.active_question?.category ?? "");
 
 function qid(col, row) {
-  return `c${col}q${row}`
+  return `c${col}q${row}`;
 }
 
 function isAnswered(col, row) {
-  return game.questionAnswered(qid(col, row))
+  return game.questionAnswered(qid(col, row));
 }
 
 function questionLabel(row) {
-  return `$${row * game.config.SCORE_TICK}`
+  return `$${row * game.config.SCORE_TICK}`;
 }
 </script>
 
@@ -107,21 +107,12 @@ function questionLabel(row) {
           style="width: 80%; max-width: 250px; margin: auto"
         >
           <div class="col-player flex-horizontal-pad">
-            <div
-              class="row-player flex-vertical-pad"
-              style="height: 30%"
-            >
-              <div
-                :id="`${team.tid}-score`"
-                class="box-ceopardy box-score"
-              >
+            <div class="row-player flex-vertical-pad" style="height: 30%">
+              <div :id="`${team.tid}-score`" class="box-ceopardy box-score">
                 <p>${{ team.score }}</p>
               </div>
             </div>
-            <div
-              class="row-player flex-vertical-pad"
-              style="height: 70%"
-            >
+            <div class="row-player flex-vertical-pad" style="height: 70%">
               <div
                 :id="`${team.tid}-name`"
                 class="box-ceopardy box-team"
