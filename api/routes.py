@@ -23,14 +23,14 @@ namespaces ("/host" and "/viewer") for realtime updates. The SPA version funnels
 all actions through JSON endpoints here and listens on a single "/game"
 namespace for broadcast events.
 """
+
 import random
 
-from flask import Blueprint, current_app as app, jsonify, request
-from flask_socketio import emit
+from flask import Blueprint, jsonify, request
+from flask import current_app as app
 
 import utils
 from config import config
-
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -63,9 +63,7 @@ def _teams_payload(controller):
     if not controller.is_game_initialized():
         # Pre-game: show the placeholder team names with a zero score.
         teams_map = controller.get_teams_for_form()
-        return [
-            {"tid": tid, "name": name, "score": 0} for tid, name in teams_map.items()
-        ]
+        return [{"tid": tid, "name": name, "score": 0} for tid, name in teams_map.items()]
 
     scores_by_tid = controller.get_teams_score_by_tid()
     teams_map = controller.get_teams_for_form()
@@ -204,8 +202,7 @@ def init_game():
             controller.db_backup_and_create_new()
 
         teamnames = {
-            "team{}".format(i): "Team {}".format(i)
-            for i in range(1, config["NB_TEAMS"] + 1)
+            "team{}".format(i): "Team {}".format(i) for i in range(1, config["NB_TEAMS"] + 1)
         }
         try:
             controller.setup_teams(teamnames)
@@ -250,9 +247,7 @@ def finish():
         controller.set_state("overlay-question", text)
         controller.set_state("overlay-big", text)
         controller.finish_game()
-        app.socketio.emit(
-            "overlay-big", {"id": "final", "html": text}, namespace=GAME_NS
-        )
+        app.socketio.emit("overlay-big", {"id": "final", "html": text}, namespace=GAME_NS)
     _broadcast_state()
     return jsonify(result="success")
 
@@ -300,9 +295,7 @@ def team_roulette():
     sequence = ["team{}".format(i % nb + 1) for i in range(12)]
     sequence.append(winner)
     controller.set_state("team", winner)
-    app.socketio.emit(
-        "team-roulette", {"sequence": sequence, "winner": winner}, namespace=GAME_NS
-    )
+    app.socketio.emit("team-roulette", {"sequence": sequence, "winner": winner}, namespace=GAME_NS)
     return jsonify(result="success", winner=winner)
 
 
@@ -407,9 +400,7 @@ def submit_answer():
     ctl_team = controller.get_good_answer_team(col, row)
     controller.set_state("team", ctl_team or "")
 
-    app.socketio.emit(
-        "team-select", {"tid": ctl_team or None}, namespace=GAME_NS
-    )
+    app.socketio.emit("team-select", {"tid": ctl_team or None}, namespace=GAME_NS)
     _broadcast_board_update()
     return jsonify(result="success", ctl_team=ctl_team)
 
@@ -428,9 +419,7 @@ def message_show():
     controller.set_state("message", mid)
     controller.set_state("overlay-big", html)
 
-    app.socketio.emit(
-        "overlay-big", {"id": mid, "html": html}, namespace=GAME_NS
-    )
+    app.socketio.emit("overlay-big", {"id": mid, "html": html}, namespace=GAME_NS)
     return jsonify(result="success")
 
 
@@ -439,9 +428,7 @@ def message_hide():
     controller = _controller()
     controller.set_state("message", "")
     controller.set_state("overlay-big", "")
-    app.socketio.emit(
-        "overlay-big", {"id": "", "html": ""}, namespace=GAME_NS
-    )
+    app.socketio.emit("overlay-big", {"id": "", "html": ""}, namespace=GAME_NS)
     return jsonify(result="success")
 
 

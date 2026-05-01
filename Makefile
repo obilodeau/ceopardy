@@ -1,7 +1,7 @@
 .PHONY: ci lint format-check test install-dev
 
 # Run all CI checks — called by GitHub Actions.
-ci: lint format-check test
+ci: lint format-check frontend-lint test
 
 # ── Python ──────────────────────────────────────────────────────────────────
 
