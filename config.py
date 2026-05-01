@@ -18,25 +18,24 @@
 import os
 
 config = {
-    'NB_TEAMS': 3,
-    'VARIABLE_TEAMS': False,
-    'CATEGORIES_PER_GAME': 5,
-    'QUESTIONS_PER_CATEGORY': 5,
-    'QUESTIONS_FILENAME': 'data/Questions.cp',
-    'SCORE_TICK': 100,
-    'MESSAGES': [\
-        {"title": "Game not started",
-         "text": "Please wait while the game is being set up..."},
-        {"title": "Technical difficulties",
-         "text": "It seems we're having some trouble, hang in there!"},
-        {"title": "Break",
-         "text": "On a short break, we'll be right back after these messages."},
-        {"title": "Custom",
-         "text": ""},
+    "NB_TEAMS": 3,
+    "VARIABLE_TEAMS": False,
+    "CATEGORIES_PER_GAME": 5,
+    "QUESTIONS_PER_CATEGORY": 5,
+    "QUESTIONS_FILENAME": "data/Questions.cp",
+    "SCORE_TICK": 100,
+    "MESSAGES": [
+        {"title": "Game not started", "text": "Please wait while the game is being set up..."},
+        {
+            "title": "Technical difficulties",
+            "text": "It seems we're having some trouble, hang in there!",
+        },
+        {"title": "Break", "text": "On a short break, we'll be right back after these messages."},
+        {"title": "Custom", "text": ""},
     ],
-    'BASE_DIR': os.path.dirname(__file__) + '/',
-    'DATABASE_FILENAME': 'ceopardy.db',
-    'DAILYDOUBLE_HOST_TEXT': '<p>Daily Double!</br>Please input user bet.</p>',
-    'DAILYDOUBLE_WAIGER_MIN': 5,
-    'DAILYDOUBLE_WAIGER_MAX_MIN': 500
+    "BASE_DIR": os.path.dirname(__file__) + "/",
+    "DATABASE_FILENAME": "ceopardy.db",
+    "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
+    "DAILYDOUBLE_WAIGER_MIN": 5,
+    "DAILYDOUBLE_WAIGER_MAX_MIN": 500,
 }
