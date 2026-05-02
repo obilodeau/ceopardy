@@ -1,4 +1,4 @@
-.PHONY: ci lint format-check test install-dev
+.PHONY: ci lint format-check test install-dev run
 
 # Run all CI checks — called by GitHub Actions.
 ci: lint format-check frontend-lint test
@@ -23,3 +23,11 @@ frontend-lint:
 
 install-dev:
 	pip install -r requirements.txt -r requirements-dev.txt
+
+# ── Run dev servers (Flask + Vite) in one terminal ──────────────────────────
+
+run:
+	@python ceopardy.py & backend=$$!; \
+		npm run dev --prefix frontend & frontend=$$!; \
+		trap "kill $$backend $$frontend 2>/dev/null" INT TERM; \
+		wait $$backend $$frontend
