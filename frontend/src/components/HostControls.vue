@@ -1,21 +1,21 @@
 <script setup>
-import { ref } from 'vue'
+import { ref } from "vue";
 
 const props = defineProps({
   buzzersLocked: { type: Boolean, default: true },
-})
+});
 const emit = defineEmits([
-  'roulette',
-  'timeout',
-  'thinking',
-  'toggle-buzzers',
-  'submit',
-  'finish',
-])
+  "roulette",
+  "timeout",
+  "thinking",
+  "toggle-buzzers",
+  "submit",
+  "finish",
+]);
 
-const spinning = ref(false)
+const spinning = ref(false);
 function hoverSpinner(state) {
-  spinning.value = state
+  spinning.value = state;
 }
 </script>
 

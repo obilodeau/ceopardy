@@ -1,53 +1,55 @@
 <script setup>
-import { computed } from 'vue'
-import { useGameStore } from '@/stores/game'
-import { api } from '@/api'
+import { computed } from "vue";
+import { useGameStore } from "@/stores/game";
+import { api } from "@/api";
 
 const props = defineProps({
   team: { type: Object, required: true },
   idx: { type: Number, required: true },
   answers: { type: Object, required: true },
-})
+});
 
-const emit = defineEmits(['update:answers'])
+const emit = defineEmits(["update:answers"]);
 
-const game = useGameStore()
+const game = useGameStore();
 
-const tid = computed(() => props.team.tid)
-const dailydouble = computed(() => game.isDailyDouble)
+const tid = computed(() => props.team.tid);
+const dailydouble = computed(() => game.isDailyDouble);
 
-const teamSelected = computed(() => game.selectedTeam === tid.value)
+const teamSelected = computed(() => game.selectedTeam === tid.value);
 
 const disabled = computed(
   () => dailydouble.value && game.selectedTeam !== tid.value,
-)
+);
 
 function updateAnswer(val) {
-  const out = { ...props.answers, [tid.value]: val }
-  emit('update:answers', out)
+  const out = { ...props.answers, [tid.value]: val };
+  emit("update:answers", out);
 }
 function updateDouble(val) {
-  const key = `${tid.value}-dailydouble`
-  emit('update:answers', { ...props.answers, [key]: val })
+  const key = `${tid.value}-dailydouble`;
+  emit("update:answers", { ...props.answers, [key]: val });
 }
 function updateWaiger(val) {
-  const key = `${tid.value}-waiger-dailydouble`
-  emit('update:answers', { ...props.answers, [key]: val })
+  const key = `${tid.value}-waiger-dailydouble`;
+  emit("update:answers", { ...props.answers, [key]: val });
 }
 
 function selectTeam() {
-  api.selectTeam(tid.value)
+  api.selectTeam(tid.value);
 }
 
-const answerVal = computed(() => props.answers[tid.value] ?? 0)
+const answerVal = computed(() => props.answers[tid.value] ?? 0);
 const doubleVal = computed(
   () => props.answers[`${tid.value}-dailydouble`] ?? -1,
-)
+);
 const waigerVal = computed(
-  () => props.answers[`${tid.value}-waiger-dailydouble`] ?? game.dailydouble_range.max,
-)
+  () =>
+    props.answers[`${tid.value}-waiger-dailydouble`] ??
+    game.dailydouble_range.max,
+);
 
-const teamFontClass = `team${props.idx + 1}-font`
+const teamFontClass = `team${props.idx + 1}-font`;
 </script>
 
 <template>
@@ -85,10 +87,7 @@ const teamFontClass = `team${props.idx + 1}-font`
             </div>
 
             <!-- Normal scoring -->
-            <div
-              v-if="!dailydouble"
-              class="box-answer-range"
-            >
+            <div v-if="!dailydouble" class="box-answer-range">
               <input
                 class="team-range"
                 :name="tid"

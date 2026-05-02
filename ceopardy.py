@@ -28,10 +28,10 @@ now only does three things:
 For development run Flask (`python ceopardy.py`) and Vite (`npm run dev`)
 side by side. Vite proxies /api and /socket.io to Flask.
 """
+
 import json
 import logging
 import os
-import sys
 
 from flask import Flask, g, jsonify, send_from_directory
 from flask_socketio import SocketIO
@@ -61,6 +61,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # exposed over a network.
 try:
     from flask_cors import CORS
+
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 except ImportError:
     # flask-cors is optional; prod serves everything from the same origin.
@@ -133,9 +134,7 @@ def create_app():
     # Logging
     file_handler = logging.FileHandler("ceopardy.log")
     file_handler.setLevel(logging.DEBUG)
-    fmt = logging.Formatter(
-        "{asctime} {levelname}: {message} [in {pathname}:{lineno}]", style="{"
-    )
+    fmt = logging.Formatter("{asctime} {levelname}: {message} [in {pathname}:{lineno}]", style="{")
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
 

@@ -1,15 +1,15 @@
-import { io } from 'socket.io-client'
+import { io } from "socket.io-client";
 
 // Single socket on the /game namespace. Host and viewer both listen here
 // for realtime broadcasts of state changes.
-let socket = null
+let socket = null;
 
 export function getSocket() {
   if (!socket) {
-    socket = io('/game', {
+    socket = io("/game", {
       autoConnect: false,
-      transports: ['websocket', 'polling'],
-    })
+      transports: ["websocket", "polling"],
+    });
   }
-  return socket
+  return socket;
 }

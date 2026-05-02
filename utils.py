@@ -25,7 +25,7 @@ from config import config
 
 def parse_questions(filename):
     """Parses a question file.
-       Returns a dict (of categories) of lists of questions (in score order)
+    Returns a dict (of categories) of lists of questions (in score order)
     """
     # TODO should drop the old format entirely?
     # if so use html and integrate answers into question file
@@ -34,16 +34,16 @@ def parse_questions(filename):
     questions = {}
     cur_category = None
     try:
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             for line in f:
                 line = line.rstrip("\r\n")
 
                 # skip comments or whitespace lines
-                if re.match(r'^\s*(#|$)', line):
+                if re.match(r"^\s*(#|$)", line):
                     continue
 
                 # it's a category
-                m = re.match(r'^>(.*)$', line)
+                m = re.match(r"^>(.*)$", line)
                 if m:
                     # create category entry
                     questions[m.group(1)] = list()
@@ -51,7 +51,7 @@ def parse_questions(filename):
                     continue
 
                 # convert fake new-lines into real ones
-                line = re.sub(r'\\n', '\n', line)
+                line = re.sub(r"\\n", "\n", line)
 
                 # it's a question
                 questions[cur_category].append(line)
@@ -65,22 +65,22 @@ def parse_questions(filename):
 
 def parse_gamefile(filename):
     """Parses a game file. A game file holds the categories that are going to be
-        played in order.
-       Returns a list of category strings and a final question dict
+     played in order.
+    Returns a list of category strings and a final question dict
     """
     # TODO should drop the old format entirely?
     # if so we need to be able to express final question somehow
     categories = list()
     final = None
     try:
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             for line in f:
                 line = line.rstrip("\r\n")
 
                 # match: final: [category] text
-                m = re.match(r'final: \[([^]]+)\] (.*)$', line)
+                m = re.match(r"final: \[([^]]+)\] (.*)$", line)
                 if m:
-                    final = {'category': m.group(1), 'question': m.group(2)}
+                    final = {"category": m.group(1), "question": m.group(2)}
                     continue
 
                 categories.append(line)
@@ -98,36 +98,40 @@ def question_to_html(question_text):
 
     # Warning, we don't support nested line heading options
     # UTF-8 is just killed since everything is UTF-8 now
-    if question_text.startswith('[utf8]'):
-        question_text = question_text.lstrip('[utf8]')
+    if question_text.startswith("[utf8]"):
+        question_text = question_text.lstrip("[utf8]")
 
     # Fixed width strings
-    if question_text.startswith('[fixed]'):
-        question_text = question_text.lstrip('[fixed]')
+    if question_text.startswith("[fixed]"):
+        question_text = question_text.lstrip("[fixed]")
         question_text = "<tt>{}</tt>".format(question_text)
 
     # Parsing images
-    m = re.search(r'^\[img:([^\]]*)\]$', question_text)
+    m = re.search(r"^\[img:([^\]]*)\]$", question_text)
     if m:
         # TODO file names will have to be hard to guess if we go multi-client
         # TODO push style into CSS
-        return '<img src="/static/game-media/{}" width="100%" style="max-height: 100%; max-width: 100%; object-fit: contain;">'.format(m.group(1))
+        img_tmpl = (
+            '<img src="/static/game-media/{}" width="100%"'
+            ' style="max-height: 100%; max-width: 100%; object-fit: contain;">'
+        )
+        return img_tmpl.format(m.group(1))
 
     # Parsing videos
-    m = re.search(r'^\[video:([^\]]*)\]$', question_text)
+    m = re.search(r"^\[video:([^\]]*)\]$", question_text)
     if m:
         # TODO file names will have to be hard to guess if we go multi-client
         # TODO push style into CSS
-        return '''
+        return """
             <video src="/static/game-media/{}"
                 autoplay
                 controls
                 style="max-height: 100%; max-width: 100%; object-fit: contain;">
             </video>
-        '''.format(m.group(1))
+        """.format(m.group(1))
 
     # Transform new lines into <br>
-    question_text = re.sub(r'\n', '<br/>', question_text)
+    question_text = re.sub(r"\n", "<br/>", question_text)
 
     return "<p>" + question_text + "</p>"
 
@@ -135,14 +139,14 @@ def question_to_html(question_text):
 def list_roundfiles():
     """List available roundfiles in config's data directory"""
 
-    _glob = config['BASE_DIR'] + 'data/*.round'
+    _glob = config["BASE_DIR"] + "data/*.round"
     # return file names only
     return [os.path.basename(_f) for _f in glob.glob(_glob)]
 
 
 def parse_question_id(qid):
     """
-    Parses a question id in the form category X question Y (cXqY) and 
+    Parses a question id in the form category X question Y (cXqY) and
     returns a tuple with category, question or None if it didn't work.
     """
     match = re.match("c([0-9]+)q([0-9]+)", qid)

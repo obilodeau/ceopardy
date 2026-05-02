@@ -1,32 +1,34 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { api } from '@/api'
-import { useGameStore } from '@/stores/game'
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { api } from "@/api";
+import { useGameStore } from "@/stores/game";
 
-const router = useRouter()
-const game = useGameStore()
+const router = useRouter();
+const game = useGameStore();
 
-const roundfiles = ref([])
-const showRoundfiles = ref(false)
-const mustInit = ref(true)
+const roundfiles = ref([]);
+const showRoundfiles = ref(false);
+const mustInit = ref(true);
 
 onMounted(async () => {
-  roundfiles.value = await api.roundfiles()
+  roundfiles.value = await api.roundfiles();
   // If a game has already been played the server lets us resume it.
-  mustInit.value = !game.initialized ? true : game.game_state === 'uninitialized'
-})
+  mustInit.value = !game.initialized
+    ? true
+    : game.game_state === "uninitialized";
+});
 
 async function startNew(filename) {
-  await api.init({ action: 'new', name: filename })
-  await game.refresh()
-  router.push({ name: 'host' })
+  await api.init({ action: "new", name: filename });
+  await game.refresh();
+  router.push({ name: "host" });
 }
 
 async function resume() {
-  await api.init({ action: 'resume' })
-  await game.refresh()
-  router.push({ name: 'host' })
+  await api.init({ action: "resume" });
+  await game.refresh();
+  router.push({ name: "host" });
 }
 </script>
 

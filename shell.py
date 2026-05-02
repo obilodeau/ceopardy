@@ -15,9 +15,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-from ceopardy import db
-from model import Answer, Question, Team, Game
 from sqlalchemy import func
 
+from ceopardy import db
+from model import Answer, Game, Question, Team
+
 # creates all tables from model
-#db.create_all()
+# db.create_all()

@@ -1,41 +1,39 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { api } from '@/api'
-import { useGameStore } from '@/stores/game'
+import { computed, ref } from "vue";
+import { api } from "@/api";
+import { useGameStore } from "@/stores/game";
 
-const game = useGameStore()
-const customText = ref('')
+const game = useGameStore();
+const customText = ref("");
 
-const isOpen = computed(
-  () => game.ui_state['container-footer'] === 'slide-up',
-)
-const currentMessage = computed(() => game.ui_state.message)
+const isOpen = computed(() => game.ui_state["container-footer"] === "slide-up");
+const currentMessage = computed(() => game.ui_state.message);
 
 async function toggle() {
-  const next = isOpen.value ? '' : 'slide-up'
-  game.ui_state['container-footer'] = next
-  await api.setSliderState('container-footer', next)
+  const next = isOpen.value ? "" : "slide-up";
+  game.ui_state["container-footer"] = next;
+  await api.setSliderState("container-footer", next);
 }
 
 async function toggleMessage(idx) {
-  const mid = `message${idx + 1}`
+  const mid = `message${idx + 1}`;
   if (mid === currentMessage.value) {
-    await api.hideMessage()
-    return
+    await api.hideMessage();
+    return;
   }
-  const msg = game.messages[idx]
+  const msg = game.messages[idx];
   // The "Custom" entry has an empty body and reads from the edit box.
-  const text = msg.text || customText.value || ''
-  await api.showMessage(mid, text)
+  const text = msg.text || customText.value || "";
+  await api.showMessage(mid, text);
 }
 
 async function hideAll() {
-  await api.hideMessage()
+  await api.hideMessage();
 }
 
-const customEditing = ref(false)
+const customEditing = ref(false);
 function toggleCustom() {
-  customEditing.value = !customEditing.value
+  customEditing.value = !customEditing.value;
 }
 </script>
 

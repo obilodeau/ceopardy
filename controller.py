@@ -24,13 +24,11 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
-from model import Answer, Game, Team, GameState, Question, Response, State, \
-    FinalQuestion
-from utils import parse_question_id, parse_questions, parse_gamefile, \
-    question_to_html
+from model import Answer, FinalQuestion, Game, GameState, Question, Response, State, Team
+from utils import parse_gamefile, parse_question_id, parse_questions, question_to_html
 
 
-class Controller():
+class Controller:
     def __init__(self):
         Controller._init()
 
@@ -47,26 +45,24 @@ class Controller():
             db.session.add(game)
             # Default overlay state for a new game
             db.session.add(State("overlay-small", ""))
-            db.session.add(State("overlay-big", "<p>There is currently no host running the show!</p>"))
+            db.session.add(
+                State("overlay-big", "<p>There is currently no host running the show!</p>")
+            )
             # No question is selected, the game hasn't started
             db.session.add(State("question", ""))
             db.session.add(State("container-header", "slide-down"))
             db.session.add(State("container-footer", "slide-up"))
             db.session.commit()
 
-
     @staticmethod
     def is_game_in_progress():
         game = Game.query.one()
-        return game.state == GameState.in_round \
-            or game.state == GameState.in_final
-
+        return game.state == GameState.in_round or game.state == GameState.in_final
 
     @staticmethod
     def is_game_initialized():
         game = Game.query.one()
         return game.state != GameState.uninitialized
-
 
     @staticmethod
     def setup_teams(teamnames):
@@ -82,7 +78,6 @@ class Controller():
             raise GameProblem("Trying to setup a game that is already started")
         return True
 
-
     @staticmethod
     def update_teams(teamnames):
         """Teamnames is {teamid: team_name} dict"""
@@ -91,28 +86,25 @@ class Controller():
             db.session.query(Team).filter_by(tid=_id).update({"name": _name})
         db.session.commit()
 
-
     @staticmethod
-    def setup_questions(round_file, q_file=config['QUESTIONS_FILENAME']):
+    def setup_questions(round_file, q_file=config["QUESTIONS_FILENAME"]):
         app.logger.info("Setup questions from file: {}".format(q_file))
         game = Game.query.one()
         if game.state == GameState.uninitialized:
-
-            gamefile, final = parse_gamefile(config['BASE_DIR'] + 'data/' + round_file)
-            questions = parse_questions(config['BASE_DIR'] + q_file)
+            gamefile, final = parse_gamefile(config["BASE_DIR"] + "data/" + round_file)
+            questions = parse_questions(config["BASE_DIR"] + q_file)
 
             # TODO do some validation based on config constants
             for _col, _cat in enumerate(gamefile, start=1):
                 for _row, _q in enumerate(questions[_cat], start=1):
-                    score = _row * config['SCORE_TICK']
+                    score = _row * config["SCORE_TICK"]
 
                     daily_double = False
-                    if _q.startswith('[dbl]'):
-                        _q = _q.lstrip('[dbl]').lstrip()
+                    if _q.startswith("[dbl]"):
+                        _q = _q.lstrip("[dbl]").lstrip()
                         daily_double = True
 
-                    question = Question(_q, score, _cat, _row, _col,
-                                        double = daily_double)
+                    question = Question(_q, score, _cat, _row, _col, double=daily_double)
                     db.session.add(question)
 
             # Add final question
@@ -130,7 +122,6 @@ class Controller():
             raise GameProblem("Trying to setup a game that is already started")
         return True
 
-
     @staticmethod
     def start_game():
         app.logger.info("Starting the game. Good luck everyone!")
@@ -145,7 +136,6 @@ class Controller():
         else:
             raise GameProblem("Trying to start a game that is not ready")
 
-
     @staticmethod
     def finish_game():
         scores = Controller.get_teams_score()
@@ -157,11 +147,10 @@ class Controller():
         db.session.commit()
         return True
 
-
     @staticmethod
     def resume_game():
         """Resuming a game is simply allowing to start over a finished game.
-        
+
         Sometimes people click on finish by mistake or mess-up the score
         in the final round. Resuming a game enables to fix that.
         """
@@ -173,22 +162,22 @@ class Controller():
         game.state = GameState.in_round
         db.session.commit()
         scores = Controller.get_teams_score()
-        app.logger.info("A game has been resumed. Current teams / scores: {}"
-                        .format(scores))
+        app.logger.info("A game has been resumed. Current teams / scores: {}".format(scores))
         return True
-
 
     @staticmethod
     def get_config():
         return config
 
-
     @staticmethod
     def get_teams_score():
         if Controller.is_game_initialized():
-            answers = db.session.query(Team.id, Team.name, Answer.response,
-                                       Answer.score_attributed)\
-                                .join(Answer).order_by(Team.id).all()
+            answers = (
+                db.session.query(Team.id, Team.name, Answer.response, Answer.score_attributed)
+                .join(Answer)
+                .order_by(Team.id)
+                .all()
+            )
 
             results = OrderedDict()
             # Handle case when there are no answers: names with 0 score
@@ -210,17 +199,18 @@ class Controller():
 
         else:
             # Return names with a 0 score
-            return {name: 0
-                    for tid, name in Controller.get_teams_for_form().items()}
-
+            return {name: 0 for tid, name in Controller.get_teams_for_form().items()}
 
     # TODO remove
     # Temporary fix, find a way to merge with the function above!
     @staticmethod
     def get_teams_score_by_tid():
-        answers = db.session.query(Team.id, Team.tid, Answer.response,
-                                   Answer.score_attributed)\
-                            .join(Answer).order_by(Team.id).all()
+        answers = (
+            db.session.query(Team.id, Team.tid, Answer.response, Answer.score_attributed)
+            .join(Answer)
+            .order_by(Team.id)
+            .all()
+        )
 
         results = OrderedDict()
         # Handle case when there are no answers: names with 0 score
@@ -240,20 +230,24 @@ class Controller():
             results[_tid] += _response.value * _score
         return results
 
-
     @staticmethod
     def get_good_answer_team(col, row):
         """
         Returns the team id of the team who correctly answered the specified question
         """
-        team = db.session.query(Team).join(Answer).join(Question).filter(
-            and_(Question.col == col, Question.row == row,
-                 Answer.response == Response.good)).first()
+        team = (
+            db.session.query(Team)
+            .join(Answer)
+            .join(Question)
+            .filter(
+                and_(Question.col == col, Question.row == row, Answer.response == Response.good)
+            )
+            .first()
+        )
         if team:
             return team.tid
         else:
             None
-
 
     @staticmethod
     def get_teams_for_form():
@@ -263,24 +257,22 @@ class Controller():
         if Team.query.first() is not None:
             return {team.tid: team.name for team in Team.query.all()}
         else:
-            return {'team{}'.format(_i): 'Team {}'.format(_i)
-                    for _i in range(1, config['NB_TEAMS'] + 1)}
-
+            return {
+                "team{}".format(_i): "Team {}".format(_i) for _i in range(1, config["NB_TEAMS"] + 1)
+            }
 
     @staticmethod
     def get_team_in_control():
         return Team.query.filter(Team.tid == Controller.get_state("team")).one()
 
-
     @staticmethod
     def get_dailydouble_waiger_range(team_id):
-        _min = config.get('DAILYDOUBLE_WAIGER_MIN')
+        _min = config.get("DAILYDOUBLE_WAIGER_MIN")
         scores = Controller.get_teams_score_by_tid()
         _max = scores[team_id]
-        if _max < config.get('DAILYDOUBLE_WAIGER_MAX_MIN'):
-            _max = config.get('DAILYDOUBLE_WAIGER_MAX_MIN')
+        if _max < config.get("DAILYDOUBLE_WAIGER_MAX_MIN"):
+            _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN")
         return (_min, _max)
-
 
     @staticmethod
     def teams_exists():
@@ -288,61 +280,59 @@ class Controller():
             return True
         return False
 
-
     @staticmethod
     def get_nb_teams():
         return config["NB_TEAMS"]
 
-
     @staticmethod
     def get_categories():
-        return [_q.category for _q in
-                db.session.query(Question.category).distinct()
-                  .filter(Question.final == False)
-                  .order_by(Question.col)]
-
+        return [
+            _q.category
+            for _q in db.session.query(Question.category)
+            .distinct()
+            .filter(Question.final == False)  # noqa: E712
+            .order_by(Question.col)
+        ]
 
     @staticmethod
     def get_question(column, row):
-        app.logger.info(
-            "Question requested for row: {} and col: {}".format(row, column))
+        app.logger.info("Question requested for row: {} and col: {}".format(row, column))
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        return { "text": question_to_html(_q.text), "category": _q.category, "dailydouble": _q.double }
-
+        return {
+            "text": question_to_html(_q.text),
+            "category": _q.category,
+            "dailydouble": _q.double,
+        }
 
     @staticmethod
     def get_active_question():
         _q = {}
-        qid = Controller.get_complete_state().get('question', '')
-        if qid != '':
+        qid = Controller.get_complete_state().get("question", "")
+        if qid != "":
             col, row = parse_question_id(qid)
             _q = Controller.get_question(col, row)
         return _q
 
-
     @staticmethod
     def is_final_question():
         """Is there a final question for this game?"""
-        return Question.query.filter(Question.final == True).one_or_none() is not None
-
+        return Question.query.filter(Question.final == True).one_or_none() is not None  # noqa: E712
 
     @staticmethod
     def get_answer(column, row):
-        app.logger.info(
-            "Answer requested for row: {} and col: {}".format(row, column))
+        app.logger.info("Answer requested for row: {} and col: {}".format(row, column))
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        _a = Answer.query.filter(Answer.question_id==_q.id).all()
+        _a = Answer.query.filter(Answer.question_id == _q.id).all()
         if len(_a) == 0:
             return {}
         answer = {}
         for a in _a:
             answer[a.team.tid] = a.response.value
         return answer
-
 
     @staticmethod
     def get_question_viewid_from_dbid(question_id):
@@ -351,16 +341,14 @@ class Controller():
         qid = "c{}q{}".format(question.col, question.row)
         return qid
 
-
     @staticmethod
     def answer_normal(column, row, answers):
-        app.logger.info("Answers submitted for question ({}, {}): {}"
-                        .format(column, row, answers))
+        app.logger.info("Answers submitted for question ({}, {}): {}".format(column, row, answers))
         # Answers looks like: ('team1', '-1'), ('team2', '1'), ('team3', '0')]
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
-        
+
         # Is there already an answer? If so update answers
         prev_answers = Answer.query.filter(Answer.question_id == _q.id).all()
         if prev_answers:
@@ -379,11 +367,13 @@ class Controller():
         db.session.commit()
         return True
 
-
     @staticmethod
     def answer_dailydouble(column, row, team, answer, waiger):
-        app.logger.info("Daily Double Answer submitted for question ({}, {}) by {}: {} waiger: {}."
-                        .format(column, row, team.tid, answer, waiger))
+        app.logger.info(
+            "Daily Double Answer submitted for question ({}, {}) by {}: {} waiger: {}.".format(
+                column, row, team.tid, answer, waiger
+            )
+        )
 
         condition = and_(Question.row == row, Question.col == column)
         _q = Question.query.filter(condition).one()
@@ -404,10 +394,8 @@ class Controller():
     @staticmethod
     def _get_questions_status():
         """Full status about all questions"""
-        questions = db.session.query(Question.row, Question.col, Answer)\
-                                    .outerjoin(Answer).all()
+        questions = db.session.query(Question.row, Question.col, Answer).outerjoin(Answer).all()
         return questions
-
 
     @staticmethod
     def get_questions_status_for_viewer():
@@ -421,7 +409,6 @@ class Controller():
             results[qid] = _answer is not None
 
         return results
-
 
     @staticmethod
     def get_questions_status_for_host():
@@ -444,11 +431,10 @@ class Controller():
                 continue
 
             points = _answer.response.value * _answer.score_attributed
-            tid = 'team{}'.format(_answer.team_id)
+            tid = "team{}".format(_answer.team_id)
             results[qid][tid] = points
 
         return results
-
 
     @staticmethod
     def get_state(name):
@@ -458,7 +444,6 @@ class Controller():
         else:
             return ""
 
-
     @staticmethod
     def get_complete_state():
         state = {}
@@ -466,39 +451,36 @@ class Controller():
             state[s.name] = s.value
         return state
 
-
     @staticmethod
     def set_state(name, value):
         result = State.query.filter_by(name=name).one_or_none()
         if result is not None:
             if value is None:
-                result.value = ''
+                result.value = ""
             else:
                 result.value = value
         else:
             db.session.add(State(name, value))
         db.session.commit()
 
-
     @staticmethod
     def db_backup_and_create_new():
         """
-        Drop db connections, move file, create new db connection 
+        Drop db connections, move file, create new db connection
         and re-init empty db
         """
         # TODO we might need to lock this thing to avoid state issues with viewers
         previous_roundfile = Game.query.one().round_filename
-        _bkp = 'ceopardy_{}_{}.db'.format(datetime.now().strftime('%Y-%m-%d_%H%M'),
-                                          previous_roundfile)
-        app.logger.info('Backing up current game to {}'.format(_bkp))
+        _bkp = "ceopardy_{}_{}.db".format(
+            datetime.now().strftime("%Y-%m-%d_%H%M"), previous_roundfile
+        )
+        app.logger.info("Backing up current game to {}".format(_bkp))
         db.engine.dispose()
-        os.rename(config['BASE_DIR'] + config['DATABASE_FILENAME'],
-                  config['BASE_DIR'] + _bkp)
+        os.rename(config["BASE_DIR"] + config["DATABASE_FILENAME"], config["BASE_DIR"] + _bkp)
         db.session = db.create_scoped_session()
         db.create_all()
         Controller._init()
-        app.logger.info('SQL Engine reconnected, empty database recreated.' +
-                        'We are ready to go!')
+        app.logger.info("SQL Engine reconnected, empty database recreated." + "We are ready to go!")
 
 
 class GameProblem(Exception):

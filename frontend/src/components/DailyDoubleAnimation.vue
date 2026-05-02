@@ -1,16 +1,16 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref } from "vue";
 
-const emit = defineEmits(['done'])
-const visible = ref(true)
+const emit = defineEmits(["done"]);
+const visible = ref(true);
 
 onMounted(() => {
   // Match CSS animation duration (2s) plus a small tail.
   setTimeout(() => {
-    visible.value = false
-    emit('done')
-  }, 2200)
-})
+    visible.value = false;
+    emit("done");
+  }, 2200);
+});
 </script>
 
 <template>

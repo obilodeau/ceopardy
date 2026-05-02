@@ -1,39 +1,39 @@
 <script setup>
-import { reactive, watch } from 'vue'
-import { api } from '@/api'
-import { useGameStore } from '@/stores/game'
+import { reactive, watch } from "vue";
+import { api } from "@/api";
+import { useGameStore } from "@/stores/game";
 
-const game = useGameStore()
+const game = useGameStore();
 
-const names = reactive({})
-const errors = reactive({})
+const names = reactive({});
+const errors = reactive({});
 
 // Keep local form names in sync with the store. The store is the source of
 // truth; the form just edits a copy until the host clicks Save.
 watch(
   () => game.teams,
   (teams) => {
-    for (const t of teams) names[t.tid] = t.name
+    for (const t of teams) names[t.tid] = t.name;
   },
   { immediate: true, deep: true },
-)
+);
 
-const isOpen = () => game.ui_state['container-header'] === 'slide-down'
+const isOpen = () => game.ui_state["container-header"] === "slide-down";
 
 async function toggle() {
-  const next = isOpen() ? '' : 'slide-down'
-  game.ui_state['container-header'] = next
-  await api.setSliderState('container-header', next)
+  const next = isOpen() ? "" : "slide-down";
+  game.ui_state["container-header"] = next;
+  await api.setSliderState("container-header", next);
 }
 
 async function save() {
-  for (const k of Object.keys(errors)) delete errors[k]
+  for (const k of Object.keys(errors)) delete errors[k];
   try {
-    await api.updateTeams(names)
+    await api.updateTeams(names);
     // Close drawer only on success.
-    if (isOpen()) toggle()
+    if (isOpen()) toggle();
   } catch (e) {
-    errors.form = e.message
+    errors.form = e.message;
   }
 }
 </script>

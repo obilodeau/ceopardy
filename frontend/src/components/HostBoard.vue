@@ -1,34 +1,34 @@
 <script setup>
-import { computed } from 'vue'
-import { useGameStore } from '@/stores/game'
+import { computed } from "vue";
+import { useGameStore } from "@/stores/game";
 
-const emit = defineEmits(['select'])
-const game = useGameStore()
+const emit = defineEmits(["select"]);
+const game = useGameStore();
 
 const rowHeight = computed(
   () => `${Math.floor(100 / game.config.QUESTIONS_PER_CATEGORY)}%`,
-)
+);
 
 // Accent colours used in the little answer pills next to each question.
-const ACCENTS = ['#d53405', '#d56c05', '#d5c105', '#05a5d5', '#8605d5']
+const ACCENTS = ["#d53405", "#d56c05", "#d5c105", "#05a5d5", "#8605d5"];
 
 function qid(col, row) {
-  return `c${col}q${row}`
+  return `c${col}q${row}`;
 }
 function isSelected(col, row) {
-  return game.activeQuestionId === qid(col, row)
+  return game.activeQuestionId === qid(col, row);
 }
 function isAnswered(col, row) {
-  return game.questionAnswered(qid(col, row))
+  return game.questionAnswered(qid(col, row));
 }
 function teamScore(col, row, tid) {
-  return game.questions[qid(col, row)]?.team_scores?.[tid] ?? ''
+  return game.questions[qid(col, row)]?.team_scores?.[tid] ?? "";
 }
 function teamAccent(i) {
-  return ACCENTS[i % ACCENTS.length]
+  return ACCENTS[i % ACCENTS.length];
 }
 function onClick(col, row) {
-  emit('select', qid(col, row))
+  emit("select", qid(col, row));
 }
 </script>
 
@@ -37,10 +37,7 @@ function onClick(col, row) {
     <!-- Categories row -->
     <div class="container-categories-host">
       <div class="black-box flex-small-pad">
-        <div
-          class="row-ceopardy flex-vertical-small-pad"
-          style="height: 100%"
-        >
+        <div class="row-ceopardy flex-vertical-small-pad" style="height: 100%">
           <div
             v-for="(name, idx) in game.categories"
             :key="idx"
@@ -86,9 +83,7 @@ function onClick(col, row) {
                   class="box-question-status"
                   :style="{
                     backgroundColor:
-                      teamScore(col, row, team.tid) !== ''
-                        ? teamAccent(i)
-                        : '',
+                      teamScore(col, row, team.tid) !== '' ? teamAccent(i) : '',
                   }"
                 >
                   <span>{{ teamScore(col, row, team.tid) }}</span>
