@@ -36,16 +36,42 @@ Starting with v0.5, Ceopardy is split in two parts:
 
 You need Python, pip, virtualenv and Node.js (LTS). The tl;dr:
 
-    python -m venv .venv/
-    source .venv/bin/activate
-    pip install -r requirements.txt
+    make venv
+    source .venv/bin/activate    # bash/zsh
+    source .venv/bin/activate.fish    # fish
     npm install --prefix frontend
     npm run build --prefix frontend
     python ceopardy.py
 
+`make venv` creates `.venv/` and installs both runtime and dev requirements.
+
+=== Optional: direnv
+
+If you use https://direnv.net/[direnv], the repo ships an `.envrc` that puts
+`.venv/bin` on your `PATH` automatically when you `cd` into the directory —
+works in bash, zsh, and fish. Install direnv (see
+https://direnv.net/docs/installation.html[upstream docs] for shell hook setup),
+then from the repo root:
+
+    make venv        # create the venv first; direnv won't do this for you
+    direnv allow     # trust the .envrc
+
+After that, entering the directory activates the venv and leaving deactivates
+it — no manual `source` needed.
+
 Then open http://127.0.0.1:5000/host[the host view] to set up the game.
 http://127.0.0.1:5000/[The players' view] (also known as the viewer) can be
 opened at any time.
+
+`python ceopardy.py` runs the built-in dev server (debug + reloader). For
+production, run it under gunicorn with the eventlet worker. Socket.IO requires
+a single worker process unless you also configure a Redis message queue:
+
+    pip install gunicorn
+    gunicorn -k eventlet -w 1 -b 127.0.0.1:5000 'ceopardy:app'
+
+Put nginx (or similar) in front for TLS and to expose it on the network — the
+app itself binds to localhost because the host interface has no auth.
 
 
 == Development
