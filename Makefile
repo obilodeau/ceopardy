@@ -1,4 +1,4 @@
-.PHONY: ci lint format-check test install-dev run
+.PHONY: ci lint format-check test install-dev run venv
 
 # Run all CI checks — called by GitHub Actions.
 ci: lint format-check frontend-lint test
@@ -20,6 +20,10 @@ frontend-lint:
 	npm --prefix frontend run lint
 
 # ── Dev setup ────────────────────────────────────────────────────────────────
+
+venv:
+	python -m venv .venv
+	.venv/bin/pip install -r requirements.txt -r requirements-dev.txt
 
 install-dev:
 	pip install -r requirements.txt -r requirements-dev.txt
