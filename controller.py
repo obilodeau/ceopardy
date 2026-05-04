@@ -483,7 +483,7 @@ class Controller:
         if os.path.exists(db_path):
             os.rename(db_path, bkp_path)
         else:
-            app.logger.warning("Expected DB file at {} was missing; skipping rename".format(db_path))
+            app.logger.warning("Expected DB file at %s was missing; skipping rename", db_path)
         db.create_all()
         Controller._init()
         app.logger.info("SQL Engine reconnected, empty database recreated. We are ready to go!")
