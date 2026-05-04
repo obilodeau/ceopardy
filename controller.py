@@ -471,16 +471,22 @@ class Controller:
         """
         # TODO we might need to lock this thing to avoid state issues with viewers
         previous_roundfile = Game.query.one().round_filename
-        _bkp = "ceopardy_{}_{}.db".format(
+        _bkp_name = "ceopardy_{}_{}.db".format(
             datetime.now().strftime("%Y-%m-%d_%H%M"), previous_roundfile
         )
-        app.logger.info("Backing up current game to {}".format(_bkp))
+        # SQLite URI is resolved against app.instance_path; the live file lives there too.
+        db_path = os.path.join(app.instance_path, config["DATABASE_FILENAME"])
+        bkp_path = os.path.join(app.instance_path, _bkp_name)
+        app.logger.info("Backing up current game to {}".format(bkp_path))
+        db.session.remove()
         db.engine.dispose()
-        os.rename(config["BASE_DIR"] + config["DATABASE_FILENAME"], config["BASE_DIR"] + _bkp)
-        db.session = db.create_scoped_session()
+        if os.path.exists(db_path):
+            os.rename(db_path, bkp_path)
+        else:
+            app.logger.warning("Expected DB file at %s was missing; skipping rename", db_path)
         db.create_all()
         Controller._init()
-        app.logger.info("SQL Engine reconnected, empty database recreated." + "We are ready to go!")
+        app.logger.info("SQL Engine reconnected, empty database recreated. We are ready to go!")
 
 
 class GameProblem(Exception):
