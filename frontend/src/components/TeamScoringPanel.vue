@@ -59,7 +59,6 @@ const teamFontClass = `team${props.idx + 1}-font`;
       class="black-box flex-small-pad"
       :class="{
         'team-selected': teamSelected,
-        disabled: disabled,
       }"
       style="width: 100%; margin: auto"
     >
@@ -75,14 +74,14 @@ const teamFontClass = `team${props.idx + 1}-font`;
             >
               <div
                 class="form-icon form-click"
-                title="Give control to this team"
+                title="Reassign control to this team"
                 @click="selectTeam"
               >
                 <i class="fa-solid fa-crosshairs fa-2x" />
               </div>
             </div>
           </div>
-          <div class="box-team-middle">
+          <div class="box-team-middle" :class="{ disabled: disabled }">
             <div class="box-ceopardy box-team-host" :class="teamFontClass">
               <p>{{ team.name }}</p>
             </div>
