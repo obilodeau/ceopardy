@@ -80,6 +80,8 @@ async function onSelectQuestion(qid) {
   if (data?.dailydouble) {
     if (data.dailydouble_range) game.dailydouble_range = data.dailydouble_range;
     if (data.team) game.ui_state.team = data.team;
+    // No buzzer race in a Daily Double — only the controlling team plays.
+    lockBuzzers();
     playSound("dailydouble");
   } else {
     unlockBuzzers();
