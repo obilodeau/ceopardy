@@ -106,6 +106,7 @@ async function onFinish() {
     window.confirm("Bring the game to the final round (if any). Are you sure?")
   ) {
     await api.finish();
+    router.push({ name: "start" });
   }
 }
 function playTimeout() {
