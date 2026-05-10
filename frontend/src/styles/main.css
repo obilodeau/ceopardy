@@ -356,6 +356,31 @@ svg:hover polygon {
   padding-right: 5px;
 }
 
+/* DD team-row variant: playing team in slot 1 + a wide info box for the rest.
+   No height override here — .container-results already sets the row height.
+   Wager label and amount sit side-by-side, default font, white text. */
+.dd-info-box-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--ceopardy-pad) * 2);
+  color: #ffffff;
+}
+.dd-info-label,
+.dd-info-amount {
+  font-size: calc(2.5vh + 1vw);
+}
+
+/* Fade between TeamRow ↔ TeamRowDailyDouble. */
+.dd-rowfade-enter-active,
+.dd-rowfade-leave-active {
+  transition: opacity 300ms ease-in-out;
+}
+.dd-rowfade-enter-from,
+.dd-rowfade-leave-to {
+  opacity: 0;
+}
+
 /* Grid primitives */
 .row-ceopardy {
   display: flex;

@@ -39,6 +39,9 @@ export const api = {
     request("/team/select", { method: "POST", body: { tid } }),
   roulette: () => request("/team/roulette", { method: "POST" }),
 
+  setWager: (amount) =>
+    request("/dailydouble/wager", { method: "POST", body: { amount } }),
+
   showMessage: (id, text) =>
     request("/message/show", { method: "POST", body: { id, text } }),
   hideMessage: () => request("/message/hide", { method: "POST" }),

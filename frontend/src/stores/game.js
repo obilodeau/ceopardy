@@ -26,6 +26,9 @@ export const useGameStore = defineStore("game", {
     active_question: {},
     messages: [],
     dailydouble_range: { min: 0, max: 0 },
+    // {team, amount} as the host moves the wager slider during a DD; null
+    // outside DD or before the operator has set anything.
+    dailydouble_wager: null,
     // Incremented every time the server fires a new daily-double. Lets the
     // viewer trigger the flip animation without watching for state changes
     // that might bounce during reconnects.
@@ -65,6 +68,8 @@ export const useGameStore = defineStore("game", {
       if (data.messages) this.messages = data.messages;
       if (data.dailydouble_range)
         this.dailydouble_range = data.dailydouble_range;
+      if (data.dailydouble_wager !== undefined)
+        this.dailydouble_wager = data.dailydouble_wager;
     },
 
     connectSocket() {
@@ -92,6 +97,7 @@ export const useGameStore = defineStore("game", {
         this.active_question = {};
         this.ui_state.question = "";
         this.ui_state.dailydouble = "";
+        this.dailydouble_wager = null;
       });
 
       s.on("dailydouble", (data) => {
@@ -100,7 +106,15 @@ export const useGameStore = defineStore("game", {
         this.active_question = { category: data.category, dailydouble: true };
         if (data.team) this.ui_state.team = data.team;
         if (data.range) this.dailydouble_range = data.range;
+        this.dailydouble_wager = null;
         this.dailydoubleTrigger += 1;
+      });
+
+      s.on("dailydouble-wager", (data) => {
+        this.dailydouble_wager =
+          data && data.team != null && data.amount != null
+            ? { team: data.team, amount: data.amount }
+            : null;
       });
 
       s.on("board-update", (data) => {

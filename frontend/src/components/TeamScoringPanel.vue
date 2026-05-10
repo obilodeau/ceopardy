@@ -33,6 +33,22 @@ function updateDouble(val) {
 function updateWaiger(val) {
   const key = `${tid.value}-waiger-dailydouble`;
   emit("update:answers", { ...props.answers, [key]: val });
+  // Live-broadcast the wager so the viewer can show it. Throttled so a slider
+  // drag doesn't flood Socket.IO; trailing edge is preserved.
+  scheduleWagerBroadcast(val);
+}
+
+let wagerTimer = null;
+let wagerPending = null;
+function scheduleWagerBroadcast(val) {
+  wagerPending = val;
+  if (wagerTimer) return;
+  api.setWager(wagerPending).catch(() => {});
+  wagerPending = null;
+  wagerTimer = setTimeout(() => {
+    wagerTimer = null;
+    if (wagerPending !== null) scheduleWagerBroadcast(wagerPending);
+  }, 100);
 }
 
 function selectTeam() {
