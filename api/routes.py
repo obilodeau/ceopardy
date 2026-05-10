@@ -135,7 +135,7 @@ def _full_state_payload():
         state = controller.get_complete_state()
         _min = config.get("DAILYDOUBLE_WAIGER_MIN", 0)
         _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN", 0)
-        if state.get("dailydouble") == "enabled":
+        if state.get("dailydouble") in ("enabled", "revealed"):
             try:
                 ctrl_team = controller.get_team_in_control()
                 _min, _max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
@@ -251,9 +251,16 @@ def finish():
         pass
     else:
         text = "<p>That's all folks! Thanks for playing!</p>"
+        # Clear any active question / DD before showing the end-of-game
+        # overlay, otherwise stale ui_state can resurrect the DD card on the
+        # viewer the next time it loads.
+        controller.set_state("question", "")
+        controller.end_dailydouble()
         controller.set_state("overlay-question", text)
         controller.set_state("overlay-big", text)
         controller.finish_game()
+        app.socketio.emit("dailydouble-wager", {"team": None, "amount": None}, namespace=GAME_NS)
+        app.socketio.emit("question-hide", {}, namespace=GAME_NS)
         app.socketio.emit("overlay-big", {"id": "final", "html": text}, namespace=GAME_NS)
     _broadcast_state()
     return jsonify(result="success")
@@ -290,12 +297,24 @@ def team_select():
     data = request.get_json(force=True, silent=True) or {}
     tid = data.get("tid") or ""
     controller.set_state("team", tid)
-    # If we're mid-DD and control is reassigned, the previous team's wager
-    # no longer applies. Drop it; the operator must set a new one.
+    # If we're mid-DD and control is reassigned, drop the previous team's
+    # wager (a new one is needed) and re-broadcast the wager range computed
+    # for the new controlling team — the host's slider min/max must follow.
     state = controller.get_complete_state()
-    if state.get("dailydouble") == "enabled":
+    if state.get("dailydouble") == "enabled" and tid:
         controller.clear_dailydouble_wager()
         app.socketio.emit("dailydouble-wager", {"team": None, "amount": None}, namespace=GAME_NS)
+        try:
+            dbl_min, dbl_max = controller.get_dailydouble_waiger_range(tid)
+            app.socketio.emit(
+                "dailydouble-range",
+                {"team": tid, "range": {"min": dbl_min, "max": dbl_max}},
+                namespace=GAME_NS,
+            )
+        except Exception:  # noqa: BLE001
+            # If the range can't be computed for some reason, leave the
+            # client's previous range in place.
+            pass
     app.socketio.emit("team-select", {"tid": tid or None}, namespace=GAME_NS)
     return jsonify(result="success", tid=tid)
 
@@ -385,6 +404,28 @@ def question_select():
         question=question["text"],
         answer=answer,
     )
+
+
+@api_bp.route("/dailydouble/reveal", methods=["POST"])
+def dailydouble_reveal():
+    """Reveal the DD clue: flip state to 'revealed' and broadcast the text."""
+    controller = _controller()
+    state = controller.get_complete_state()
+    if state.get("dailydouble") != "enabled":
+        return jsonify(result="failure", error="Daily Double not active or already revealed"), 400
+    qid = state.get("question") or ""
+    try:
+        col, row = utils.parse_question_id(qid)
+    except utils.InvalidQuestionId:
+        return jsonify(result="failure", error="No active DD question"), 400
+    question = controller.get_question(col, row)
+    controller.set_state("dailydouble", "revealed")
+    app.socketio.emit(
+        "dailydouble-reveal",
+        {"qid": qid, "text": question["text"], "category": question["category"]},
+        namespace=GAME_NS,
+    )
+    return jsonify(result="success")
 
 
 @api_bp.route("/dailydouble/wager", methods=["POST"])

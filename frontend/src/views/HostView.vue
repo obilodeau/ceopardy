@@ -165,11 +165,22 @@ watch(
 );
 
 const activeHtml = computed(() => {
-  if (game.isDailyDouble) {
+  if (game.isDailyDouble && !game.isDailyDoubleRevealed) {
     return "<p>Daily Double!<br/>Please input user bet.</p>";
   }
   return game.active_question?.text ?? "";
 });
+
+const canRevealDailyDouble = computed(
+  () =>
+    game.isDailyDouble &&
+    !game.isDailyDoubleRevealed &&
+    game.dailydouble_wager != null,
+);
+
+async function onRevealDailyDouble() {
+  await api.revealDailyDouble();
+}
 </script>
 
 <template>
@@ -207,6 +218,14 @@ const activeHtml = computed(() => {
         <div class="black-box flex-small-pad">
           <div class="box-fake-overlay">
             <div class="box-ceopardy box-question-host" v-html="activeHtml" />
+            <button
+              v-if="canRevealDailyDouble"
+              type="button"
+              class="dd-reveal-btn"
+              @click="onRevealDailyDouble"
+            >
+              <i class="fa-solid fa-eye" /> Reveal clue
+            </button>
           </div>
         </div>
       </div>

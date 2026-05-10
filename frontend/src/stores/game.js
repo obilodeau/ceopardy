@@ -44,7 +44,10 @@ export const useGameStore = defineStore("game", {
     teamByTid: (s) => (tid) => s.teams.find((t) => t.tid === tid),
     activeQuestionId: (s) => s.ui_state.question || "",
     selectedTeam: (s) => s.ui_state.team || "",
-    isDailyDouble: (s) => s.ui_state.dailydouble === "enabled",
+    isDailyDouble: (s) =>
+      s.ui_state.dailydouble === "enabled" ||
+      s.ui_state.dailydouble === "revealed",
+    isDailyDoubleRevealed: (s) => s.ui_state.dailydouble === "revealed",
     bigOverlayHtml: (s) => s.ui_state["overlay-big"] || "",
     questionAnswered: (s) => (qid) => !!s.questions[qid]?.answered,
   },
@@ -108,6 +111,21 @@ export const useGameStore = defineStore("game", {
         if (data.range) this.dailydouble_range = data.range;
         this.dailydouble_wager = null;
         this.dailydoubleTrigger += 1;
+      });
+
+      s.on("dailydouble-reveal", (data) => {
+        this.ui_state.dailydouble = "revealed";
+        this.active_question = {
+          ...this.active_question,
+          text: data.text,
+          category: data.category,
+          dailydouble: true,
+        };
+        this.ui_state.question = data.qid;
+      });
+
+      s.on("dailydouble-range", (data) => {
+        if (data?.range) this.dailydouble_range = data.range;
       });
 
       s.on("dailydouble-wager", (data) => {

@@ -91,9 +91,9 @@ function questionLabel(row) {
             </div>
           </div>
         </div>
-        <!-- DD overlay stays inside the black border and persists while DD is active. -->
+        <!-- DD overlay stays inside the black border until the clue is revealed. -->
         <DailyDoubleAnimation
-          v-if="game.isDailyDouble"
+          v-if="game.isDailyDouble && !game.isDailyDoubleRevealed"
           :key="game.dailydoubleTrigger"
         />
       </div>

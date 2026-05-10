@@ -41,6 +41,7 @@ export const api = {
 
   setWager: (amount) =>
     request("/dailydouble/wager", { method: "POST", body: { amount } }),
+  revealDailyDouble: () => request("/dailydouble/reveal", { method: "POST" }),
 
   showMessage: (id, text) =>
     request("/message/show", { method: "POST", body: { id, text } }),
