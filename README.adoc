@@ -41,7 +41,7 @@ You need Python, pip, virtualenv and Node.js (LTS). The tl;dr:
     source .venv/bin/activate.fish    # fish
     npm install --prefix frontend
     npm run build --prefix frontend
-    python run.py
+    python ceopardy.py
 
 `make venv` creates `.venv/` and installs both runtime and dev requirements.
 
@@ -63,12 +63,12 @@ Then open http://127.0.0.1:5000/host[the host view] to set up the game.
 http://127.0.0.1:5000/[The players' view] (also known as the viewer) can be
 opened at any time.
 
-`python run.py` runs the built-in dev server (debug + reloader). For
+`python ceopardy.py` runs the built-in dev server (debug + reloader). For
 production, run it under gunicorn with the eventlet worker. Socket.IO requires
 a single worker process unless you also configure a Redis message queue:
 
     pip install gunicorn
-    gunicorn -k eventlet -w 1 -b 127.0.0.1:5000 'run:app'
+    gunicorn -k eventlet -w 1 -b 127.0.0.1:5000 'ceopardy:app'
 
 Put nginx (or similar) in front for TLS and to expose it on the network — the
 app itself binds to localhost because the host interface has no auth.
@@ -80,7 +80,7 @@ Run Flask and Vite side by side. Vite hot-reloads the UI and proxies
 `/api` and `/socket.io` to Flask.
 
     # terminal 1 - Flask
-    python run.py
+    python ceopardy.py
 
     # terminal 2 - Vite dev server
     npm run dev --prefix frontend

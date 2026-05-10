@@ -230,6 +230,8 @@ def init_game():
         {"id": "message1", "html": content},
         namespace=GAME_NS,
     )
+    # Old viewers that are still on a legacy URL should just bounce.
+    app.socketio.emit("redirect", {"url": "/"}, namespace=GAME_NS)
 
     return jsonify(result="success")
 

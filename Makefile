@@ -30,13 +30,8 @@ install-dev:
 
 # ── Run dev servers (Flask + Vite) in one terminal ──────────────────────────
 
-# Reinstalls when package.json is newer than the install marker.
-frontend/node_modules/.package-lock.json: frontend/package.json
-	npm install --prefix frontend
-	@touch frontend/node_modules/.package-lock.json
-
-run: frontend/node_modules/.package-lock.json
-	@exec sh -c 'trap "kill 0" INT TERM; \
-		python run.py & \
-		npm run dev --prefix frontend & \
-		wait'
+run:
+	@python ceopardy.py & backend=$$!; \
+		npm run dev --prefix frontend & frontend=$$!; \
+		trap "kill $$backend $$frontend 2>/dev/null" INT TERM; \
+		wait $$backend $$frontend
