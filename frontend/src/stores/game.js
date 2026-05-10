@@ -98,6 +98,8 @@ export const useGameStore = defineStore("game", {
         this.ui_state.question = data.qid;
         this.ui_state.dailydouble = "enabled";
         this.active_question = { category: data.category, dailydouble: true };
+        if (data.team) this.ui_state.team = data.team;
+        if (data.range) this.dailydouble_range = data.range;
         this.dailydoubleTrigger += 1;
       });
 

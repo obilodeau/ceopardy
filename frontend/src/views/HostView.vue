@@ -78,6 +78,8 @@ async function onSelectQuestion(qid) {
   }
   const data = await api.selectQuestion(qid);
   if (data?.dailydouble) {
+    if (data.dailydouble_range) game.dailydouble_range = data.dailydouble_range;
+    if (data.team) game.ui_state.team = data.team;
     playSound("dailydouble");
   } else {
     unlockBuzzers();

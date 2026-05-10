@@ -43,11 +43,12 @@ const answerVal = computed(() => props.answers[tid.value] ?? 0);
 const doubleVal = computed(
   () => props.answers[`${tid.value}-dailydouble`] ?? -1,
 );
-const waigerVal = computed(
-  () =>
+const waigerVal = computed({
+  get: () =>
     props.answers[`${tid.value}-waiger-dailydouble`] ??
     game.dailydouble_range.max,
-);
+  set: (val) => updateWaiger(Number(val)),
+});
 
 const teamFontClass = `team${props.idx + 1}-font`;
 </script>
@@ -108,14 +109,13 @@ const teamFontClass = `team${props.idx + 1}-font`;
             <!-- Daily double scoring -->
             <div v-else class="box-answer-range">
               <input
+                v-model.number="waigerVal"
                 class="team-range"
                 :name="`${tid}-waiger-dailydouble`"
                 type="range"
                 :min="game.dailydouble_range.min"
                 :max="game.dailydouble_range.max"
                 step="1"
-                :value="waigerVal"
-                @input="updateWaiger(Number($event.target.value))"
               />
               <div class="box-answer-range-label">
                 <div><p>Minimum</p></div>

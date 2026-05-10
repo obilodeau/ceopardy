@@ -28,6 +28,7 @@ import random
 
 from flask import Blueprint, jsonify, request
 from flask import current_app as app
+from sqlalchemy.exc import NoResultFound
 
 import utils
 from config import config
@@ -129,16 +130,18 @@ def _full_state_payload():
         data["active_question"] = controller.get_active_question()
 
         # Daily-double waiger range for the team currently in control (if any).
+        # Always report a usable range so the host slider is interactive even
+        # before any team has been put in control.
         state = controller.get_complete_state()
+        _min = config.get("DAILYDOUBLE_WAIGER_MIN", 0)
+        _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN", 0)
         if state.get("dailydouble") == "enabled":
             try:
                 ctrl_team = controller.get_team_in_control()
                 _min, _max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
-            except Exception:
-                _min, _max = 0, 0
-        else:
-            _min = config.get("DAILYDOUBLE_WAIGER_MIN", 0)
-            _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN", 0)
+            except NoResultFound:
+                # No team in control yet: keep the config defaults.
+                pass
         data["dailydouble_range"] = {"min": _min, "max": _max}
     else:
         data["teams"] = _teams_payload(controller)
@@ -146,7 +149,10 @@ def _full_state_payload():
         data["questions"] = {}
         data["state"] = controller.get_complete_state()
         data["active_question"] = {}
-        data["dailydouble_range"] = {"min": 0, "max": 0}
+        data["dailydouble_range"] = {
+            "min": config.get("DAILYDOUBLE_WAIGER_MIN", 0),
+            "max": config.get("DAILYDOUBLE_WAIGER_MAX_MIN", 0),
+        }
 
     return data
 
@@ -314,7 +320,19 @@ def question_select():
     answer = controller.get_answer(col, row)
 
     if question["dailydouble"] is True:
-        ctrl_team = controller.get_team_in_control()
+        # A Daily Double normally requires a team to be in control (they had
+        # to pick the clue to trigger it). If that invariant is broken — most
+        # likely because the operator forgot to use the roulette — fall back
+        # to team1 and log loudly so it's noticed.
+        try:
+            ctrl_team = controller.get_team_in_control()
+        except NoResultFound:
+            app.logger.warning(
+                "Daily Double selected with no team in control; falling back to team1. "
+                "Normally, you should use the roulette to assign control before picking a clue."
+            )
+            controller.set_state("team", "team1")
+            ctrl_team = controller.get_team_in_control()
         dbl_min, dbl_max = controller.get_dailydouble_waiger_range(ctrl_team.tid)
 
         controller.set_state("question", qid)
@@ -324,7 +342,12 @@ def question_select():
         app.socketio.emit("question-hide", {}, namespace=GAME_NS)
         app.socketio.emit(
             "dailydouble",
-            {"qid": qid, "category": question["category"]},
+            {
+                "qid": qid,
+                "category": question["category"],
+                "team": ctrl_team.tid,
+                "range": {"min": dbl_min, "max": dbl_max},
+            },
             namespace=GAME_NS,
         )
         return jsonify(
