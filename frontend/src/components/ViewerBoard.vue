@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { useGameStore } from "@/stores/game";
+import DailyDoubleAnimation from "@/components/DailyDoubleAnimation.vue";
 
 const game = useGameStore();
 
@@ -88,6 +89,11 @@ function questionLabel(row) {
             </div>
           </div>
         </div>
+        <!-- DD overlay stays inside the black border and persists while DD is active. -->
+        <DailyDoubleAnimation
+          v-if="game.isDailyDouble"
+          :key="game.dailydoubleTrigger"
+        />
       </div>
     </div>
 

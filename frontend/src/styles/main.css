@@ -2,6 +2,14 @@
    The Jeopardy-style visuals (dark brown chrome + blue question boxes) are
    kept exactly as before so the crowd-facing board still "feels" right. */
 
+:root {
+  /* Black-frame thickness used as padding by .flex-pad / .flex-*-pad helpers.
+     The visible black border around a question box is two of these stacked
+     (outer .black-box.flex-pad + per-row/col .flex-*-pad). */
+  --ceopardy-pad: calc(0.3vh + 0.3vw);
+  --ceopardy-pad-small: calc(0.2vh + 0.1vw);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -467,11 +475,11 @@ svg:hover polygon {
 }
 
 .box-overlay {
-  padding: calc(0.3vh + 0.3vw);
+  padding: var(--ceopardy-pad);
   height: 100%;
 }
 .box-fake-overlay {
-  padding: calc(0.2vh + 0.1vw);
+  padding: var(--ceopardy-pad-small);
   height: 100%;
 }
 .box-team p {
@@ -521,26 +529,26 @@ svg:hover polygon {
   height: 100%;
 }
 .flex-pad {
-  padding: calc(0.3vh + 0.3vw);
+  padding: var(--ceopardy-pad);
 }
 .flex-small-pad {
-  padding: calc(0.2vh + 0.1vw);
+  padding: var(--ceopardy-pad-small);
 }
 .flex-horizontal-pad {
-  padding-left: calc(0.3vh + 0.3vw);
-  padding-right: calc(0.3vh + 0.3vw);
+  padding-left: var(--ceopardy-pad);
+  padding-right: var(--ceopardy-pad);
 }
 .flex-vertical-pad {
-  padding-top: calc(0.3vh + 0.3vw);
-  padding-bottom: calc(0.3vh + 0.3vw);
+  padding-top: var(--ceopardy-pad);
+  padding-bottom: var(--ceopardy-pad);
 }
 .flex-horizontal-small-pad {
-  padding-left: calc(0.2vh + 0.1vw);
-  padding-right: calc(0.2vh + 0.1vw);
+  padding-left: var(--ceopardy-pad-small);
+  padding-right: var(--ceopardy-pad-small);
 }
 .flex-vertical-small-pad {
-  padding-top: calc(0.2vh + 0.1vw);
-  padding-bottom: calc(0.2vh + 0.1vw);
+  padding-top: var(--ceopardy-pad-small);
+  padding-bottom: var(--ceopardy-pad-small);
 }
 .flex-border-header {
   border-top-width: 0;
@@ -571,10 +579,18 @@ svg:hover polygon {
   opacity: 0;
 }
 
-/* Daily Double flip animation */
+/* Daily Double flip animation — covers the dollar-value grid only and stays
+   in place while DD is active (parent controls mount/unmount). The overlay
+   lives inside the .black-box so it sits within the rounded black border. */
+.container-questions-viewer .black-box {
+  position: relative;
+  overflow: hidden;
+}
 .dailydouble-overlay {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  /* Match the black border around question boxes: two stacked pads
+     (.black-box.flex-pad + per-row/col .flex-*-pad). */
+  inset: calc(var(--ceopardy-pad) * 2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -585,18 +601,17 @@ svg:hover polygon {
 .dailydouble-inner {
   background: rgb(0, 1, 161);
   color: white;
-  width: 60vw;
-  height: 40vh;
-  border: 1px solid black;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-weight: bolder;
   font-family: 'Gyparody', Helvetica, sans-serif;
-  font-size: calc(6vh + 2vw);
+  font-size: calc(8vh + 3vw);
   text-shadow: 2px 2px 0px #000000;
-  transform: scale(0.1) rotateX(0deg);
+  transform: scale(0.05) rotateX(0deg);
   animation: dailydouble-spin 2s ease-out forwards;
 }
 @keyframes dailydouble-spin {
@@ -712,32 +727,14 @@ input[type='range']::-moz-range-thumb {
 
 /* Wide screens */
 @media (min-width: 1230px) {
+  :root {
+    --ceopardy-pad: 8px;
+    --ceopardy-pad-small: 4px;
+  }
   .container-all {
     margin-left: auto !important;
     margin-right: auto !important;
     width: 1200px;
-  }
-  .flex-pad {
-    padding: 8px;
-  }
-  .flex-small-pad {
-    padding: 4px;
-  }
-  .flex-horizontal-pad {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-  .flex-vertical-pad {
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
-  .flex-horizontal-small-pad {
-    padding-left: 4px;
-    padding-right: 4px;
-  }
-  .flex-vertical-small-pad {
-    padding-top: 4px;
-    padding-bottom: 4px;
   }
   .box-category-host p { font-size: 20px; }
   .box-question-host p { font-size: 40px; }
