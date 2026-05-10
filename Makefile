@@ -1,3 +1,7 @@
+# Put the project venv first on PATH so targets work the same whether or not
+# the user has activated it (or has direnv loaded). `make venv` creates it.
+export PATH := $(CURDIR)/.venv/bin:$(PATH)
+
 .PHONY: ci lint format-check test install-dev run venv
 
 # Run all CI checks — called by GitHub Actions.
