@@ -25,7 +25,7 @@ now only does three things:
   * broadcast realtime state changes on the /game Socket.IO namespace
   * serve the built SPA (and some legacy static assets)
 
-For development run Flask (`python run.py`) and Vite (`npm run dev`)
+For development run Flask (`python ceopardy.py`) and Vite (`npm run dev`)
 side by side. Vite proxies /api and /socket.io to Flask.
 """
 
@@ -146,7 +146,6 @@ def create_app():
 
         from controller import Controller
 
-        db.create_all()
         app.controller = Controller()
 
         # Register the REST blueprint. It depends on app.controller being set.
@@ -161,3 +160,10 @@ def create_app():
                 _ctl = None
 
     return app
+
+
+if __name__ == "__main__":
+    create_app()
+    # WARNING: This app is not ready to be exposed on the network.
+    #          Game host interface would be exposed.
+    socketio.run(app, host="127.0.0.1", port=5000, debug=True)
