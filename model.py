@@ -151,7 +151,3 @@ class State(db.Model):
 
     def __repr__(self):
         return "<State {} is {}.>".format(self.name, self.value)
-
-
-# This creates the database if it doesn't already exist
-db.create_all()
