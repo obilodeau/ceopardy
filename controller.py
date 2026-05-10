@@ -275,6 +275,37 @@ class Controller:
         return (_min, _max)
 
     @staticmethod
+    def set_dailydouble_wager(tid: str, amount: int) -> tuple[str, int]:
+        """Validate and persist the DD wager for the controlling team."""
+        _min, _max = Controller.get_dailydouble_waiger_range(tid)
+        if not (_min <= amount <= _max):
+            raise GameProblem(f"Wager {amount} outside [{_min}, {_max}] for {tid}")
+        Controller.set_state("dailydouble-wager", f"{tid}:{amount}")
+        return tid, amount
+
+    @staticmethod
+    def get_dailydouble_wager() -> tuple[str, int] | None:
+        """Return the persisted (tid, amount) wager, or None."""
+        raw = Controller.get_state("dailydouble-wager") or ""
+        if ":" not in raw:
+            return None
+        tid, amount = raw.split(":", 1)
+        try:
+            return tid, int(amount)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def clear_dailydouble_wager() -> None:
+        Controller.set_state("dailydouble-wager", "")
+
+    @staticmethod
+    def end_dailydouble() -> None:
+        """Turn DD off and clear any wager. Use everywhere DD ends."""
+        Controller.set_state("dailydouble", "")
+        Controller.clear_dailydouble_wager()
+
+    @staticmethod
     def teams_exists():
         if Team.query.all():
             return True

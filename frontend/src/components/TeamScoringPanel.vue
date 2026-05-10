@@ -33,6 +33,22 @@ function updateDouble(val) {
 function updateWaiger(val) {
   const key = `${tid.value}-waiger-dailydouble`;
   emit("update:answers", { ...props.answers, [key]: val });
+  // Live-broadcast the wager so the viewer can show it. Throttled so a slider
+  // drag doesn't flood Socket.IO; trailing edge is preserved.
+  scheduleWagerBroadcast(val);
+}
+
+let wagerTimer = null;
+let wagerPending = null;
+function scheduleWagerBroadcast(val) {
+  wagerPending = val;
+  if (wagerTimer) return;
+  api.setWager(wagerPending).catch(() => {});
+  wagerPending = null;
+  wagerTimer = setTimeout(() => {
+    wagerTimer = null;
+    if (wagerPending !== null) scheduleWagerBroadcast(wagerPending);
+  }, 100);
 }
 
 function selectTeam() {
@@ -43,11 +59,12 @@ const answerVal = computed(() => props.answers[tid.value] ?? 0);
 const doubleVal = computed(
   () => props.answers[`${tid.value}-dailydouble`] ?? -1,
 );
-const waigerVal = computed(
-  () =>
+const waigerVal = computed({
+  get: () =>
     props.answers[`${tid.value}-waiger-dailydouble`] ??
     game.dailydouble_range.max,
-);
+  set: (val) => updateWaiger(Number(val)),
+});
 
 const teamFontClass = `team${props.idx + 1}-font`;
 </script>
@@ -58,7 +75,6 @@ const teamFontClass = `team${props.idx + 1}-font`;
       class="black-box flex-small-pad"
       :class="{
         'team-selected': teamSelected,
-        disabled: disabled,
       }"
       style="width: 100%; margin: auto"
     >
@@ -74,14 +90,14 @@ const teamFontClass = `team${props.idx + 1}-font`;
             >
               <div
                 class="form-icon form-click"
-                title="Give control to this team"
+                title="Reassign control to this team"
                 @click="selectTeam"
               >
                 <i class="fa-solid fa-crosshairs fa-2x" />
               </div>
             </div>
           </div>
-          <div class="box-team-middle">
+          <div class="box-team-middle" :class="{ disabled: disabled }">
             <div class="box-ceopardy box-team-host" :class="teamFontClass">
               <p>{{ team.name }}</p>
             </div>
@@ -108,14 +124,13 @@ const teamFontClass = `team${props.idx + 1}-font`;
             <!-- Daily double scoring -->
             <div v-else class="box-answer-range">
               <input
+                v-model.number="waigerVal"
                 class="team-range"
                 :name="`${tid}-waiger-dailydouble`"
                 type="range"
                 :min="game.dailydouble_range.min"
                 :max="game.dailydouble_range.max"
                 step="1"
-                :value="waigerVal"
-                @input="updateWaiger(Number($event.target.value))"
               />
               <div class="box-answer-range-label">
                 <div><p>Minimum</p></div>

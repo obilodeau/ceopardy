@@ -78,6 +78,10 @@ async function onSelectQuestion(qid) {
   }
   const data = await api.selectQuestion(qid);
   if (data?.dailydouble) {
+    if (data.dailydouble_range) game.dailydouble_range = data.dailydouble_range;
+    if (data.team) game.ui_state.team = data.team;
+    // No buzzer race in a Daily Double — only the controlling team plays.
+    lockBuzzers();
     playSound("dailydouble");
   } else {
     unlockBuzzers();
@@ -104,6 +108,7 @@ async function onFinish() {
     window.confirm("Bring the game to the final round (if any). Are you sure?")
   ) {
     await api.finish();
+    router.push({ name: "start" });
   }
 }
 function playTimeout() {
@@ -162,11 +167,22 @@ watch(
 );
 
 const activeHtml = computed(() => {
-  if (game.isDailyDouble) {
+  if (game.isDailyDouble && !game.isDailyDoubleRevealed) {
     return "<p>Daily Double!<br/>Please input user bet.</p>";
   }
   return game.active_question?.text ?? "";
 });
+
+const canRevealDailyDouble = computed(
+  () =>
+    game.isDailyDouble &&
+    !game.isDailyDoubleRevealed &&
+    game.dailydouble_wager != null,
+);
+
+async function onRevealDailyDouble() {
+  await api.revealDailyDouble();
+}
 </script>
 
 <template>
@@ -204,6 +220,14 @@ const activeHtml = computed(() => {
         <div class="black-box flex-small-pad">
           <div class="box-fake-overlay">
             <div class="box-ceopardy box-question-host" v-html="activeHtml" />
+            <button
+              v-if="canRevealDailyDouble"
+              type="button"
+              class="dd-reveal-btn"
+              @click="onRevealDailyDouble"
+            >
+              <i class="fa-solid fa-eye" /> Reveal clue
+            </button>
           </div>
         </div>
       </div>
