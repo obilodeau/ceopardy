@@ -35,6 +35,9 @@ export const useGameStore = defineStore("game", {
     dailydoubleTrigger: 0,
     socket: null,
     rouletteTarget: null,
+    // Set by HostView on mount. Host skips the roulette animation and jumps
+    // straight to the winner so the operator can re-roll quickly for showmanship.
+    isHost: false,
   }),
 
   getters: {
@@ -180,6 +183,10 @@ export const useGameStore = defineStore("game", {
       if (!sequence || sequence.length === 0) return;
       // Clear any pending roulette first.
       if (this._rouletteTimer) clearInterval(this._rouletteTimer);
+      if (this.isHost) {
+        this.ui_state.team = sequence[sequence.length - 1];
+        return;
+      }
       const queue = [...sequence];
       this._rouletteTimer = setInterval(() => {
         if (queue.length === 0) {

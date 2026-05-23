@@ -23,6 +23,7 @@ function resetAnswers() {
 }
 
 onMounted(async () => {
+  game.isHost = true;
   if (!game.initialized) await game.refresh();
   if (!game.isInProgress) {
     router.push({ name: "start" });
