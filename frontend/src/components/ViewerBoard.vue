@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from "vue";
 import { useGameStore } from "@/stores/game";
+import DailyDoubleAnimation from "@/components/DailyDoubleAnimation.vue";
+import TeamRow from "@/components/TeamRow.vue";
+import TeamRowDailyDouble from "@/components/TeamRowDailyDouble.vue";
 
 const game = useGameStore();
 
@@ -88,42 +91,20 @@ function questionLabel(row) {
             </div>
           </div>
         </div>
+        <!-- DD overlay stays inside the black border until the clue is revealed. -->
+        <DailyDoubleAnimation
+          v-if="game.isDailyDouble && !game.isDailyDoubleRevealed"
+          :key="game.dailydoubleTrigger"
+        />
       </div>
     </div>
 
     <div class="container-separator-h" />
 
-    <!-- Team result cards -->
-    <div class="container-results">
-      <div
-        v-for="(team, idx) in game.teams"
-        :key="team.tid"
-        class="container-team"
-      >
-        <div
-          :id="team.tid"
-          class="black-box flex-pad"
-          :class="{ 'team-selected': game.selectedTeam === team.tid }"
-          style="width: 80%; max-width: 250px; margin: auto"
-        >
-          <div class="col-player flex-horizontal-pad">
-            <div class="row-player flex-vertical-pad" style="height: 30%">
-              <div :id="`${team.tid}-score`" class="box-ceopardy box-score">
-                <p>${{ team.score }}</p>
-              </div>
-            </div>
-            <div class="row-player flex-vertical-pad" style="height: 70%">
-              <div
-                :id="`${team.tid}-name`"
-                class="box-ceopardy box-team"
-                :class="`team${idx + 1}-font`"
-              >
-                <p>{{ team.name }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Team result cards: normal row vs DD layout, swapped with a fade. -->
+    <Transition name="dd-rowfade" mode="out-in">
+      <TeamRowDailyDouble v-if="game.isDailyDouble" key="dd" />
+      <TeamRow v-else key="normal" />
+    </Transition>
   </div>
 </template>

@@ -24,6 +24,7 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
+from exceptions import GameProblem, UnknownTeamError
 from model import Answer, FinalQuestion, Game, GameState, Question, Response, State, Team
 from utils import parse_gamefile, parse_question_id, parse_questions, question_to_html
 
@@ -269,10 +270,44 @@ class Controller:
     def get_dailydouble_waiger_range(team_id):
         _min = config.get("DAILYDOUBLE_WAIGER_MIN")
         scores = Controller.get_teams_score_by_tid()
-        _max = scores[team_id]
+        try:
+            _max = scores[team_id]
+        except KeyError as e:
+            raise UnknownTeamError(f"Unknown team {team_id!r}") from e
         if _max < config.get("DAILYDOUBLE_WAIGER_MAX_MIN"):
             _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN")
         return (_min, _max)
+
+    @staticmethod
+    def set_dailydouble_wager(tid: str, amount: int) -> tuple[str, int]:
+        """Validate and persist the DD wager for the controlling team."""
+        _min, _max = Controller.get_dailydouble_waiger_range(tid)
+        if not (_min <= amount <= _max):
+            raise GameProblem(f"Wager {amount} outside [{_min}, {_max}] for {tid}")
+        Controller.set_state("dailydouble-wager", f"{tid}:{amount}")
+        return tid, amount
+
+    @staticmethod
+    def get_dailydouble_wager() -> tuple[str, int] | None:
+        """Return the persisted (tid, amount) wager, or None."""
+        raw = Controller.get_state("dailydouble-wager") or ""
+        if ":" not in raw:
+            return None
+        tid, amount = raw.split(":", 1)
+        try:
+            return tid, int(amount)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def clear_dailydouble_wager() -> None:
+        Controller.set_state("dailydouble-wager", "")
+
+    @staticmethod
+    def end_dailydouble() -> None:
+        """Turn DD off and clear any wager. Use everywhere DD ends."""
+        Controller.set_state("dailydouble", "")
+        Controller.clear_dailydouble_wager()
 
     @staticmethod
     def teams_exists():
@@ -487,7 +522,3 @@ class Controller:
         db.create_all()
         Controller._init()
         app.logger.info("SQL Engine reconnected, empty database recreated. We are ready to go!")
-
-
-class GameProblem(Exception):
-    pass

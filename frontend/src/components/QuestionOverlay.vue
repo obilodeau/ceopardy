@@ -4,7 +4,13 @@ import { useGameStore } from "@/stores/game";
 
 const game = useGameStore();
 
-const visible = computed(() => !!game.activeQuestionId && !game.isDailyDouble);
+// Show the clue overlay for normal questions, and for DDs once the operator
+// has revealed the clue. Hidden during the DD wager phase.
+const visible = computed(
+  () =>
+    !!game.activeQuestionId &&
+    (!game.isDailyDouble || game.isDailyDoubleRevealed),
+);
 const html = computed(() => game.active_question?.text ?? "");
 </script>
 

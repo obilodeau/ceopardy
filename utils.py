@@ -21,6 +21,7 @@ import os
 import re
 
 from config import config
+from exceptions import GamefileParsingError, InvalidQuestionId, QuestionParsingError
 
 
 def parse_questions(filename):
@@ -167,15 +168,3 @@ def filter_answer_form(data, dailydouble=False):
                 key = key.rstrip("-dailydouble")
                 answers[key] = value
     return answers
-
-
-class InvalidQuestionId(Exception):
-    pass
-
-
-class QuestionParsingError(Exception):
-    pass
-
-
-class GamefileParsingError(Exception):
-    pass
