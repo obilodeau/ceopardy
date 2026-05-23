@@ -24,6 +24,7 @@ from sqlalchemy import and_
 
 from ceopardy import db
 from config import config
+from exceptions import GameProblem, UnknownTeamError
 from model import Answer, FinalQuestion, Game, GameState, Question, Response, State, Team
 from utils import parse_gamefile, parse_question_id, parse_questions, question_to_html
 
@@ -269,7 +270,10 @@ class Controller:
     def get_dailydouble_waiger_range(team_id):
         _min = config.get("DAILYDOUBLE_WAIGER_MIN")
         scores = Controller.get_teams_score_by_tid()
-        _max = scores[team_id]
+        try:
+            _max = scores[team_id]
+        except KeyError as e:
+            raise UnknownTeamError(f"Unknown team {team_id!r}") from e
         if _max < config.get("DAILYDOUBLE_WAIGER_MAX_MIN"):
             _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN")
         return (_min, _max)
@@ -518,7 +522,3 @@ class Controller:
         db.create_all()
         Controller._init()
         app.logger.info("SQL Engine reconnected, empty database recreated. We are ready to go!")
-
-
-class GameProblem(Exception):
-    pass

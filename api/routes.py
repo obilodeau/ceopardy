@@ -32,6 +32,13 @@ from sqlalchemy.exc import NoResultFound
 
 import utils
 from config import config
+from exceptions import (
+    GamefileParsingError,
+    GameProblem,
+    InvalidQuestionId,
+    QuestionParsingError,
+    UnknownTeamError,
+)
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -217,7 +224,7 @@ def init_game():
             controller.setup_teams(teamnames)
             controller.setup_questions(roundfile)
             controller.start_game()
-        except Exception:  # noqa: BLE001
+        except (GameProblem, GamefileParsingError, QuestionParsingError):
             app.logger.exception("Initialization error!")
             return jsonify(result="failure", error="Initialization error!"), 500
 
@@ -311,10 +318,12 @@ def team_select():
                 {"team": tid, "range": {"min": dbl_min, "max": dbl_max}},
                 namespace=GAME_NS,
             )
-        except Exception:  # noqa: BLE001
-            # If the range can't be computed for some reason, leave the
-            # client's previous range in place.
-            pass
+        except UnknownTeamError:
+            app.logger.warning(
+                "DD range recompute skipped: unknown team %s; "
+                "client keeps its previous slider range",
+                tid,
+            )
     app.socketio.emit("team-select", {"tid": tid or None}, namespace=GAME_NS)
     return jsonify(result="success", tid=tid)
 
@@ -341,7 +350,7 @@ def question_select():
     qid = data.get("id")
     try:
         col, row = utils.parse_question_id(qid)
-    except utils.InvalidQuestionId:
+    except InvalidQuestionId:
         return jsonify(result="failure", error="Invalid qid"), 400
 
     question = controller.get_question(col, row)
@@ -416,7 +425,7 @@ def dailydouble_reveal():
     qid = state.get("question") or ""
     try:
         col, row = utils.parse_question_id(qid)
-    except utils.InvalidQuestionId:
+    except InvalidQuestionId:
         return jsonify(result="failure", error="No active DD question"), 400
     question = controller.get_question(col, row)
     controller.set_state("dailydouble", "revealed")
@@ -441,9 +450,6 @@ def dailydouble_wager():
         ctrl_team = controller.get_team_in_control()
     except NoResultFound:
         return jsonify(result="failure", error="No team in control"), 400
-    # Late import to dodge circular imports (controller imports model, etc.).
-    from controller import GameProblem
-
     try:
         tid, amount = controller.set_dailydouble_wager(ctrl_team.tid, amount)
     except GameProblem as e:
@@ -474,7 +480,7 @@ def submit_answer():
     answers = data.get("answers") or {}
     try:
         col, row = utils.parse_question_id(qid)
-    except utils.InvalidQuestionId:
+    except InvalidQuestionId:
         return jsonify(result="failure", error="Invalid qid"), 400
 
     question = controller.get_question(col, row)

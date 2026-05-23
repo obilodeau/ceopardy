@@ -7,12 +7,8 @@ and can run without any app context.
 
 import pytest
 
-from utils import (
-    InvalidQuestionId,
-    filter_answer_form,
-    parse_question_id,
-    question_to_html,
-)
+from exceptions import InvalidQuestionId
+from utils import filter_answer_form, parse_question_id, question_to_html
 
 # ---------------------------------------------------------------------------
 # parse_question_id
