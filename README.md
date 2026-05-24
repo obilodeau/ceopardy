@@ -39,11 +39,15 @@ You need Python, pip, virtualenv and Node.js (LTS). The tl;dr:
     make venv
     source .venv/bin/activate    # bash/zsh
     source .venv/bin/activate.fish    # fish
+    make init                    # seed data/ and game-media/ from templates
     npm install --prefix frontend
     npm run build --prefix frontend
     python run.py
 
 `make venv` creates `.venv/` and installs both runtime and dev requirements.
+`make init` is a one-time step that copies starter `data/1st.round` and
+`data/Questions.cp` into the repo and creates `game-media/`. Edit those files
+to set up your game.
 
 ### Optional: direnv
 
@@ -88,11 +92,29 @@ Run Flask and Vite side by side. Vite hot-reloads the UI and proxies
 Then open http://localhost:5173/.
 
 
+## Install as a CLI (pipx)
+
+Once published, Ceopardy can be installed as a stand-alone command:
+
+    pipx install ceopardy
+    mkdir my-game && cd my-game
+    ceopardy init        # scaffolds data/ and game-media/ in CWD
+    # edit data/Questions.cp and data/1st.round
+    ceopardy             # or `ceopardy serve` — starts the server
+
+`ceopardy init` never overwrites existing files; it's safe to re-run. The
+server, the SQLite database, and the question files all resolve relative to
+the directory you run `ceopardy` from, so keep one directory per game.
+
+
 ## Prepare a game
 
 Game data goes in `data/`. There you should add round files (create a `.round`
 file) and questions in `Questions.cp`. The format is pretty self explanatory.
-Check `data/` for an example.
+Run `ceopardy init` (or `make init` from the repo) to get a working starter
+set; `data/1st.round` and `data/Questions.cp` are the minimal example.
+User-supplied media referenced by questions (e.g. `[img:photo.png]`) goes in
+`game-media/` next to `data/`.
 
 > **Note:** In order to avoid dataloss due to a crash, Ceopardy is backed by a
 > database where transactions are pushed when the hosts submit the points. This
