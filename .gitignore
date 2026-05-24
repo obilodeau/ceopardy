@@ -3,6 +3,12 @@ __pycache__/
 *.pyc
 /.venv/
 
+# packaging
+/build/
+/dist/
+*.egg-info/
+/ceopardy/_version.py
+
 # IDE files
 /.idea/
 /.vscode/
@@ -12,17 +18,17 @@ __pycache__/
 /frontend/node_modules/
 
 # Vite build output
-/static/dist/
-
-# Legacy static/vendor directory (no longer produced, kept for safety)
-/static/vendor/
+/ceopardy/static/dist/
 
 # project files
 ceopardy*db
 ceopardy.log
+/game-media/
+# Operator game content — seeded by `ceopardy init` from package templates.
+/data/
 
 # sound files (not provided)
-/static/sounds/*.mp3
-/static/sounds/*.wav
+/ceopardy/static/sounds/*.mp3
+/ceopardy/static/sounds/*.wav
 # these are creative commons sounds
-!/static/sounds/buzzer*.wav
+!/ceopardy/static/sounds/buzzer*.wav

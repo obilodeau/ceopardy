@@ -1,7 +1,6 @@
 {
   "name": "ceopardy-workspace",
   "private": true,
-  "version": "0.5.0",
   "description": "Ceopardy workspace - scripts that delegate to frontend/",
   "scripts": {
     "install:frontend": "npm --prefix frontend install",

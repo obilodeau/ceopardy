@@ -23,10 +23,24 @@ from flask import current_app as app
 from sqlalchemy import and_
 
 from ceopardy import db
-from config import config
-from exceptions import GameProblem, UnknownTeamError
-from model import Answer, FinalQuestion, Game, GameState, Question, Response, State, Team
-from utils import parse_gamefile, parse_question_id, parse_questions, question_to_html
+from ceopardy.config import config
+from ceopardy.exceptions import GameProblem, UnknownTeamError
+from ceopardy.model import (
+    Answer,
+    FinalQuestion,
+    Game,
+    GameState,
+    Question,
+    Response,
+    State,
+    Team,
+)
+from ceopardy.utils import (
+    parse_gamefile,
+    parse_question_id,
+    parse_questions,
+    question_to_html,
+)
 
 
 class Controller:

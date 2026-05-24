@@ -18,7 +18,7 @@
 from sqlalchemy import func
 
 from ceopardy import db
-from model import Answer, Game, Question, Team
+from ceopardy.model import Answer, Game, Question, Team
 
 # creates all tables from model
 # db.create_all()

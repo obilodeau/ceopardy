@@ -20,8 +20,8 @@ import html
 import os
 import re
 
-from config import config
-from exceptions import GamefileParsingError, InvalidQuestionId, QuestionParsingError
+from ceopardy.config import config
+from ceopardy.exceptions import GamefileParsingError, InvalidQuestionId, QuestionParsingError
 
 
 def parse_questions(filename):
