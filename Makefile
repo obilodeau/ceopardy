@@ -2,7 +2,7 @@
 # the user has activated it (or has direnv loaded). `make venv` creates it.
 export PATH := $(CURDIR)/.venv/bin:$(PATH)
 
-.PHONY: ci lint format format-check test install-dev run venv init
+.PHONY: ci lint format format-check test install-dev run venv init build
 
 # Run all CI checks — called by GitHub Actions.
 ci: lint format-check frontend-lint test
@@ -40,6 +40,14 @@ install-dev:
 # but works without an editable install (dev workflow uses python run.py).
 init:
 	python -m ceopardy init
+
+# Build sdist + wheel (the same path the release workflow takes). Requires
+# the frontend bundle to be present: rebuilds it first.
+build:
+	npm --prefix frontend ci
+	npm --prefix frontend run build
+	pip install build
+	python -m build
 
 # ── Run dev servers (Flask + Vite) in one terminal ──────────────────────────
 
