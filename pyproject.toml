@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ceopardy"
 description = "A Jeopardy!-style game for hosting Hacker Jeopardy nights."
-readme = { file = "README.adoc", content-type = "text/plain" }
+readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
 requires-python = ">=3.11"
 authors = [{ name = "Olivier Bilodeau", email = "olivier@bottomlesspit.org" }]
@@ -51,7 +51,7 @@ packages = ["ceopardy"]
 artifacts = ["ceopardy/static/dist/**"]
 
 [tool.hatch.build.targets.sdist]
-include = ["ceopardy", "tests", "README.adoc", "LICENSE"]
+include = ["ceopardy", "tests", "README.md", "LICENSE"]
 artifacts = ["ceopardy/static/dist/**"]
 
 [tool.ruff]
