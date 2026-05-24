@@ -3,6 +3,12 @@ __pycache__/
 *.pyc
 /.venv/
 
+# packaging
+/build/
+/dist/
+*.egg-info/
+/ceopardy/_version.py
+
 # IDE files
 /.idea/
 /.vscode/

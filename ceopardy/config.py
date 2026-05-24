@@ -33,7 +33,7 @@ config = {
         {"title": "Break", "text": "On a short break, we'll be right back after these messages."},
         {"title": "Custom", "text": ""},
     ],
-    "BASE_DIR": os.path.dirname(__file__) + "/",
+    "BASE_DIR": os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/",
     "DATABASE_FILENAME": "ceopardy.db",
     "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
     "DAILYDOUBLE_WAIGER_MIN": 5,

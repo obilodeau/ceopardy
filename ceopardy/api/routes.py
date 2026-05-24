@@ -30,9 +30,9 @@ from flask import Blueprint, jsonify, request
 from flask import current_app as app
 from sqlalchemy.exc import NoResultFound
 
-import utils
-from config import config
-from exceptions import (
+from ceopardy import utils
+from ceopardy.config import config
+from ceopardy.exceptions import (
     GamefileParsingError,
     GameProblem,
     InvalidQuestionId,
@@ -115,7 +115,7 @@ def _full_state_payload():
     in_progress = controller.is_game_in_progress()
 
     if initialized:
-        from model import Game  # local import: model needs an app context
+        from ceopardy.model import Game  # local import: model needs an app context
 
         game_state = Game.query.one().state.name
     else:

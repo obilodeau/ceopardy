@@ -1,3 +1,55 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ceopardy"
+description = "A Jeopardy!-style game for hosting Hacker Jeopardy nights."
+readme = { file = "README.adoc", content-type = "text/plain" }
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.11"
+authors = [{ name = "Olivier Bilodeau", email = "olivier@bottomlesspit.org" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Games/Entertainment",
+]
+dependencies = [
+    "Flask==3.1.3",
+    "Flask-CORS==6.0.2",
+    "Flask-SocketIO==5.6.1",
+    "Flask-SQLAlchemy==3.0.5",
+    "SQLAlchemy==1.4.54",
+    "Werkzeug==3.1.8",
+    "eventlet==0.40.3",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/obilodeau/ceopardy"
+Repository = "https://github.com/obilodeau/ceopardy"
+
+[project.scripts]
+ceopardy = "ceopardy.__main__:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "ceopardy/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ceopardy"]
+
+[tool.hatch.build.targets.sdist]
+include = ["ceopardy", "tests", "README.adoc", "LICENSE"]
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
@@ -6,6 +58,7 @@ exclude = [
     "__pycache__",
     ".venv",
     "static/",
+    "ceopardy/_version.py",
 ]
 
 [tool.ruff.lint]
@@ -14,9 +67,7 @@ select = ["E", "F", "W", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 # shell.py is an interactive REPL helper; its imports are used interactively.
-"shell.py" = ["F401"]
+"ceopardy/shell.py" = ["F401"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Ensure project root is importable so tests can `from utils import ...` etc.
-pythonpath = ["."]

@@ -29,18 +29,21 @@ For development run Flask (`python run.py`) and Vite (`npm run dev`)
 side by side. Vite proxies /api and /socket.io to Flask.
 """
 
-import json
 import logging
 import os
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 
 from flask import Flask, g, jsonify, send_from_directory
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
-from config import config
+from ceopardy.config import config
 
-with open(os.path.join(os.path.dirname(__file__), "package.json")) as _f:
-    VERSION = json.load(_f)["version"]
+try:
+    VERSION = _pkg_version("ceopardy")
+except PackageNotFoundError:
+    VERSION = "0.0.0+unknown"
 
 # The Vite build drops its output here. `npm run build` writes the production
 # bundle; during dev Vite serves directly on :5173 and proxies /api to us.
@@ -49,7 +52,7 @@ FRONTEND_DIST = os.path.join(config["BASE_DIR"], "static", "dist")
 
 app = Flask(
     __name__,
-    static_folder="static",
+    static_folder=os.path.join(config["BASE_DIR"], "static"),
     static_url_path="/static",
 )
 app.config["SECRET_KEY"] = "Alex Trebek forever!"
@@ -144,13 +147,13 @@ def create_app():
         app.db = db
         app.socketio = socketio
 
-        from controller import Controller
+        from ceopardy.controller import Controller
 
         db.create_all()
         app.controller = Controller()
 
         # Register the REST blueprint. It depends on app.controller being set.
-        from api.routes import api_bp
+        from ceopardy.api.routes import api_bp
 
         app.register_blueprint(api_bp)
 
