@@ -33,7 +33,10 @@ config = {
         {"title": "Break", "text": "On a short break, we'll be right back after these messages."},
         {"title": "Custom", "text": ""},
     ],
-    "BASE_DIR": os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/",
+    # User data (data/, game-media/, ceopardy.db, ...) is resolved relative
+    # to the operator's working directory. Run `ceopardy` from a directory
+    # that contains a `data/` folder with your round files.
+    "BASE_DIR": os.getcwd() + "/",
     "DATABASE_FILENAME": "ceopardy.db",
     "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
     "DAILYDOUBLE_WAIGER_MIN": 5,

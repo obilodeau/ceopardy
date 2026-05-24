@@ -7,7 +7,8 @@ import { fileURLToPath, URL } from 'node:url'
 // In dev, proxy /api and /socket.io to the Flask back-end (default 127.0.0.1:5000)
 // so that the SPA can be served on localhost:5173 while hitting Flask APIs.
 //
-// In production, `npm run build` emits to ../static/dist which Flask serves.
+// In production, `npm run build` emits to ../ceopardy/static/dist which Flask
+// serves out of the package's static folder (and ships in the wheel).
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -35,7 +36,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../static/dist',
+    outDir: '../ceopardy/static/dist',
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: true,

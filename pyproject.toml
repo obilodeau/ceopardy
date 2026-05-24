@@ -46,9 +46,13 @@ version-file = "ceopardy/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ceopardy"]
+# ceopardy/static/dist/ is gitignored (it's a build artifact); force-include
+# it so a freshly-built wheel ships the SPA bundle.
+artifacts = ["ceopardy/static/dist/**"]
 
 [tool.hatch.build.targets.sdist]
 include = ["ceopardy", "tests", "README.adoc", "LICENSE"]
+artifacts = ["ceopardy/static/dist/**"]
 
 [tool.ruff]
 target-version = "py311"
@@ -57,7 +61,7 @@ exclude = [
     ".git",
     "__pycache__",
     ".venv",
-    "static/",
+    "ceopardy/static/",
     "ceopardy/_version.py",
 ]
 

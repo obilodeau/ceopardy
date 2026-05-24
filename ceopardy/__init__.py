@@ -45,18 +45,26 @@ try:
 except PackageNotFoundError:
     VERSION = "0.0.0+unknown"
 
-# The Vite build drops its output here. `npm run build` writes the production
-# bundle; during dev Vite serves directly on :5173 and proxies /api to us.
-FRONTEND_DIST = os.path.join(config["BASE_DIR"], "static", "dist")
+# Frontend bundle ships inside the package (ceopardy/static/dist). Vite's
+# `npm run build` writes it there; during dev Vite serves directly on :5173
+# and proxies /api to us.
+_PACKAGE_DIR = os.path.dirname(__file__)
+FRONTEND_DIST = os.path.join(_PACKAGE_DIR, "static", "dist")
+
+# User-supplied media (referenced as /static/game-media/<file> from question
+# files) lives in the operator's working directory, not inside the package.
+GAME_MEDIA_DIR = os.path.join(config["BASE_DIR"], "game-media")
 
 
 app = Flask(
     __name__,
-    static_folder=os.path.join(config["BASE_DIR"], "static"),
+    static_folder=os.path.join(_PACKAGE_DIR, "static"),
     static_url_path="/static",
 )
 app.config["SECRET_KEY"] = "Alex Trebek forever!"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + config["DATABASE_FILENAME"]
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
+    config["BASE_DIR"], config["DATABASE_FILENAME"]
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # CORS for dev so that http://localhost:5173 can hit http://127.0.0.1:5000.
@@ -109,6 +117,14 @@ def serve_spa():
 @app.route("/assets/<path:filename>")
 def serve_spa_asset(filename):
     return send_from_directory(os.path.join(FRONTEND_DIST, "assets"), filename)
+
+
+# game-media lives in the operator's CWD (per-game user content), not in the
+# package. Register this *before* the default /static handler can resolve it,
+# so question files keep using /static/game-media/<f> URLs.
+@app.route("/static/game-media/<path:filename>")
+def serve_game_media(filename):
+    return send_from_directory(GAME_MEDIA_DIR, filename)
 
 
 @app.route("/api/v1/version")
