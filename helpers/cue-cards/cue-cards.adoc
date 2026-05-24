@@ -1,0 +1,74 @@
+= Hacker Jeopardy
+Olivier Bilodeau <olivier@bottomlesspit.org>
+v2.0, 20 mai 2023
+:website: https://nsec.io/
+:event: NorthSec 2026
+:copyright: CC BY-SA 4.0
+:theme: volnitsky
+:notitle:
+
+// increases font-size for cue-cards style
++++<style type="text/css">p { font-size: 225%; } </style>+++
+
+== Teams
+
+.Round 1
+* Team1
+* Team2
+* Team3
+
+.Round 2
+* Team1
+* Team2
+* Team3
+
+<<<
+
+include::cue-cards-prizes.adoc[]
+
+<<<
+
+== Game rules
+
+* random pick starts
+* any team can answer
+* winning team keeps control
+* negative scoring if you answer bad
+* daily double is a bet where team in control bets, others can't play
+
+<<<
+
+== Game rules (cont.)
+
+* Final Jeopardy (one day maybe?)
+** we reveal category
+** team do a hidden bet
+** we reveal question
+** team answer in secret
+** we reveal answers then amounts
+* Most point wins
+
+<<<
+
+== Cues
+
+.Team picking
+* Let's pick team $team_name
+* This year's contestants
+* Come up to the stage / Come on down
+
+.Answering
+* Your answer MUST be in the form a question. Or as Winn Schwartau would say "In the form a fucking question"
+
+.Répliques
+* Anybody else? / Steal / The question is up for grabs
+* Let's go to the audience for the answer
+
+.Daily double
+* is a Daily Double, as you know "Don't fuck it up!"
+* Let's make this a "true daily double" means all-in
+
+<<<
+
+include::cue-cards-cues.adoc[]
+
