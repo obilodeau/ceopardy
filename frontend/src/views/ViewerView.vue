@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup>
 // Crowd-facing UI. Listens to the store for state changes pushed from the
 // server and renders the big Jeopardy board. The viewer is silent — all

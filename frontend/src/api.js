@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Thin REST client for the Flask back-end. Everything funnels through here
 // so we have a single place to add auth, retries, or error handling.
 

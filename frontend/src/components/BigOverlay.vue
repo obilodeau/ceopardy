@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup>
 // Full-screen overlay used for "Game is starting", "Break", etc.
 // HTML comes pre-rendered from the server (already sanitized upstream).

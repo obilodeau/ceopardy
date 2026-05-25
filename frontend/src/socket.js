@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 import { io } from "socket.io-client";
 
 // Single socket on the /game namespace. Host and viewer both listen here

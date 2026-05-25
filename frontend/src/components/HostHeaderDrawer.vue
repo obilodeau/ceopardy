@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup>
 import { reactive, watch } from "vue";
 import { api } from "@/api";

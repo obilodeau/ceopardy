@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 import { createRouter, createWebHistory } from "vue-router";
 
 import ViewerView from "@/views/ViewerView.vue";
