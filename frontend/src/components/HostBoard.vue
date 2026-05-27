@@ -9,7 +9,7 @@ const emit = defineEmits<{
 const game = useGameStore();
 
 const rowHeight = computed(
-  () => `${Math.floor(100 / (game.config.QUESTIONS_PER_CATEGORY ?? 5))}%`,
+  () => `${Math.floor(100 / game.questionsPerCategory)}%`,
 );
 
 // Accent colours used in the little answer pills next to each question.
@@ -60,7 +60,7 @@ function onClick(col: number, row: number): void {
     <div class="container-questions-host">
       <div class="black-box flex-small-pad">
         <div
-          v-for="row in game.config.QUESTIONS_PER_CATEGORY"
+          v-for="row in game.questionsPerCategory"
           :key="row"
           class="row-ceopardy flex-vertical-small-pad"
           :style="{ height: rowHeight }"
@@ -93,7 +93,7 @@ function onClick(col: number, row: number): void {
                 </div>
               </div>
               <div class="box-question-right">
-                <p>${{ row * (game.config.SCORE_TICK ?? 100) }}</p>
+                <p>${{ row * game.scoreTick }}</p>
               </div>
             </div>
           </div>

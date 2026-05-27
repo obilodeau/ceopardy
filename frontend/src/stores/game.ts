@@ -61,9 +61,9 @@ export const useGameStore = defineStore("game", {
     initialized: false,
     config: {}, // populated from /api/v1/state on connect
     game_state: "uninitialized",
-    teams: [],
-    categories: [],
-    questions: {},
+    teams: [], // [{tid, name, score}]
+    categories: [], // ['Cat1', ...]
+    questions: {}, // { c1q1: { answered: bool, team_scores: {team1: 100} } }
     ui_state: {
       question: "",
       team: "",
@@ -78,7 +78,8 @@ export const useGameStore = defineStore("game", {
     active_question: {},
     messages: [],
     dailydouble_range: { min: 0, max: 0 },
-    // null outside DD or before the operator has nudged the wager slider.
+    // {team, amount} as the host moves the wager slider during a DD; null
+    // outside DD or before the operator has set anything.
     dailydouble_wager: null,
     dailydoubleTrigger: 0,
     socket: null,
@@ -88,6 +89,12 @@ export const useGameStore = defineStore("game", {
   }),
 
   getters: {
+    // Config getters with sane defaults so components can use them without
+    // having to guard against the brief window between mount and the first
+    // /api/v1/state response.
+    questionsPerCategory: (s): number => s.config.QUESTIONS_PER_CATEGORY ?? 5,
+    scoreTick: (s): number => s.config.SCORE_TICK ?? 100,
+
     isInProgress: (s): boolean =>
       s.game_state === "in_round" || s.game_state === "in_final",
     isFinished: (s): boolean => s.game_state === "finished",

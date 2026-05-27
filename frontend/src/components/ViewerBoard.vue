@@ -9,7 +9,7 @@ import TeamRowDailyDouble from "@/components/TeamRowDailyDouble.vue";
 const game = useGameStore();
 
 const rowHeight = computed(
-  () => `${Math.floor(100 / (game.config.QUESTIONS_PER_CATEGORY ?? 5))}%`,
+  () => `${Math.floor(100 / game.questionsPerCategory)}%`,
 );
 
 const showCategoriesRow = computed(
@@ -26,7 +26,7 @@ function isAnswered(col: number, row: number): boolean {
 }
 
 function questionLabel(row: number): string {
-  return `$${row * (game.config.SCORE_TICK ?? 100)}`;
+  return `$${row * game.scoreTick}`;
 }
 </script>
 
@@ -71,7 +71,7 @@ function questionLabel(row: number): string {
     <div class="container-questions-viewer">
       <div class="black-box flex-pad">
         <div
-          v-for="row in game.config.QUESTIONS_PER_CATEGORY"
+          v-for="row in game.questionsPerCategory"
           :key="row"
           class="row-ceopardy flex-vertical-pad"
           :style="{ height: rowHeight }"
