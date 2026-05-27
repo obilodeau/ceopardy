@@ -22,13 +22,20 @@ import sys
 from importlib import resources
 
 
-def _cmd_serve(_args):
+def _cmd_serve(args):
     from ceopardy import app, create_app, socketio
 
     # WARNING: This app is not ready to be exposed on the network.
     #          Game host interface would be exposed.
     create_app()
-    socketio.run(app, host="127.0.0.1", port=5000, debug=False)
+    debug = getattr(args, "debug", False)
+    host, port = "127.0.0.1", 5000
+    print(f"Ceopardy serving on http://{host}:{port}/")
+    print(f"  Viewer: http://localhost:{port}/")
+    print(f"  Host:   http://localhost:{port}/host")
+    if debug:
+        print("  Debug:  ON (verbose logging + auto-reload)")
+    socketio.run(app, host=host, port=port, debug=debug)
 
 
 def _walk(traversable, prefix=""):
@@ -80,7 +87,12 @@ def _cmd_init(_args):
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="ceopardy")
     sub = parser.add_subparsers(dest="cmd")
-    sub.add_parser("serve", help="Run the Ceopardy server (default).")
+    serve = sub.add_parser("serve", help="Run the Ceopardy server (default).")
+    serve.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable Flask debug mode (verbose logging + auto-reload).",
+    )
     sub.add_parser(
         "init",
         help="Scaffold data/ and game-media/ in the current directory.",
