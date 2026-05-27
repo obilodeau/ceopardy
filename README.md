@@ -94,9 +94,19 @@ Then open http://localhost:5173/.
 
 ## Install as a CLI (pipx)
 
-Once published, Ceopardy can be installed as a stand-alone command:
+Ceopardy is distributed as a wheel attached to each
+[GitHub release](https://github.com/obilodeau/ceopardy/releases). Install the
+latest one with pipx (requires `curl` and `jq`):
 
-    pipx install ceopardy
+    pipx install "$(curl -fsSL https://api.github.com/repos/obilodeau/ceopardy/releases/latest | jq -r '.assets[] | select(.name | endswith(".whl")) | .browser_download_url')"
+
+Or pick a specific version by pointing pipx at a wheel URL from the
+[releases page](https://github.com/obilodeau/ceopardy/releases), e.g.:
+
+    pipx install https://github.com/obilodeau/ceopardy/releases/download/v0.6.0/ceopardy-0.6.0-py3-none-any.whl
+
+Then scaffold a game directory and start the server:
+
     mkdir my-game && cd my-game
     ceopardy init        # scaffolds data/ and game-media/ in CWD
     # edit data/Questions.cp and data/1st.round
