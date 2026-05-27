@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from "vue";
 import { api } from "@/api";
 import { useGameStore } from "@/stores/game";
@@ -10,13 +10,13 @@ const customText = ref("");
 const isOpen = computed(() => game.ui_state["container-footer"] === "slide-up");
 const currentMessage = computed(() => game.ui_state.message);
 
-async function toggle() {
+async function toggle(): Promise<void> {
   const next = isOpen.value ? "" : "slide-up";
   game.ui_state["container-footer"] = next;
   await api.setSliderState("container-footer", next);
 }
 
-async function toggleMessage(idx) {
+async function toggleMessage(idx: number): Promise<void> {
   const mid = `message${idx + 1}`;
   if (mid === currentMessage.value) {
     await api.hideMessage();
@@ -24,16 +24,16 @@ async function toggleMessage(idx) {
   }
   const msg = game.messages[idx];
   // The "Custom" entry has an empty body and reads from the edit box.
-  const text = msg.text || customText.value || "";
+  const text = msg?.text || customText.value || "";
   await api.showMessage(mid, text);
 }
 
-async function hideAll() {
+async function hideAll(): Promise<void> {
   await api.hideMessage();
 }
 
 const customEditing = ref(false);
-function toggleCustom() {
+function toggleCustom(): void {
   customEditing.value = !customEditing.value;
 }
 </script>
@@ -107,7 +107,7 @@ function toggleCustom() {
             v-if="customEditing"
             class="form-color form-edit"
             contenteditable="true"
-            @input="customText = $event.target.innerText"
+            @input="customText = ($event.target as HTMLElement).innerText"
           >
             <span>{{ customText }}</span>
           </div>

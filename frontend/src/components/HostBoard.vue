@@ -1,34 +1,36 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { useGameStore } from "@/stores/game";
 
-const emit = defineEmits(["select"]);
+const emit = defineEmits<{
+  (e: "select", id: string): void;
+}>();
 const game = useGameStore();
 
 const rowHeight = computed(
-  () => `${Math.floor(100 / game.config.QUESTIONS_PER_CATEGORY)}%`,
+  () => `${Math.floor(100 / (game.config.QUESTIONS_PER_CATEGORY ?? 5))}%`,
 );
 
 // Accent colours used in the little answer pills next to each question.
 const ACCENTS = ["#d53405", "#d56c05", "#d5c105", "#05a5d5", "#8605d5"];
 
-function qid(col, row) {
+function qid(col: number, row: number): string {
   return `c${col}q${row}`;
 }
-function isSelected(col, row) {
+function isSelected(col: number, row: number): boolean {
   return game.activeQuestionId === qid(col, row);
 }
-function isAnswered(col, row) {
+function isAnswered(col: number, row: number): boolean {
   return game.questionAnswered(qid(col, row));
 }
-function teamScore(col, row, tid) {
+function teamScore(col: number, row: number, tid: string): number | string {
   return game.questions[qid(col, row)]?.team_scores?.[tid] ?? "";
 }
-function teamAccent(i) {
-  return ACCENTS[i % ACCENTS.length];
+function teamAccent(i: number): string {
+  return ACCENTS[i % ACCENTS.length]!;
 }
-function onClick(col, row) {
+function onClick(col: number, row: number): void {
   emit("select", qid(col, row));
 }
 </script>
@@ -91,7 +93,7 @@ function onClick(col, row) {
                 </div>
               </div>
               <div class="box-question-right">
-                <p>${{ row * game.config.SCORE_TICK }}</p>
+                <p>${{ row * (game.config.SCORE_TICK ?? 100) }}</p>
               </div>
             </div>
           </div>

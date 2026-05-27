@@ -1,16 +1,21 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { useGameStore } from "@/stores/game";
 import { api } from "@/api";
+import type { Team } from "@/types";
 
-const props = defineProps({
-  team: { type: Object, required: true },
-  idx: { type: Number, required: true },
-  answers: { type: Object, required: true },
-});
+type AnswerMap = Record<string, number>;
 
-const emit = defineEmits(["update:answers"]);
+const props = defineProps<{
+  team: Team;
+  idx: number;
+  answers: AnswerMap;
+}>();
+
+const emit = defineEmits<{
+  (e: "update:answers", value: AnswerMap): void;
+}>();
 
 const game = useGameStore();
 
@@ -23,15 +28,15 @@ const disabled = computed(
   () => dailydouble.value && game.selectedTeam !== tid.value,
 );
 
-function updateAnswer(val) {
+function updateAnswer(val: number): void {
   const out = { ...props.answers, [tid.value]: val };
   emit("update:answers", out);
 }
-function updateDouble(val) {
+function updateDouble(val: number): void {
   const key = `${tid.value}-dailydouble`;
   emit("update:answers", { ...props.answers, [key]: val });
 }
-function updateWaiger(val) {
+function updateWaiger(val: number): void {
   const key = `${tid.value}-waiger-dailydouble`;
   emit("update:answers", { ...props.answers, [key]: val });
   // Live-broadcast the wager so the viewer can show it. Throttled so a slider
@@ -39,9 +44,9 @@ function updateWaiger(val) {
   scheduleWagerBroadcast(val);
 }
 
-let wagerTimer = null;
-let wagerPending = null;
-function scheduleWagerBroadcast(val) {
+let wagerTimer: ReturnType<typeof setTimeout> | null = null;
+let wagerPending: number | null = null;
+function scheduleWagerBroadcast(val: number): void {
   wagerPending = val;
   if (wagerTimer) return;
   api.setWager(wagerPending).catch(() => {});
@@ -52,7 +57,7 @@ function scheduleWagerBroadcast(val) {
   }, 100);
 }
 
-function selectTeam() {
+function selectTeam(): void {
   api.selectTeam(tid.value);
 }
 
@@ -64,7 +69,7 @@ const waigerVal = computed({
   get: () =>
     props.answers[`${tid.value}-waiger-dailydouble`] ??
     game.dailydouble_range.max,
-  set: (val) => updateWaiger(Number(val)),
+  set: (val: number) => updateWaiger(Number(val)),
 });
 
 const teamFontClass = `team${props.idx + 1}-font`;
@@ -113,7 +118,11 @@ const teamFontClass = `team${props.idx + 1}-font`;
                 max="1"
                 step="1"
                 :value="answerVal"
-                @input="updateAnswer(Number($event.target.value))"
+                @input="
+                  updateAnswer(
+                    Number(($event.target as HTMLInputElement).value),
+                  )
+                "
               />
               <div class="box-answer-range-label">
                 <div><p>Bad</p></div>
@@ -148,7 +157,11 @@ const teamFontClass = `team${props.idx + 1}-font`;
                 max="1"
                 step="2"
                 :value="doubleVal"
-                @input="updateDouble(Number($event.target.value))"
+                @input="
+                  updateDouble(
+                    Number(($event.target as HTMLInputElement).value),
+                  )
+                "
               />
               <div class="box-answer-range-label">
                 <div><p>Bad / No Answer</p></div>

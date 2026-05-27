@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { onBeforeMount } from "vue";
 import { useGameStore } from "@/stores/game";
 

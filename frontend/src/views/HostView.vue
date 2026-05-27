@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/api";
@@ -11,14 +11,24 @@ import HostHeaderDrawer from "@/components/HostHeaderDrawer.vue";
 import HostFooterDrawer from "@/components/HostFooterDrawer.vue";
 import TeamScoringPanel from "@/components/TeamScoringPanel.vue";
 
+type AnswerMap = Record<string, number>;
+type SoundName =
+  | "buzzer1"
+  | "buzzer2"
+  | "buzzer3"
+  | "timeout"
+  | "reveal"
+  | "thinking"
+  | "dailydouble";
+
 const router = useRouter();
 const game = useGameStore();
 
 // Local form state for the per-team answer sliders.
-const answers = ref({});
+const answers = ref<AnswerMap>({});
 
-function resetAnswers() {
-  const next = {};
+function resetAnswers(): void {
+  const next: AnswerMap = {};
   for (const t of game.teams) next[t.tid] = 0;
   answers.value = next;
 }
@@ -44,18 +54,18 @@ watch(
 
 // ---- Buzzer handling ----
 const buzzersLocked = ref(true);
-function toggleBuzzers() {
+function toggleBuzzers(): void {
   buzzersLocked.value = !buzzersLocked.value;
 }
-function lockBuzzers() {
+function lockBuzzers(): void {
   buzzersLocked.value = true;
 }
-function unlockBuzzers() {
+function unlockBuzzers(): void {
   buzzersLocked.value = false;
 }
 
 // Keyboard events from the emulated-keyboard buzzers.
-function onKeyPress(e) {
+function onKeyPress(e: KeyboardEvent): void {
   if (buzzersLocked.value) return;
   // Only numeric keys 1..N.
   const num = parseInt(e.key, 10);
@@ -63,7 +73,7 @@ function onKeyPress(e) {
   if (num < 1 || num > game.teams.length) return;
   const tid = `team${num}`;
   api.selectTeam(tid);
-  playSound(`buzzer${num}`);
+  playSound(`buzzer${num}` as SoundName);
   lockBuzzers();
 }
 
@@ -72,7 +82,7 @@ onMounted(() => {
 });
 
 // ---- Question selection ----
-async function onSelectQuestion(qid) {
+async function onSelectQuestion(qid: string): Promise<void> {
   if (game.activeQuestionId === qid) {
     await api.deselectQuestion();
     lockBuzzers();
@@ -91,7 +101,7 @@ async function onSelectQuestion(qid) {
 }
 
 // ---- Submitting answers ----
-async function submitAnswers() {
+async function submitAnswers(): Promise<void> {
   if (!game.activeQuestionId) return;
   const payload = { id: game.activeQuestionId, answers: answers.value };
   const res = await api.submitAnswer(payload);
@@ -102,10 +112,10 @@ async function submitAnswers() {
 }
 
 // ---- Roulette / finish / sounds ----
-function onRoulette() {
+function onRoulette(): void {
   api.roulette();
 }
-async function onFinish() {
+async function onFinish(): Promise<void> {
   if (
     window.confirm("Bring the game to the final round (if any). Are you sure?")
   ) {
@@ -113,11 +123,11 @@ async function onFinish() {
     router.push({ name: "start" });
   }
 }
-function playTimeout() {
+function playTimeout(): void {
   playSound("timeout");
 }
 
-const soundUrls = {
+const soundUrls: Record<SoundName, string> = {
   buzzer1: "/static/sounds/buzzer1.wav",
   buzzer2: "/static/sounds/buzzer2.wav",
   buzzer3: "/static/sounds/buzzer3.wav",
@@ -126,15 +136,15 @@ const soundUrls = {
   thinking: "/static/sounds/thinking-music.wav",
   dailydouble: "/static/sounds/daily-double.mp3",
 };
-const preloaded = {};
-for (const [name, url] of Object.entries(soundUrls)) {
+const preloaded: Partial<Record<SoundName, HTMLAudioElement>> = {};
+for (const [name, url] of Object.entries(soundUrls) as [SoundName, string][]) {
   const a = new Audio(url);
   a.preload = "auto";
   preloaded[name] = a;
 }
 
-let thinkingAudio = null;
-function playSound(name) {
+let thinkingAudio: HTMLAudioElement | null = null;
+function playSound(name: SoundName): void {
   try {
     const audio = new Audio(soundUrls[name]);
     audio.play().catch(() => {});
@@ -142,7 +152,7 @@ function playSound(name) {
     /* ignore */
   }
 }
-function toggleThinking() {
+function toggleThinking(): void {
   if (thinkingAudio && !thinkingAudio.paused) {
     thinkingAudio.pause();
     thinkingAudio.currentTime = 0;
@@ -182,7 +192,7 @@ const canRevealDailyDouble = computed(
     game.dailydouble_wager != null,
 );
 
-async function onRevealDailyDouble() {
+async function onRevealDailyDouble(): Promise<void> {
   await api.revealDailyDouble();
 }
 </script>

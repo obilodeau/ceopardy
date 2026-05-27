@@ -6,9 +6,10 @@
   "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "prettier --check \"src/**/*.{js,vue}\""
+    "lint": "prettier --check \"src/**/*.{ts,vue}\"",
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.2",
@@ -18,8 +19,12 @@
     "vue-router": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/tsconfig": "^0.9.1",
     "prettier": "^3.3.3",
-    "vite": "^8.0.10"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "vue-tsc": "^3.3.1"
   }
 }

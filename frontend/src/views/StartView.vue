@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/api";
@@ -8,7 +8,7 @@ import { useGameStore } from "@/stores/game";
 const router = useRouter();
 const game = useGameStore();
 
-const roundfiles = ref([]);
+const roundfiles = ref<string[]>([]);
 const showRoundfiles = ref(false);
 const mustInit = ref(true);
 
@@ -20,13 +20,13 @@ onMounted(async () => {
     : game.game_state === "uninitialized";
 });
 
-async function startNew(filename) {
+async function startNew(filename: string): Promise<void> {
   await api.init({ action: "new", name: filename });
   await game.refresh();
   router.push({ name: "host" });
 }
 
-async function resume() {
+async function resume(): Promise<void> {
   await api.init({ action: "resume" });
   await game.refresh();
   router.push({ name: "host" });
