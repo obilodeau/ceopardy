@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { reactive, watch } from "vue";
 import { api } from "@/api";
 import { useGameStore } from "@/stores/game";
 
 const game = useGameStore();
 
-const names = reactive({});
-const errors = reactive({});
+const names = reactive<Record<string, string>>({});
+const errors = reactive<Record<string, string>>({});
 
 // Keep local form names in sync with the store. The store is the source of
 // truth; the form just edits a copy until the host clicks Save.
@@ -19,22 +19,23 @@ watch(
   { immediate: true, deep: true },
 );
 
-const isOpen = () => game.ui_state["container-header"] === "slide-down";
+const isOpen = (): boolean =>
+  game.ui_state["container-header"] === "slide-down";
 
-async function toggle() {
+async function toggle(): Promise<void> {
   const next = isOpen() ? "" : "slide-down";
   game.ui_state["container-header"] = next;
   await api.setSliderState("container-header", next);
 }
 
-async function save() {
+async function save(): Promise<void> {
   for (const k of Object.keys(errors)) delete errors[k];
   try {
     await api.updateTeams(names);
     // Close drawer only on success.
     if (isOpen()) toggle();
   } catch (e) {
-    errors.form = e.message;
+    errors.form = e instanceof Error ? e.message : String(e);
   }
 }
 </script>

@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { useGameStore } from "@/stores/game";
 import DailyDoubleAnimation from "@/components/DailyDoubleAnimation.vue";
@@ -9,7 +9,7 @@ import TeamRowDailyDouble from "@/components/TeamRowDailyDouble.vue";
 const game = useGameStore();
 
 const rowHeight = computed(
-  () => `${Math.floor(100 / game.config.QUESTIONS_PER_CATEGORY)}%`,
+  () => `${Math.floor(100 / game.questionsPerCategory)}%`,
 );
 
 const showCategoriesRow = computed(
@@ -17,16 +17,16 @@ const showCategoriesRow = computed(
 );
 const activeCategory = computed(() => game.active_question?.category ?? "");
 
-function qid(col, row) {
+function qid(col: number, row: number): string {
   return `c${col}q${row}`;
 }
 
-function isAnswered(col, row) {
+function isAnswered(col: number, row: number): boolean {
   return game.questionAnswered(qid(col, row));
 }
 
-function questionLabel(row) {
-  return `$${row * game.config.SCORE_TICK}`;
+function questionLabel(row: number): string {
+  return `$${row * game.scoreTick}`;
 }
 </script>
 
@@ -71,7 +71,7 @@ function questionLabel(row) {
     <div class="container-questions-viewer">
       <div class="black-box flex-pad">
         <div
-          v-for="row in game.config.QUESTIONS_PER_CATEGORY"
+          v-for="row in game.questionsPerCategory"
           :key="row"
           class="row-ceopardy flex-vertical-pad"
           :style="{ height: rowHeight }"

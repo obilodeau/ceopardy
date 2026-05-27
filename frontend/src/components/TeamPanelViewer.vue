@@ -1,10 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
-defineProps({
-  team: { type: Object, required: true },
-  idx: { type: Number, required: true },
-  selected: { type: Boolean, default: false },
-});
+<script setup lang="ts">
+import type { Team } from "@/types";
+
+withDefaults(
+  defineProps<{
+    team: Team;
+    idx: number;
+    selected?: boolean;
+  }>(),
+  { selected: false },
+);
 </script>
 
 <template>

@@ -2,10 +2,10 @@
 # the user has activated it (or has direnv loaded). `make venv` creates it.
 export PATH := $(CURDIR)/.venv/bin:$(PATH)
 
-.PHONY: ci lint format format-check test install-dev run venv init build
+.PHONY: ci lint format format-check test install-dev run venv init build frontend-lint frontend-type-check
 
 # Run all CI checks — called by GitHub Actions.
-ci: lint format-check frontend-lint test
+ci: lint format-check frontend-lint frontend-type-check test
 
 # ── Python ──────────────────────────────────────────────────────────────────
 
@@ -26,6 +26,9 @@ test:
 
 frontend-lint:
 	npm --prefix frontend run lint
+
+frontend-type-check:
+	npm --prefix frontend run type-check
 
 # ── Dev setup ────────────────────────────────────────────────────────────────
 

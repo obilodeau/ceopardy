@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { useGameStore } from "@/stores/game";
 import TeamPanelViewer from "@/components/TeamPanelViewer.vue";
 

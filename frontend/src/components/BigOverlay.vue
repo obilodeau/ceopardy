@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 // Full-screen overlay used for "Game is starting", "Break", etc.
 // HTML comes pre-rendered from the server (already sanitized upstream).
 import { computed } from "vue";

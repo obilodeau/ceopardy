@@ -1,21 +1,23 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 
-const props = defineProps({
-  buzzersLocked: { type: Boolean, default: true },
-});
-const emit = defineEmits([
-  "roulette",
-  "timeout",
-  "thinking",
-  "toggle-buzzers",
-  "submit",
-  "finish",
-]);
-
+const props = withDefaults(
+  defineProps<{
+    buzzersLocked?: boolean;
+  }>(),
+  { buzzersLocked: true },
+);
+const emit = defineEmits<{
+  (e: "roulette"): void;
+  (e: "timeout"): void;
+  (e: "thinking"): void;
+  (e: "toggle-buzzers"): void;
+  (e: "submit"): void;
+  (e: "finish"): void;
+}>();
 const spinning = ref(false);
-function hoverSpinner(state) {
+function hoverSpinner(state: boolean): void {
   spinning.value = state;
 }
 </script>
