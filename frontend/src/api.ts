@@ -29,10 +29,20 @@ async function request<T = unknown>(
   }
   const res = await fetch(`${BASE}${path}`, opts);
   const text = await res.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    // Non-JSON body (e.g. HTML error page from the dev proxy or a crashed
+    // backend). Surface the HTTP status + a snippet so it's actually
+    // debuggable instead of a bare SyntaxError from JSON.parse.
+    throw new Error(
+      `${method} ${path} → ${res.status} ${res.statusText}: ${text.slice(0, 200)}`,
+    );
+  }
   if (!res.ok) {
     const msg = (data as { error?: string } | null)?.error ?? res.statusText;
-    throw new Error(msg);
+    throw new Error(`${method} ${path} → ${res.status}: ${msg}`);
   }
   return data as T;
 }
