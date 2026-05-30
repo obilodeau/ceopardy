@@ -150,12 +150,18 @@ def on_disconnect():
 
 
 def create_app():
-    # Logging
+    # Logging — both to file (full DEBUG) and to stderr (INFO+) so app errors
+    # (notably the /init traceback) show up in the terminal running the server.
+    fmt = logging.Formatter("{asctime} {levelname}: {message} [in {pathname}:{lineno}]", style="{")
     file_handler = logging.FileHandler("ceopardy.log")
     file_handler.setLevel(logging.DEBUG)
-    fmt = logging.Formatter("{asctime} {levelname}: {message} [in {pathname}:{lineno}]", style="{")
     file_handler.setFormatter(fmt)
     app.logger.addHandler(file_handler)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(fmt)
+    app.logger.addHandler(stream_handler)
+    app.logger.setLevel(logging.DEBUG)
 
     with app.app_context():
         # Hand a couple of things on the app object so modules that don't
