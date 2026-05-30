@@ -523,9 +523,10 @@ class Controller:
         _bkp_name = "ceopardy_{}_{}.db".format(
             datetime.now().strftime("%Y-%m-%d_%H%M"), previous_roundfile
         )
-        # SQLite URI is resolved against app.instance_path; the live file lives there too.
-        db_path = os.path.join(app.instance_path, config["DATABASE_FILENAME"])
-        bkp_path = os.path.join(app.instance_path, _bkp_name)
+        # The live DB and its backups sit next to the user's data/ directory
+        # (matches SQLALCHEMY_DATABASE_URI in ceopardy/__init__.py).
+        db_path = os.path.join(config["BASE_DIR"], config["DATABASE_FILENAME"])
+        bkp_path = os.path.join(config["BASE_DIR"], _bkp_name)
         app.logger.info("Backing up current game to {}".format(bkp_path))
         db.session.remove()
         db.engine.dispose()
