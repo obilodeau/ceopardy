@@ -25,4 +25,12 @@ if __name__ == "__main__":
     # debug=False.
     # WARNING: This app is not ready to be exposed on the network.
     #          Game host interface would be exposed.
-    socketio.run(app, host="127.0.0.1", port=5000, debug=True)
+    # allow_unsafe_werkzeug: Flask-SocketIO refuses Werkzeug otherwise. See
+    # the same opt-in (and rationale) in ceopardy/__main__.py:_cmd_serve.
+    socketio.run(
+        app,
+        host="127.0.0.1",
+        port=5000,
+        debug=True,
+        allow_unsafe_werkzeug=True,
+    )

@@ -78,10 +78,13 @@ except ImportError:
     # flask-cors is optional; prod serves everything from the same origin.
     pass
 
+# Use threading mode so the WSGI layer stays plain Werkzeug — its debugger
+# and exception logging just work. If someone fronts this with gunicorn
+# (see README), they pick the worker class at the CLI level (-k eventlet).
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet",
+    async_mode="threading",
 )
 db = SQLAlchemy(app)
 

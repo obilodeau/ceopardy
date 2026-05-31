@@ -35,7 +35,10 @@ def _cmd_serve(args):
     print(f"  Host:   http://localhost:{port}/host")
     if debug:
         print("  Debug:  ON (verbose logging + auto-reload)")
-    socketio.run(app, host=host, port=port, debug=debug)
+    # Werkzeug is the only WSGI server we use here. Flask-SocketIO refuses it
+    # by default; we opt in because Ceopardy is meant for single-operator
+    # local use (binds to 127.0.0.1, see README on exposing via nginx).
+    socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)
 
 
 def _walk(traversable, prefix=""):
