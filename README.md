@@ -48,7 +48,7 @@ Install [pipx](https://pipx.pypa.io/), then install the latest release wheel
 Or pin a specific version from the
 [releases page](https://github.com/obilodeau/ceopardy/releases):
 
-    pipx install https://github.com/obilodeau/ceopardy/releases/download/v0.6.0/ceopardy-0.6.0-py3-none-any.whl
+    pipx install https://github.com/obilodeau/ceopardy/releases/download/v0.8.0/ceopardy-0.8.0-py3-none-any.whl
 
 Then scaffold a per-game directory and start the server:
 
