@@ -4,4 +4,3 @@ Flask-SocketIO==5.6.1
 Flask-SQLAlchemy==3.0.5
 SQLAlchemy==1.4.54
 Werkzeug==3.1.8
-eventlet==0.40.3

@@ -79,8 +79,8 @@ except ImportError:
     pass
 
 # Use threading mode so the WSGI layer stays plain Werkzeug — its debugger
-# and exception logging just work. If someone fronts this with gunicorn
-# (see README), they pick the worker class at the CLI level (-k eventlet).
+# and exception logging just work. Ceopardy is single-operator local-only,
+# so we don't need eventlet/gevent's concurrency model.
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
