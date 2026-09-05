@@ -14,11 +14,23 @@ Python 3.11, Node 20, the GitHub CLI, and Claude Code.
    template. It is read verbatim by Docker, so no quotes and no spaces
    around `=`.
 
-2. In VS Code: **Dev Containers: Reopen in Container**.
+2. Add the name and address you want your commits authored by, to the same
+   file:
+
+       GIT_USER_NAME=Your Name
+       GIT_USER_EMAIL=you@example.com
+
+   Neither is secret; they're here because the container's `~/.gitconfig` is
+   no more persisted than `~/.claude` is, so post-create rewrites the
+   identity on every rebuild. Without them, committing from inside the
+   container fails with *Author identity unknown*.
+
+3. In VS Code: **Dev Containers: Reopen in Container**.
 
 The first build runs `.devcontainer/post-create.sh`, which creates the
 virtualenv (`make venv`), installs the frontend dependencies, installs
-Claude Code, and points git at the token for GitHub HTTPS.
+Claude Code, sets the git identity, and points git at the token for GitHub
+HTTPS.
 
 If you open the container before creating the token, add it to
 `devcontainer.env` and run **Dev Containers: Rebuild Container**.

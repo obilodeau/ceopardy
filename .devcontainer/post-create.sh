@@ -41,6 +41,19 @@ else
     echo "    in from the Claude tab (that login is lost on rebuild)."
 fi
 
+# ~/.gitconfig isn't persisted either, so identity comes from the env file on
+# every rebuild. --global rather than the repo's config: .git/ is bind-mounted
+# from the host, and the container has no business writing to it.
+if [ -n "${GIT_USER_NAME:-}" ] && [ -n "${GIT_USER_EMAIL:-}" ]; then
+    echo "==> Setting the git identity to $GIT_USER_NAME <$GIT_USER_EMAIL>"
+    git config --global user.name "$GIT_USER_NAME"
+    git config --global user.email "$GIT_USER_EMAIL"
+else
+    echo "==> GIT_USER_NAME/GIT_USER_EMAIL are not set: commits made in this"
+    echo "    container will fail until you set them. Add them to"
+    echo "    .devcontainer/devcontainer.env and rebuild."
+fi
+
 # Let git push/pull over HTTPS use the scoped token from devcontainer.env.
 if [ -n "${GITHUB_TOKEN:-}" ]; then
     echo "==> Configuring git to authenticate to GitHub with GITHUB_TOKEN"
