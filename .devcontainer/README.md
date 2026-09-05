@@ -53,13 +53,7 @@ into the repository. To revoke it, delete it at
 
 ## Claude Code
 
-The Claude Code extension is installed in the container and its state lives in
-a Docker volume (`CLAUDE_CONFIG_DIR=/home/vscode/.claude`), so a login survives
-a rebuild.
-
-Signing in from the Claude tab uses a browser round-trip that ends at a
-loopback port *inside* the container, which the host browser can't always
-reach. If it stalls, mint a long-lived token on the **host** instead:
+Authenticate with a long-lived token minted on the **host**:
 
     claude setup-token
 
@@ -67,9 +61,33 @@ and put it in `.devcontainer/devcontainer.env`:
 
     CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat...
 
-Then **Dev Containers: Rebuild Container**. The token is a credential for your
-Claude account — treat it like the GitHub one; it never leaves the host except
-as an environment variable in this container.
+Revoke it from your Claude account settings if it ever leaks.
+
+You *can* instead sign in from the Claude tab, but that login is lost on
+every rebuild, and the browser round-trip ends at a loopback port inside the
+container that the host browser can't always reach.
+
+### Why ~/.claude is not persisted
+
+Nothing under `/home/vscode/.claude` survives a rebuild, on purpose.
+
+`npm install` runs package postinstall scripts as `vscode`, which is the
+foothold supply-chain worms like Shai-Hulud use. Such a script can write
+anywhere that user can — including Claude's own config, where
+`settings.json` hooks and `apiKeyHelper` are *shell commands the agent runs
+automatically*. Put that directory in a Docker volume and the injected
+commands outlive "Rebuild Container", which is exactly the remediation
+you'd reach for.
+
+Keeping it ephemeral doesn't stop a compromise from reading your
+credentials during the session — nothing in the container can, since the
+tools need them at hand. What it buys is that a rebuild is genuinely clean.
+
+Note the tradeoff this makes: both tokens are environment variables in the
+container, and env is the first place credential harvesters look. They stay
+long-lived and identical across rebuilds, so treat `devcontainer.env` as the
+secret it is, keep the GitHub token scoped to this one repo, and rotate both
+if you suspect anything.
 
 ## What runs where
 
@@ -78,5 +96,7 @@ as an environment variable in this container.
 - `.venv/` and `frontend/node_modules/` live in Docker volumes rather than
   the bind-mounted workspace, so the container's dependencies don't collide
   with the ones on your host.
-- Claude Code's login persists in a volume across rebuilds; run `claude` in
-  the container terminal, or use the Claude tab.
+- Claude Code runs from the token in `devcontainer.env`; run `claude` in the
+  container terminal, or use the Claude tab. Project-level settings that
+  should be shared belong in the repo's `.claude/settings.json`, which is
+  version-controlled and reviewable — not in a shared home directory.

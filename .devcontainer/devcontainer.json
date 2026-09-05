@@ -22,18 +22,14 @@
     // workspace: the host's .venv has absolute paths that don't resolve here,
     // and native npm deps may differ.
     "source=ceopardy-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
-    "source=ceopardy-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume",
-    // Persist the Claude Code login and settings across container rebuilds
-    // (CLAUDE_CONFIG_DIR below points at it; post-create.sh fixes its owner).
-    "source=ceopardy-claude,target=/home/vscode/.claude,type=volume"
+    "source=ceopardy-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume"
   ],
 
-  "containerEnv": {
-    // Keep *all* of Claude Code's state in the volume below: without this the
-    // credentials land in ~/.claude/ but the config (~/.claude.json) sits
-    // outside it and is lost on every rebuild.
-    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
-  },
+  // Deliberately NOT persisting /home/vscode/.claude. Anything a postinstall
+  // script writes there (settings.json hooks, apiKeyHelper, plugins) would
+  // survive "Rebuild Container" — i.e. survive the remediation. Claude signs
+  // in from CLAUDE_CODE_OAUTH_TOKEN in devcontainer.env instead, so a rebuild
+  // is a clean container that is still logged in.
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 

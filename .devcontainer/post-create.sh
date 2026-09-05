@@ -5,8 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Docker creates volume mount points root-owned when the path doesn't exist in
-# the image. Claude Code fails to log in if it can't write its config dir.
-sudo chown "$(id -u):$(id -g)" .venv frontend/node_modules "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# the image.
+sudo chown "$(id -u):$(id -g)" .venv frontend/node_modules
 
 echo "==> Creating the Python virtualenv"
 make venv
@@ -17,14 +17,14 @@ npm --prefix frontend install
 echo "==> Installing Claude Code"
 npm install -g @anthropic-ai/claude-code
 
-# A browser OAuth round-trip can't reach the container's loopback listener, so
-# the smoothest path is a long-lived token minted on the host with
-# `claude setup-token`. See .devcontainer/README.md.
+# ~/.claude is intentionally not persisted (see devcontainer.json), so the
+# token from devcontainer.env is what keeps you logged in across rebuilds.
 if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
     echo "==> Claude Code will authenticate with CLAUDE_CODE_OAUTH_TOKEN"
 else
-    echo "==> CLAUDE_CODE_OAUTH_TOKEN is not set: sign in from the Claude tab,"
-    echo "    or add a token to .devcontainer/devcontainer.env."
+    echo "==> CLAUDE_CODE_OAUTH_TOKEN is not set: run 'claude setup-token' on"
+    echo "    the host and add it to .devcontainer/devcontainer.env, or sign"
+    echo "    in from the Claude tab (that login is lost on rebuild)."
 fi
 
 # Let git push/pull over HTTPS use the scoped token from devcontainer.env.
