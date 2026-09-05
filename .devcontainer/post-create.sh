@@ -17,6 +17,20 @@ npm --prefix frontend install
 echo "==> Installing Claude Code"
 npm install -g @anthropic-ai/claude-code
 
+# The container is the isolation boundary (disposable, no host filesystem
+# access outside the bind-mounted workspace), so skip permission prompts
+# here. This only ever affects the container: ~/.claude is not persisted
+# (see devcontainer.json), so this file is rewritten fresh by this script
+# on every container creation and never survives a rebuild on its own.
+mkdir -p ~/.claude
+cat > ~/.claude/settings.json <<'EOF'
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}
+EOF
+
 # ~/.claude is intentionally not persisted (see devcontainer.json), so the
 # token from devcontainer.env is what keeps you logged in across rebuilds.
 if [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
