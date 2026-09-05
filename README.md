@@ -89,6 +89,30 @@ Then open <http://localhost:5173/> — Vite hot-reloads the UI and proxies
 `/api` and `/socket.io` to Flask on `:5000`. **In dev, always use the Vite
 URL** (`:5173`); the Flask port serves the *built* SPA which gets stale.
 
+### Optional: dev container
+
+The repo ships a [dev container](https://containers.dev/) (Python 3.11,
+Node 20, the GitHub CLI, and Claude Code) for VS Code. Copy
+`.devcontainer/devcontainer.env.example` to `.devcontainer/devcontainer.env`
+(gitignored) and fill in what you need, then run **Dev Containers: Reopen in
+Container**.
+
+| Variable                  | What it unlocks                                    |
+| ------------------------- | -------------------------------------------------- |
+| `GITHUB_TOKEN`            | `git` push/pull over HTTPS and `gh`; fine-grained, scoped to this repo |
+| `GIT_USER_NAME`           | committing at all — without it git says *Author identity unknown* |
+| `GIT_USER_EMAIL`          | same                                                |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code, signed in across rebuilds; mint it on the *host* with `claude setup-token` |
+
+Docker reads that file verbatim: no quotes, no spaces around `=`, and no
+trailing comments — they'd end up inside the value.
+
+The container builds and runs without any of them; each one just unlocks
+the matching row. Nothing under `~/` is persisted, which is why the identity
+lives here rather than in a `~/.gitconfig` — see
+[`.devcontainer/README.md`](.devcontainer/README.md) for the token's scopes,
+why that is, and what the container sets up.
+
 ### Optional: direnv
 
 If you use [direnv](https://direnv.net/), the repo ships an `.envrc` that

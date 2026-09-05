@@ -1,0 +1,68 @@
+// Dev container for Ceopardy: Python 3.11 + Node 20 + gh CLI + Claude Code.
+// See .devcontainer/README.md for the GitHub token setup.
+{
+  "name": "ceopardy",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Creates .devcontainer/devcontainer.env on the host if it is missing, so
+  // the --env-file below never fails the container start.
+  "initializeCommand": "bash .devcontainer/initialize.sh",
+
+  // The scoped GitHub token (and anything else secret) is read from a
+  // gitignored env file rather than baked into this committed config.
+  "runArgs": ["--env-file", "${localWorkspaceFolder}/.devcontainer/devcontainer.env"],
+
+  "mounts": [
+    // Keep the container's virtualenv and node_modules out of the bind-mounted
+    // workspace: the host's .venv has absolute paths that don't resolve here,
+    // and native npm deps may differ.
+    "source=ceopardy-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
+    "source=ceopardy-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume"
+  ],
+
+  // Deliberately NOT persisting /home/vscode/.claude. Anything a postinstall
+  // script writes there (settings.json hooks, apiKeyHelper, plugins) would
+  // survive "Rebuild Container" — i.e. survive the remediation. Claude signs
+  // in from CLAUDE_CODE_OAUTH_TOKEN in devcontainer.env instead, so a rebuild
+  // is a clean container that is still logged in.
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Viewer/host UI (Flask) and the Vite dev server.
+  "forwardPorts": [5000, 5173],
+  "portsAttributes": {
+    "5000": { "label": "ceopardy (Flask)", "onAutoForward": "notify" },
+    "5173": { "label": "ceopardy (Vite dev)", "onAutoForward": "notify" }
+  },
+
+  "remoteUser": "vscode",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "Vue.volar",
+        "esbenp.prettier-vscode",
+        "GitHub.vscode-pull-request-github",
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.testing.pytestEnabled": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+        "[vue]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}
