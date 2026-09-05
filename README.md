@@ -89,6 +89,14 @@ Then open <http://localhost:5173/> — Vite hot-reloads the UI and proxies
 `/api` and `/socket.io` to Flask on `:5000`. **In dev, always use the Vite
 URL** (`:5173`); the Flask port serves the *built* SPA which gets stale.
 
+### Optional: dev container
+
+The repo ships a [dev container](https://containers.dev/) (Python 3.11,
+Node 20, the GitHub CLI, and Claude Code) for VS Code. Put a fine-grained
+GitHub token in `.devcontainer/devcontainer.env`, then run **Dev Containers:
+Reopen in Container**. See [`.devcontainer/README.md`](.devcontainer/README.md)
+for the token's scopes and what the container sets up.
+
 ### Optional: direnv
 
 If you use [direnv](https://direnv.net/), the repo ships an `.envrc` that

@@ -13,6 +13,9 @@ __pycache__/
 /.idea/
 /.vscode/
 
+# dev container secrets (holds the scoped GitHub token)
+/.devcontainer/devcontainer.env
+
 # dependencies managed by npm
 /node_modules/
 /frontend/node_modules/
