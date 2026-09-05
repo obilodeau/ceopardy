@@ -51,6 +51,26 @@ container as an environment variable. It is never written into the image or
 into the repository. To revoke it, delete it at
 <https://github.com/settings/personal-access-tokens>.
 
+## Claude Code
+
+The Claude Code extension is installed in the container and its state lives in
+a Docker volume (`CLAUDE_CONFIG_DIR=/home/vscode/.claude`), so a login survives
+a rebuild.
+
+Signing in from the Claude tab uses a browser round-trip that ends at a
+loopback port *inside* the container, which the host browser can't always
+reach. If it stalls, mint a long-lived token on the **host** instead:
+
+    claude setup-token
+
+and put it in `.devcontainer/devcontainer.env`:
+
+    CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat...
+
+Then **Dev Containers: Rebuild Container**. The token is a credential for your
+Claude account — treat it like the GitHub one; it never leaves the host except
+as an environment variable in this container.
+
 ## What runs where
 
 - Flask back-end on port 5000, Vite dev server on port 5173 — both
@@ -59,4 +79,4 @@ into the repository. To revoke it, delete it at
   the bind-mounted workspace, so the container's dependencies don't collide
   with the ones on your host.
 - Claude Code's login persists in a volume across rebuilds; run `claude` in
-  the container terminal.
+  the container terminal, or use the Claude tab.
