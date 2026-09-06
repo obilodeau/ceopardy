@@ -21,24 +21,29 @@ Python 3.11, Node 20, the GitHub CLI, and Claude Code.
        GIT_USER_EMAIL=you@example.com
 
    Neither is secret; they're here because the container's `~/.gitconfig` is
-   no more persisted than `~/.claude` is, so post-create rewrites the
-   identity on every rebuild. Without them, committing from inside the
+   no more persisted than `~/.claude` is, so post-start rewrites the
+   identity on every start. Without them, committing from inside the
    container fails with *Author identity unknown*.
 
 3. In VS Code: **Dev Containers: Reopen in Container**.
 
 The first build runs `.devcontainer/post-create.sh`, which installs the
-frontend dependencies, installs Claude Code, sets the git identity, and
-points git at the token for GitHub HTTPS.
+frontend dependencies and Claude Code — the things that live in the
+container's own filesystem and last exactly as long as it does.
 
-Then `.devcontainer/post-start.sh` runs — on that first build and on every
-later start of the container. It creates the virtualenv with `make venv`
-when `.venv/` is empty, and does nothing when it isn't. That check lives at
-start rather than at creation because `.venv/` is a Docker volume that can
-outlive, or go missing independently of, the container that uses it.
+Then `.devcontainer/post-start.sh` runs, on that first build and on every
+later start. It creates the virtualenv with `make venv` when `.venv/` is
+empty, writes Claude Code's settings, sets the git identity, and points git
+at the token for GitHub HTTPS. None of that is create-time work: `.venv/` is
+a Docker volume with a lifetime of its own, and `~/.claude` and
+`~/.gitconfig` are deliberately not persisted at all, so a container can
+come up missing any of them. Setting them at start means a *restart* repairs
+that, rather than a rebuild.
 
 If you open the container before creating the token, add it to
-`devcontainer.env` and run **Dev Containers: Rebuild Container**.
+`devcontainer.env` and run **Dev Containers: Rebuild Container**. Docker
+reads that file when it *creates* the container, so a restart is not enough
+to pick up anything you change in there.
 
 ## The GitHub token
 
