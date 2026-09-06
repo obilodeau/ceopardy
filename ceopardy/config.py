@@ -38,6 +38,10 @@ config = {
     # that contains a `data/` folder with your round files.
     "BASE_DIR": os.getcwd() + "/",
     "DATABASE_FILENAME": "ceopardy.db",
+    # Online mode: sounds play on the viewer instead of the host. During an
+    # online event the viewer is the tab being screen-shared, so that's where
+    # the crowd needs to hear the buzzers. Set by `ceopardy serve --online`.
+    "ONLINE_MODE": False,
     "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
     "DAILYDOUBLE_WAIGER_MIN": 5,
     "DAILYDOUBLE_WAIGER_MAX_MIN": 500,

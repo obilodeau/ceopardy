@@ -24,6 +24,11 @@ from importlib import resources
 
 def _cmd_serve(args):
     from ceopardy import app, create_app, socketio
+    from ceopardy.config import config
+
+    # Must be set before create_app() so the first /api/v1/state a client
+    # fetches already advertises the mode.
+    config["ONLINE_MODE"] = getattr(args, "online", False)
 
     # WARNING: This app is not ready to be exposed on the network.
     #          Game host interface would be exposed.
@@ -33,6 +38,8 @@ def _cmd_serve(args):
     print(f"Ceopardy serving on http://{host}:{port}/")
     print(f"  Viewer: http://localhost:{port}/")
     print(f"  Host:   http://localhost:{port}/host")
+    if config["ONLINE_MODE"]:
+        print("  Online: ON (sounds play on the viewer, not the host)")
     if debug:
         print("  Debug:  ON (verbose logging + auto-reload)")
     # Werkzeug is the only WSGI server we use here. Flask-SocketIO refuses it
@@ -95,6 +102,11 @@ def main(argv=None):
         "--debug",
         action="store_true",
         help="Enable Flask debug mode (verbose logging + auto-reload).",
+    )
+    serve.add_argument(
+        "--online",
+        action="store_true",
+        help="Online mode: play sounds on the viewer instead of the host.",
     )
     sub.add_parser(
         "init",

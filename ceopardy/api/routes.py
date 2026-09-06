@@ -60,6 +60,7 @@ def _public_config():
         "CATEGORIES_PER_GAME",
         "QUESTIONS_PER_CATEGORY",
         "SCORE_TICK",
+        "ONLINE_MODE",
         "DAILYDOUBLE_WAIGER_MIN",
         "DAILYDOUBLE_WAIGER_MAX_MIN",
     )
