@@ -33,6 +33,10 @@
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
+  // Runs on every start, not just on creation: it recreates .venv/ when the
+  // volume behind it is missing or empty.
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
   // Viewer/host UI (Flask) and the Vite dev server.
   "forwardPorts": [5000, 5173],
   "portsAttributes": {

@@ -6,10 +6,11 @@ cd "$(dirname "$0")/.."
 
 # Docker creates volume mount points root-owned when the path doesn't exist in
 # the image.
-sudo chown "$(id -u):$(id -g)" .venv frontend/node_modules
+sudo chown "$(id -u):$(id -g)" frontend/node_modules
 
-echo "==> Creating the Python virtualenv"
-make venv
+# The virtualenv is not created here: post-start.sh owns it, so that a .venv
+# volume that goes missing later is rebuilt on the next start rather than only
+# on the next container creation.
 
 echo "==> Installing frontend dependencies"
 npm --prefix frontend install

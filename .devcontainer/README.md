@@ -27,10 +27,15 @@ Python 3.11, Node 20, the GitHub CLI, and Claude Code.
 
 3. In VS Code: **Dev Containers: Reopen in Container**.
 
-The first build runs `.devcontainer/post-create.sh`, which creates the
-virtualenv (`make venv`), installs the frontend dependencies, installs
-Claude Code, sets the git identity, and points git at the token for GitHub
-HTTPS.
+The first build runs `.devcontainer/post-create.sh`, which installs the
+frontend dependencies, installs Claude Code, sets the git identity, and
+points git at the token for GitHub HTTPS.
+
+Then `.devcontainer/post-start.sh` runs — on that first build and on every
+later start of the container. It creates the virtualenv with `make venv`
+when `.venv/` is empty, and does nothing when it isn't. That check lives at
+start rather than at creation because `.venv/` is a Docker volume that can
+outlive, or go missing independently of, the container that uses it.
 
 If you open the container before creating the token, add it to
 `devcontainer.env` and run **Dev Containers: Rebuild Container**.
