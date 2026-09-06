@@ -102,14 +102,15 @@ export function useSound() {
     thinkingAudio = null;
   }
 
-  /** Handle a `sound` broadcast from the server. */
+  /**
+   * Handle a one-shot `sound` broadcast from the server.
+   *
+   * The waiting music is not handled here: it is stateful, so it is driven
+   * by watching the store's isThinking instead, which also covers clients
+   * that join or reload in the middle of a break.
+   */
   function handle(name: string, action: string): void {
-    if (!isSoundName(name)) return;
-    if (name === "thinking") {
-      if (action === "play") startThinking();
-      else stopThinking();
-      return;
-    }
+    if (!isSoundName(name) || name === "thinking") return;
     if (action === "play") play(name);
   }
 

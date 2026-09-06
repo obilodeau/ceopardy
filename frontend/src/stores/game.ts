@@ -238,6 +238,13 @@ export const useGameStore = defineStore("game", {
       });
 
       s.on("sound", (data: SoundEvent) => {
+        // The waiting music is stateful, so mirror it locally instead of
+        // waiting for a full state broadcast; App.vue watches isThinking and
+        // drives the audio from there. One-shot sounds just fire.
+        if (data.name === "thinking") {
+          this.ui_state.thinking = data.action === "play" ? "1" : "";
+          return;
+        }
         useSound().handle(data.name, data.action);
       });
 
