@@ -21,7 +21,12 @@ import os
 import re
 
 from ceopardy.config import config
-from ceopardy.exceptions import GamefileParsingError, InvalidQuestionId, QuestionParsingError
+from ceopardy.exceptions import (
+    GamefileParsingError,
+    InvalidQuestionId,
+    QuestionParsingError,
+    SoundProblem,
+)
 
 
 def parse_questions(filename):
@@ -168,3 +173,38 @@ def filter_answer_form(data, dailydouble=False):
                 key = key.rstrip("-dailydouble")
                 answers[key] = value
     return answers
+
+
+# Sounds the host can ask clients to play. Kept here (rather than in the
+# route) so it can be unit-tested without an app context, and mirrored by
+# `soundUrls` in frontend/src/composables/useSound.ts.
+#
+# Only three buzzer files exist while the team count is configurable, so a
+# game with more teams simply has no buzzer sound for the extra ones.
+SOUND_NAMES = frozenset(
+    {
+        "buzzer1",
+        "buzzer2",
+        "buzzer3",
+        "timeout",
+        "reveal",
+        "thinking",
+        "dailydouble",
+    }
+)
+
+SOUND_ACTIONS = frozenset({"play", "stop"})
+
+
+def validate_sound_request(name: object, action: object) -> tuple[str, str]:
+    """
+    Validate a /api/v1/sound payload.
+
+    Returns the (name, action) pair on success, raises SoundProblem with a
+    user-facing message otherwise.
+    """
+    if name not in SOUND_NAMES:
+        raise SoundProblem("Unknown sound: {}".format(name))
+    if action not in SOUND_ACTIONS:
+        raise SoundProblem("Unknown sound action: {}".format(action))
+    return (name, action)

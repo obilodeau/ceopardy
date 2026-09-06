@@ -24,8 +24,13 @@ and can run without any app context.
 
 import pytest
 
-from ceopardy.exceptions import InvalidQuestionId
-from ceopardy.utils import filter_answer_form, parse_question_id, question_to_html
+from ceopardy.exceptions import InvalidQuestionId, SoundProblem
+from ceopardy.utils import (
+    filter_answer_form,
+    parse_question_id,
+    question_to_html,
+    validate_sound_request,
+)
 
 # ---------------------------------------------------------------------------
 # parse_question_id
@@ -128,3 +133,27 @@ def test_filter_answer_form_dailydouble_mode_keeps_only_dd_keys():
 def test_filter_answer_form_empty_input():
     assert filter_answer_form({}) == {}
     assert filter_answer_form({}, dailydouble=True) == {}
+
+
+# ---------------------------------------------------------------------------
+# validate_sound_request
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "name",
+    ["buzzer1", "buzzer2", "buzzer3", "timeout", "reveal", "thinking", "dailydouble"],
+)
+@pytest.mark.parametrize("action", ["play", "stop"])
+def test_validate_sound_request_accepts_known_pairs(name, action):
+    assert validate_sound_request(name, action) == (name, action)
+
+
+@pytest.mark.parametrize("name", ["buzzer4", "", None, "THINKING", "../../etc/passwd"])
+def test_validate_sound_request_rejects_unknown_names(name):
+    with pytest.raises(SoundProblem):
+        validate_sound_request(name, "play")
+
+
+@pytest.mark.parametrize("action", ["pause", "", None, "PLAY"])
+def test_validate_sound_request_rejects_unknown_actions(action):
+    with pytest.raises(SoundProblem):
+        validate_sound_request("timeout", action)

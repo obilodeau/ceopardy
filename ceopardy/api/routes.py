@@ -37,6 +37,7 @@ from ceopardy.exceptions import (
     GameProblem,
     InvalidQuestionId,
     QuestionParsingError,
+    SoundProblem,
     UnknownTeamError,
 )
 
@@ -543,6 +544,31 @@ def message_hide():
 # ---------------------------------------------------------------------------
 # Misc host state (drawer positions etc.)
 # ---------------------------------------------------------------------------
+@api_bp.route("/sound", methods=["POST"])
+def sound():
+    """
+    Ask every connected client to play (or stop) a sound.
+
+    Which window actually makes noise is a client-side decision: the host in
+    normal mode, the viewer when ONLINE_MODE is on. The server just relays.
+    """
+    controller = _controller()
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        name, action = utils.validate_sound_request(data.get("name"), data.get("action"))
+    except SoundProblem as e:
+        return jsonify(result="failure", error=str(e)), 400
+
+    # The thinking music is the only sound with duration, so it is the only
+    # one worth persisting: a viewer that joins or reloads mid-break resumes
+    # it from /api/v1/state instead of sitting in silence.
+    if name == "thinking":
+        controller.set_state("thinking", "1" if action == "play" else "")
+
+    app.socketio.emit("sound", {"name": name, "action": action}, namespace=GAME_NS)
+    return jsonify(result="success")
+
+
 @api_bp.route("/slider", methods=["POST"])
 def slider():
     controller = _controller()
