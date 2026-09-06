@@ -26,7 +26,9 @@ import pytest
 
 from ceopardy.exceptions import InvalidQuestionId, SoundProblem
 from ceopardy.utils import (
+    SOUND_FILES,
     filter_answer_form,
+    list_sounds,
     parse_question_id,
     question_to_html,
     validate_sound_request,
@@ -157,3 +159,23 @@ def test_validate_sound_request_rejects_unknown_names(name):
 def test_validate_sound_request_rejects_unknown_actions(action):
     with pytest.raises(SoundProblem):
         validate_sound_request("timeout", action)
+
+
+# ---------------------------------------------------------------------------
+# list_sounds
+# ---------------------------------------------------------------------------
+def test_list_sounds_covers_every_known_sound():
+    sounds = list_sounds()
+    assert set(sounds) == set(SOUND_FILES)
+
+
+def test_list_sounds_returns_served_urls():
+    for url in list_sounds().values():
+        assert url.startswith("/static/sounds/")
+
+
+def test_list_sounds_names_are_all_accepted_by_the_validator():
+    # The front-end plays whatever this map contains, so every entry must be
+    # something the /api/v1/sound endpoint will accept back.
+    for name in list_sounds():
+        assert validate_sound_request(name, "play") == (name, "play")

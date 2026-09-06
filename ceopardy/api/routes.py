@@ -129,6 +129,9 @@ def _full_state_payload():
         "game_state": game_state,
         "config": _public_config(),
         "messages": config.get("MESSAGES", []),
+        # Sound registry lives server-side; the front-end plays whatever it
+        # is handed instead of keeping a second copy of the list.
+        "sounds": utils.list_sounds(),
     }
 
     if initialized:

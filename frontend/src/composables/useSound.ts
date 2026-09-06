@@ -7,29 +7,14 @@ import { useGameStore } from "@/stores/game";
 // through it; who actually makes noise is decided by isAudioSink() below, so
 // no caller has to know about online mode.
 //
-// Keep the names in sync with SOUND_NAMES in ceopardy/utils.py.
-export type SoundName =
-  | "buzzer1"
-  | "buzzer2"
-  | "buzzer3"
-  | "timeout"
-  | "reveal"
-  | "thinking"
-  | "dailydouble";
+// The sound registry (name -> URL) is served by the back-end in
+// /api/v1/state, from SOUND_FILES in ceopardy/utils.py. Adding a sound is a
+// back-end-only change.
 
-const soundUrls: Record<SoundName, string> = {
-  buzzer1: "/static/sounds/buzzer1.wav",
-  buzzer2: "/static/sounds/buzzer2.wav",
-  buzzer3: "/static/sounds/buzzer3.wav",
-  timeout: "/static/sounds/timeout.mp3",
-  reveal: "/static/sounds/reveal.mp3",
-  thinking: "/static/sounds/thinking-music.wav",
-  dailydouble: "/static/sounds/daily-double.mp3",
-};
-
-export function isSoundName(name: string): name is SoundName {
-  return name in soundUrls;
-}
+// A one-sample silent WAV. Used to satisfy the autoplay policy without
+// depending on a real sound file, most of which are gitignored.
+const SILENCE =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 const UNLOCK_KEY = "ceopardy-audio-unlocked";
 
@@ -49,8 +34,8 @@ export const audioUnlocked = ref(readUnlocked());
 // Long-lived handle for the only sound with duration.
 let thinkingAudio: HTMLAudioElement | null = null;
 
-function makeAudio(name: SoundName): HTMLAudioElement {
-  const audio = new Audio(soundUrls[name]);
+function makeAudio(url: string): HTMLAudioElement {
+  const audio = new Audio(url);
   // Most sound files are gitignored (licensing), so a fresh clone 404s on
   // them. Never let that surface as an unhandled rejection.
   audio.addEventListener("error", () => {});
@@ -71,10 +56,19 @@ export function isAudioSink(): boolean {
 }
 
 export function useSound() {
-  function play(name: SoundName): void {
+  const game = useGameStore();
+
+  /** URL for a sound, or "" when the back-end does not know that name. */
+  function urlFor(name: string): string {
+    return game.sounds[name] ?? "";
+  }
+
+  function play(name: string): void {
     if (!isAudioSink()) return;
+    const url = urlFor(name);
+    if (!url) return;
     try {
-      makeAudio(name)
+      makeAudio(url)
         .play()
         .catch(() => {});
     } catch {
@@ -85,8 +79,10 @@ export function useSound() {
   function startThinking(): void {
     if (!isAudioSink()) return;
     if (thinkingAudio && !thinkingAudio.paused) return;
+    const url = urlFor("thinking");
+    if (!url) return;
     try {
-      thinkingAudio = makeAudio("thinking");
+      thinkingAudio = makeAudio(url);
       // Waiting music has to keep going for the whole break.
       thinkingAudio.loop = true;
       thinkingAudio.play().catch(() => {});
@@ -110,7 +106,7 @@ export function useSound() {
    * that join or reload in the middle of a break.
    */
   function handle(name: string, action: string): void {
-    if (!isSoundName(name) || name === "thinking") return;
+    if (name === "thinking") return;
     if (action === "play") play(name);
   }
 
@@ -120,7 +116,7 @@ export function useSound() {
    */
   function unlock(): void {
     try {
-      const audio = makeAudio("buzzer1");
+      const audio = makeAudio(SILENCE);
       audio.muted = true;
       audio
         .play()

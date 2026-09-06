@@ -74,6 +74,7 @@ export interface ServerState {
   state?: Partial<UiState>;
   active_question?: ActiveQuestion | null;
   messages?: ServerMessage[];
+  sounds?: SoundMap;
   dailydouble_range?: Range;
   dailydouble_wager?: DailyDoubleWager | null;
 }
@@ -131,6 +132,9 @@ export interface OverlayBigEvent {
   html?: string;
   id?: string;
 }
+
+/** Sound registry served by the back-end: logical name -> URL. */
+export type SoundMap = Record<string, string>;
 
 export interface SoundEvent {
   name: string;

@@ -175,25 +175,34 @@ def filter_answer_form(data, dailydouble=False):
     return answers
 
 
-# Sounds the host can ask clients to play. Kept here (rather than in the
-# route) so it can be unit-tested without an app context, and mirrored by
-# `soundUrls` in frontend/src/composables/useSound.ts.
+# The one registry of sounds the host can ask clients to play. The front-end
+# gets it from /api/v1/state rather than keeping its own copy, so adding a
+# sound means touching this dict and nothing else.
+#
+# Logical name -> file in ceopardy/static/sounds/. The two differ often
+# enough (dailydouble, thinking) that a bare directory listing would rename
+# half of them.
 #
 # Only three buzzer files exist while the team count is configurable, so a
 # game with more teams simply has no buzzer sound for the extra ones.
-SOUND_NAMES = frozenset(
-    {
-        "buzzer1",
-        "buzzer2",
-        "buzzer3",
-        "timeout",
-        "reveal",
-        "thinking",
-        "dailydouble",
-    }
-)
+SOUND_FILES = {
+    "buzzer1": "buzzer1.wav",
+    "buzzer2": "buzzer2.wav",
+    "buzzer3": "buzzer3.wav",
+    "timeout": "timeout.mp3",
+    "reveal": "reveal.mp3",
+    "thinking": "thinking-music.wav",
+    "dailydouble": "daily-double.mp3",
+}
+
+SOUND_NAMES = frozenset(SOUND_FILES)
 
 SOUND_ACTIONS = frozenset({"play", "stop"})
+
+
+def list_sounds() -> dict[str, str]:
+    """Map of sound name -> URL, for the front-end to play from."""
+    return {name: "/static/sounds/{}".format(filename) for name, filename in SOUND_FILES.items()}
 
 
 def validate_sound_request(name: object, action: object) -> tuple[str, str]:

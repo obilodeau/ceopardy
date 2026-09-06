@@ -24,6 +24,7 @@ import type {
   ServerState,
   SliderEvent,
   SoundEvent,
+  SoundMap,
   Team,
   TeamNamesEvent,
   TeamRouletteEvent,
@@ -44,6 +45,9 @@ interface GameStoreState {
   ui_state: UiState;
   active_question: ActiveQuestion;
   messages: ServerMessage[];
+  // Sound name -> URL, served by the back-end so the registry lives in
+  // exactly one place (SOUND_FILES in ceopardy/utils.py).
+  sounds: SoundMap;
   dailydouble_range: Range;
   dailydouble_wager: DailyDoubleWager | null;
   // Incremented every time the server fires a new daily-double. Lets the
@@ -80,6 +84,7 @@ export const useGameStore = defineStore("game", {
     },
     active_question: {},
     messages: [],
+    sounds: {},
     dailydouble_range: { min: 0, max: 0 },
     // {team, amount} as the host moves the wager slider during a DD; null
     // outside DD or before the operator has set anything.
@@ -146,6 +151,7 @@ export const useGameStore = defineStore("game", {
       if (data.active_question !== undefined)
         this.active_question = data.active_question || {};
       if (data.messages) this.messages = data.messages;
+      if (data.sounds) this.sounds = data.sounds;
       if (data.dailydouble_range)
         this.dailydouble_range = data.dailydouble_range;
       if (data.dailydouble_wager !== undefined)
