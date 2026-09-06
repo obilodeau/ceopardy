@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import type { Socket } from "socket.io-client";
 
 import { api } from "@/api";
+import { useSound } from "@/composables/useSound";
 import { getSocket } from "@/socket";
 import type {
   ActiveQuestion,
@@ -22,6 +23,7 @@ import type {
   ServerMessage,
   ServerState,
   SliderEvent,
+  SoundEvent,
   Team,
   TeamNamesEvent,
   TeamRouletteEvent,
@@ -69,6 +71,7 @@ export const useGameStore = defineStore("game", {
       team: "",
       dailydouble: "",
       message: "",
+      thinking: "",
       "overlay-big": "",
       "overlay-small": "",
       "overlay-question": "",
@@ -94,6 +97,9 @@ export const useGameStore = defineStore("game", {
     // /api/v1/state response.
     questionsPerCategory: (s): number => s.config.QUESTIONS_PER_CATEGORY ?? 5,
     scoreTick: (s): number => s.config.SCORE_TICK ?? 100,
+    // Online mode moves every sound from the host to the viewer, which is
+    // the tab being screen-shared during an online event.
+    onlineMode: (s): boolean => s.config.ONLINE_MODE ?? false,
 
     isInProgress: (s): boolean =>
       s.game_state === "in_round" || s.game_state === "in_final",
@@ -110,6 +116,9 @@ export const useGameStore = defineStore("game", {
     isDailyDoubleRevealed: (s): boolean =>
       s.ui_state.dailydouble === "revealed",
     bigOverlayHtml: (s): string => s.ui_state["overlay-big"] || "",
+    // Waiting music is the only sound with duration, so the server keeps
+    // its on/off state and clients joining mid-break pick it up.
+    isThinking: (s): boolean => !!s.ui_state.thinking,
     questionAnswered:
       (s) =>
       (qid: string): boolean =>
@@ -226,6 +235,10 @@ export const useGameStore = defineStore("game", {
       s.on("overlay-big", (data: OverlayBigEvent) => {
         this.ui_state["overlay-big"] = data.html || "";
         this.ui_state.message = data.id || "";
+      });
+
+      s.on("sound", (data: SoundEvent) => {
+        useSound().handle(data.name, data.action);
       });
 
       s.on("slider", (data: SliderEvent) => {

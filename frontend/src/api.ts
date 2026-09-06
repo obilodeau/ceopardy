@@ -89,4 +89,9 @@ export const api = {
 
   setSliderState: (id: string, value: string | number) =>
     request<ApiOk>("/slider", { method: "POST", body: { id, value } }),
+
+  // Ask the server to broadcast a sound cue. The host never plays directly
+  // any more; it goes through here so the viewer can be the one making noise.
+  sound: (name: string, action: "play" | "stop" = "play") =>
+    request<ApiOk>("/sound", { method: "POST", body: { name, action } }),
 };
