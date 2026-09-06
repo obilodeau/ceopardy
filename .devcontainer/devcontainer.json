@@ -33,6 +33,11 @@
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
+  // Runs on every start, not just on creation, and re-establishes everything
+  // that does not survive to the next start on its own: the .venv/ volume,
+  // and the unpersisted ~/.claude and ~/.gitconfig.
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
   // Viewer/host UI (Flask) and the Vite dev server.
   "forwardPorts": [5000, 5173],
   "portsAttributes": {
