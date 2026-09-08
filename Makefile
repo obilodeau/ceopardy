@@ -59,8 +59,12 @@ frontend/node_modules/.package-lock.json: frontend/package.json
 	npm install --prefix frontend
 	@touch frontend/node_modules/.package-lock.json
 
+# --host 127.0.0.1: node resolves "localhost" to ::1 first, so Vite would bind
+# only [::1]:5173. A dev container's port forwarder connects over IPv4, so the
+# forwarded port refuses every connection while Flask (already on 127.0.0.1)
+# works. Same local-only binding either way, just pinned to IPv4.
 run: frontend/node_modules/.package-lock.json
 	@exec sh -c 'trap "kill 0" INT TERM; \
 		python run.py & \
-		npm run dev --prefix frontend & \
+		npm run dev --prefix frontend -- --host 127.0.0.1 & \
 		wait'
