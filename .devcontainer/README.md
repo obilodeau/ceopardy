@@ -117,7 +117,12 @@ if you suspect anything.
   auto-forwarded to the host. `make run` starts them together.
 - `.venv/` and `frontend/node_modules/` live in Docker volumes rather than
   the bind-mounted workspace, so the container's dependencies don't collide
-  with the ones on your host.
+  with the ones on your host. The volume names carry `${devcontainerId}`,
+  which is unique per checkout, so a second clone gets its own pair rather
+  than rewriting this one's — a virtualenv records the absolute path it was
+  built for, and a shared volume leaves whichever container ran `make venv`
+  last as the only one whose console scripts work. Find them with
+  `docker volume ls | grep ceopardy`.
 - Claude Code runs from the token in `devcontainer.env`; run `claude` in the
   container terminal, or use the Claude tab. Project-level settings that
   should be shared belong in the repo's `.claude/settings.json`, which is
