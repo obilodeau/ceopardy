@@ -13,9 +13,21 @@
   // the --env-file below never fails the container start.
   "initializeCommand": "bash .devcontainer/initialize.sh",
 
-  // The scoped GitHub token (and anything else secret) is read from a
-  // gitignored env file rather than baked into this committed config.
-  "runArgs": ["--env-file", "${localWorkspaceFolder}/.devcontainer/devcontainer.env"],
+  // --env-file: the scoped GitHub token (and anything else secret) is read
+  //   from a gitignored env file rather than baked into this committed config.
+  // --dns: docker writes /etc/resolv.conf once, at container creation, from
+  //   whatever resolver the host had then. Suspend the laptop, change network,
+  //   and the container keeps pointing at a resolver it can no longer reach.
+  //   Routing still works, so lookups time out rather than fail fast and the
+  //   tools simply appear to hang. Pinning a public resolver makes the
+  //   container independent of the host's current network. The cost:
+  //   hostnames that only resolve on the host's network (VPN, corporate,
+  //   .local) won't resolve in here.
+  "runArgs": [
+    "--env-file", "${localWorkspaceFolder}/.devcontainer/devcontainer.env",
+    "--dns", "1.1.1.1",
+    "--dns", "1.0.0.1"
+  ],
 
   "mounts": [
     // Keep the container's virtualenv and node_modules out of the bind-mounted
@@ -32,6 +44,11 @@
   // is a clean container that is still logged in.
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Runs on every start, not just on creation, and re-establishes everything
+  // that does not survive to the next start on its own: the .venv/ volume,
+  // and the unpersisted ~/.claude and ~/.gitconfig.
+  "postStartCommand": "bash .devcontainer/post-start.sh",
 
   // Viewer/host UI (Flask) and the Vite dev server.
   "forwardPorts": [5000, 5173],
