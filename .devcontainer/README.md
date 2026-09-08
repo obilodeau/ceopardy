@@ -27,20 +27,16 @@ Python 3.11, Node 20, the GitHub CLI, and Claude Code.
 
 3. In VS Code: **Dev Containers: Reopen in Container**.
 
-The first build runs `.devcontainer/post-create.sh`, which installs the
-frontend dependencies, Claude Code, and the headless browser's shared
-libraries — the things that live in the container's own filesystem and last
-exactly as long as it does.
+The first build runs `.devcontainer/post-create.sh`. Then
+`.devcontainer/post-start.sh` runs, on that first build and on every later
+start.
 
-Then `.devcontainer/post-start.sh` runs, on that first build and on every
-later start. It creates the virtualenv with `make venv` when `.venv/` is
-empty, writes Claude Code's settings, sets the git identity, points git at
-the token for GitHub HTTPS, and downloads the headless browser. None of that
-is create-time work: `.venv/` is a Docker volume with a lifetime of its own,
-and `~/.claude` and
-`~/.gitconfig` are deliberately not persisted at all, so a container can
-come up missing any of them. Setting them at start means a *restart* repairs
-that, rather than a rebuild.
+The split between them is by lifetime. Whatever belongs to the container's
+own filesystem is set up at create time; whatever can go missing without the
+container being recreated — the `.venv/` volume, the unpersisted `~/.claude`
+and `~/.gitconfig`, the browser under `~/.cache` — is set up at start, so
+losing any of it costs a restart rather than a rebuild. The scripts say what
+each one does.
 
 If you open the container before creating the token, add it to
 `devcontainer.env` and run **Dev Containers: Rebuild Container**. Docker
@@ -116,41 +112,18 @@ if you suspect anything.
 ## Headless browser
 
 The container carries a headless Chromium so a UI change can be *looked at*
-from in here — Claude screenshots the viewer and checks its own work rather
-than asking you to be the renderer. Ceopardy's whole product is a screen in
-front of a crowd, and neither `vue-tsc` nor the Python tests can see it.
+from in here, not just type-checked: Claude screenshots the viewer and
+checks its own work rather than asking you to be the renderer.
 
-It arrives in three pieces, each placed by the same lifetime rule as
-everything else here:
+- `post-create.sh` installs the shared libraries it links against.
+- `post-start.sh` downloads `chrome-headless-shell`, 266 MB, into
+  `~/.cache` — which no rebuild persists, so a rebuild re-downloads it.
+- `playwright` is pinned in `frontend/package.json`.
 
-- **16 shared libraries**, in `post-create.sh` — image state, with exactly
-  the container's own lifetime.
-- **`chrome-headless-shell`, 266 MB**, in `post-start.sh` — a `~/.cache`
-  download, and that is not persisted.
-- **A pinned `playwright`**, in `frontend/package.json` — so the client and
-  the browser build can't drift apart.
-
-So a *restart* costs a second, and a *rebuild* re-downloads 266 MB. Making
-that survive would mean a Docker volume over `~/.cache`, which is exactly
-the kind of writable path that outlives the rebuild you'd reach for as
-remediation — not worth it for a binary that re-downloads in a minute.
-
-Two things worth knowing if you extend this:
-
-- **Don't reach for `playwright install-deps`.** It pulls ~80 packages —
-  xvfb, LLVM, `-dev` headers — that only a headed browser needs, and it
-  shells out to `apt-get update`, which exits 100 in this image: the Node
-  feature adds a `dl.yarnpkg.com` source signed with a key yarn has since
-  rotated. Every Debian list still refreshes, so `post-create.sh` tolerates
-  that exit code and lets the install itself be the step that must succeed.
-- **`--only-shell` means headless only.** No headed runs, no video capture.
-  Drop the flag and you get full Chromium too, at 658 MB instead of 266 MB.
-
-There are no browser tests yet: today this is tooling, not a regression net.
-Adding a couple of smoke tests (the viewer renders the board, the host page
-loads, the enable-sound overlay appears in online mode) and a target in
-`make ci` is what would turn it into one. GitHub Actions installs its own
-browsers, so CI is unaffected until then.
+Headless only: `--only-shell` skips the full Chromium build that headed runs
+and video capture need. There are no browser tests yet, so this is tooling
+rather than a regression net — GitHub Actions installs its own browsers, so
+CI is unaffected either way.
 
 ## What runs where
 

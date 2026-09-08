@@ -91,13 +91,8 @@ fi
 
 # ── Headless browser ─────────────────────────────────────────────────────────
 
-# Playwright keeps its browsers in ~/.cache/ms-playwright, which is not
-# persisted, so a rebuilt container comes up without one. The shared
-# libraries it links against are image-level state and live in post-create.sh.
-#
-# --only-shell skips the full Chromium build, which is needed only to run
-# headed: 266 MB rather than 658 MB. `playwright install` is idempotent, so
-# this is a fast no-op once the browser is there.
+# ~/.cache/ms-playwright is not persisted, so a rebuild comes up without a
+# browser. --only-shell skips the full Chromium build: 266 MB, not 658 MB.
 if [ -x frontend/node_modules/.bin/playwright ]; then
     echo "==> Making sure the headless browser is installed"
     frontend/node_modules/.bin/playwright install --only-shell chromium
