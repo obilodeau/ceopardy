@@ -69,6 +69,7 @@ export const useGameStore = defineStore("game", {
       team: "",
       dailydouble: "",
       message: "",
+      "message-text": "",
       "overlay-big": "",
       "overlay-small": "",
       "overlay-question": "",

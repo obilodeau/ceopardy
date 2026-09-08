@@ -32,6 +32,7 @@ export interface UiState {
   team: string;
   dailydouble: "" | "enabled" | "revealed";
   message: string;
+  "message-text": string;
   "overlay-big": string;
   "overlay-small": string;
   "overlay-question": string;

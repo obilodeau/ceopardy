@@ -58,13 +58,16 @@ async function hideAll(): Promise<void> {
 const customEditing = ref(false);
 const customInput = ref<HTMLInputElement | null>(null);
 
-// Open the box when the custom message is the one on screen, so a host who
-// reloads mid-message lands on something editable. This only ever opens the
-// box; closing it stays the pencil's job.
+// Put the host back where they were after a reload: if the custom message is
+// the one on screen, open the box and seed it from the text the server kept.
+// This only ever opens the box; closing it stays the pencil's job. The
+// empty-draft guard means a second host window never loses an unsent draft.
 watch(
-  () => customMid.value !== "" && currentMessage.value === customMid.value,
-  (isLive) => {
-    if (isLive) customEditing.value = true;
+  () => [currentMessage.value, game.ui_state["message-text"]] as const,
+  ([mid, text]) => {
+    if (!customMid.value || mid !== customMid.value) return;
+    customEditing.value = true;
+    if (!customText.value) customText.value = text ?? "";
   },
   { immediate: true },
 );
