@@ -28,14 +28,16 @@ Python 3.11, Node 20, the GitHub CLI, and Claude Code.
 3. In VS Code: **Dev Containers: Reopen in Container**.
 
 The first build runs `.devcontainer/post-create.sh`, which installs the
-frontend dependencies and Claude Code — the things that live in the
-container's own filesystem and last exactly as long as it does.
+frontend dependencies, Claude Code, and the headless browser's shared
+libraries — the things that live in the container's own filesystem and last
+exactly as long as it does.
 
 Then `.devcontainer/post-start.sh` runs, on that first build and on every
 later start. It creates the virtualenv with `make venv` when `.venv/` is
-empty, writes Claude Code's settings, sets the git identity, and points git
-at the token for GitHub HTTPS. None of that is create-time work: `.venv/` is
-a Docker volume with a lifetime of its own, and `~/.claude` and
+empty, writes Claude Code's settings, sets the git identity, points git at
+the token for GitHub HTTPS, and downloads the headless browser. None of that
+is create-time work: `.venv/` is a Docker volume with a lifetime of its own,
+and `~/.claude` and
 `~/.gitconfig` are deliberately not persisted at all, so a container can
 come up missing any of them. Setting them at start means a *restart* repairs
 that, rather than a rebuild.
@@ -111,6 +113,45 @@ long-lived and identical across rebuilds, so treat `devcontainer.env` as the
 secret it is, keep the GitHub token scoped to this one repo, and rotate both
 if you suspect anything.
 
+## Headless browser
+
+The container carries a headless Chromium so a UI change can be *looked at*
+from in here — Claude screenshots the viewer and checks its own work rather
+than asking you to be the renderer. Ceopardy's whole product is a screen in
+front of a crowd, and neither `vue-tsc` nor the Python tests can see it.
+
+It arrives in three pieces, each placed by the same lifetime rule as
+everything else here:
+
+- **16 shared libraries**, in `post-create.sh` — image state, with exactly
+  the container's own lifetime.
+- **`chrome-headless-shell`, 266 MB**, in `post-start.sh` — a `~/.cache`
+  download, and that is not persisted.
+- **A pinned `playwright`**, in `frontend/package.json` — so the client and
+  the browser build can't drift apart.
+
+So a *restart* costs a second, and a *rebuild* re-downloads 266 MB. Making
+that survive would mean a Docker volume over `~/.cache`, which is exactly
+the kind of writable path that outlives the rebuild you'd reach for as
+remediation — not worth it for a binary that re-downloads in a minute.
+
+Two things worth knowing if you extend this:
+
+- **Don't reach for `playwright install-deps`.** It pulls ~80 packages —
+  xvfb, LLVM, `-dev` headers — that only a headed browser needs, and it
+  shells out to `apt-get update`, which exits 100 in this image: the Node
+  feature adds a `dl.yarnpkg.com` source signed with a key yarn has since
+  rotated. Every Debian list still refreshes, so `post-create.sh` tolerates
+  that exit code and lets the install itself be the step that must succeed.
+- **`--only-shell` means headless only.** No headed runs, no video capture.
+  Drop the flag and you get full Chromium too, at 658 MB instead of 266 MB.
+
+There are no browser tests yet: today this is tooling, not a regression net.
+Adding a couple of smoke tests (the viewer renders the board, the host page
+loads, the enable-sound overlay appears in online mode) and a target in
+`make ci` is what would turn it into one. GitHub Actions installs its own
+browsers, so CI is unaffected until then.
+
 ## What runs where
 
 - Flask back-end on port 5000, Vite dev server on port 5173 — both
@@ -118,6 +159,8 @@ if you suspect anything.
 - `.venv/` and `frontend/node_modules/` live in Docker volumes rather than
   the bind-mounted workspace, so the container's dependencies don't collide
   with the ones on your host.
+- The headless browser lives in `~/.cache/ms-playwright`; `playwright` is a
+  devDependency of the front-end. See above.
 - Claude Code runs from the token in `devcontainer.env`; run `claude` in the
   container terminal, or use the Claude tab. Project-level settings that
   should be shared belong in the repo's `.claude/settings.json`, which is
