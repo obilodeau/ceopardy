@@ -40,3 +40,7 @@ class QuestionParsingError(Exception):
 
 class GamefileParsingError(Exception):
     """Raised when a .round (game) file cannot be parsed."""
+
+
+class SoundProblem(Exception):
+    """Raised when a sound play/stop request is not valid."""

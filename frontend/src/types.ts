@@ -21,6 +21,7 @@ export interface AppConfig {
   CATEGORIES_PER_GAME?: number;
   QUESTIONS_PER_CATEGORY?: number;
   SCORE_TICK?: number;
+  ONLINE_MODE?: boolean;
   DAILYDOUBLE_WAIGER_MIN?: number;
   DAILYDOUBLE_WAIGER_MAX_MIN?: number;
 }
@@ -32,6 +33,7 @@ export interface UiState {
   team: string;
   dailydouble: "" | "enabled" | "revealed";
   message: string;
+  thinking: string;
   "overlay-big": string;
   "overlay-small": string;
   "overlay-question": string;
@@ -72,6 +74,7 @@ export interface ServerState {
   state?: Partial<UiState>;
   active_question?: ActiveQuestion | null;
   messages?: ServerMessage[];
+  sounds?: SoundMap;
   dailydouble_range?: Range;
   dailydouble_wager?: DailyDoubleWager | null;
 }
@@ -128,6 +131,14 @@ export interface TeamNamesEvent {
 export interface OverlayBigEvent {
   html?: string;
   id?: string;
+}
+
+/** Sound registry served by the back-end: logical name -> URL. */
+export type SoundMap = Record<string, string>;
+
+export interface SoundEvent {
+  name: string;
+  action: "play" | "stop";
 }
 
 export interface SliderEvent {

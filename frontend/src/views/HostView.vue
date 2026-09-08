@@ -12,14 +12,6 @@ import HostFooterDrawer from "@/components/HostFooterDrawer.vue";
 import TeamScoringPanel from "@/components/TeamScoringPanel.vue";
 
 type AnswerMap = Record<string, number>;
-type SoundName =
-  | "buzzer1"
-  | "buzzer2"
-  | "buzzer3"
-  | "timeout"
-  | "reveal"
-  | "thinking"
-  | "dailydouble";
 
 const router = useRouter();
 const game = useGameStore();
@@ -73,7 +65,7 @@ function onKeyPress(e: KeyboardEvent): void {
   if (num < 1 || num > game.teams.length) return;
   const tid = `team${num}`;
   api.selectTeam(tid);
-  playSound(`buzzer${num}` as SoundName);
+  api.sound(`buzzer${num}`);
   lockBuzzers();
 }
 
@@ -94,7 +86,7 @@ async function onSelectQuestion(qid: string): Promise<void> {
     if (data.team) game.ui_state.team = data.team;
     // No buzzer race in a Daily Double — only the controlling team plays.
     lockBuzzers();
-    playSound("dailydouble");
+    api.sound("dailydouble");
   } else {
     unlockBuzzers();
   }
@@ -124,43 +116,14 @@ async function onFinish(): Promise<void> {
   }
 }
 function playTimeout(): void {
-  playSound("timeout");
+  api.sound("timeout");
 }
 
-const soundUrls: Record<SoundName, string> = {
-  buzzer1: "/static/sounds/buzzer1.wav",
-  buzzer2: "/static/sounds/buzzer2.wav",
-  buzzer3: "/static/sounds/buzzer3.wav",
-  timeout: "/static/sounds/timeout.mp3",
-  reveal: "/static/sounds/reveal.mp3",
-  thinking: "/static/sounds/thinking-music.wav",
-  dailydouble: "/static/sounds/daily-double.mp3",
-};
-const preloaded: Partial<Record<SoundName, HTMLAudioElement>> = {};
-for (const [name, url] of Object.entries(soundUrls) as [SoundName, string][]) {
-  const a = new Audio(url);
-  a.preload = "auto";
-  preloaded[name] = a;
-}
-
-let thinkingAudio: HTMLAudioElement | null = null;
-function playSound(name: SoundName): void {
-  try {
-    const audio = new Audio(soundUrls[name]);
-    audio.play().catch(() => {});
-  } catch {
-    /* ignore */
-  }
-}
+// Sounds are not played here any more: the host asks the server to
+// broadcast a cue and every client decides for itself whether to make noise
+// (the host normally, the viewer in online mode).
 function toggleThinking(): void {
-  if (thinkingAudio && !thinkingAudio.paused) {
-    thinkingAudio.pause();
-    thinkingAudio.currentTime = 0;
-    thinkingAudio = null;
-  } else {
-    thinkingAudio = new Audio(soundUrls.thinking);
-    thinkingAudio.play().catch(() => {});
-  }
+  api.sound("thinking", game.isThinking ? "stop" : "play");
 }
 
 // Automatically unlock buzzers if any team is marked "Bad" so it can buzz in
