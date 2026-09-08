@@ -238,6 +238,9 @@ button {
   padding: 10px;
   margin-left: 10px;
   margin-right: 10px;
+  /* Fill the drawer column the way the block-level div it replaced did. */
+  width: calc(100% - 20px);
+  box-sizing: border-box;
 }
 .form-icon {
   display: flex;
@@ -271,8 +274,8 @@ button {
 .form-cursive[contenteditable='true']:focus {
   border-width: 0 0 2px 0;
 }
-.form-edit[contenteditable='true']:active,
-.form-edit[contenteditable='true']:focus {
+.form-edit:active,
+.form-edit:focus {
   border-width: 2px;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075),
     0 0 8px rgba(213, 193, 156, 0.6);

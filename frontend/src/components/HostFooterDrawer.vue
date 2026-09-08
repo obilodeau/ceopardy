@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { api } from "@/api";
 import { useGameStore } from "@/stores/game";
 
@@ -10,22 +10,45 @@ const customText = ref("");
 const isOpen = computed(() => game.ui_state["container-footer"] === "slide-up");
 const currentMessage = computed(() => game.ui_state.message);
 
+// The "Custom" entry has an empty body and reads from the edit box instead.
+// An operator is free to drop it from their MESSAGES config, hence the -1.
+const customIdx = computed(() =>
+  game.messages.findIndex((m) => m.title === "Custom"),
+);
+const customMid = computed(() =>
+  customIdx.value >= 0 ? messageId(customIdx.value) : "",
+);
+const canSubmit = computed(
+  () => customIdx.value >= 0 && customText.value.trim().length > 0,
+);
+
+function messageId(idx: number): string {
+  return `message${idx + 1}`;
+}
+
 async function toggle(): Promise<void> {
   const next = isOpen.value ? "" : "slide-up";
   game.ui_state["container-footer"] = next;
   await api.setSliderState("container-footer", next);
 }
 
+// Submit always shows, never hides: it is "put this on the screen", which is
+// what makes editing a message that is already up a single click.
+async function showCustom(): Promise<void> {
+  if (!canSubmit.value) return;
+  await api.showMessage(customMid.value, customText.value.trim());
+}
+
 async function toggleMessage(idx: number): Promise<void> {
-  const mid = `message${idx + 1}`;
-  if (mid === currentMessage.value) {
+  if (messageId(idx) === currentMessage.value) {
     await api.hideMessage();
     return;
   }
-  const msg = game.messages[idx];
-  // The "Custom" entry has an empty body and reads from the edit box.
-  const text = msg?.text || customText.value || "";
-  await api.showMessage(mid, text);
+  if (idx === customIdx.value) {
+    await showCustom();
+    return;
+  }
+  await api.showMessage(messageId(idx), game.messages[idx]?.text ?? "");
 }
 
 async function hideAll(): Promise<void> {
@@ -33,8 +56,24 @@ async function hideAll(): Promise<void> {
 }
 
 const customEditing = ref(false);
-function toggleCustom(): void {
+const customInput = ref<HTMLInputElement | null>(null);
+
+// Open the box when the custom message is the one on screen, so a host who
+// reloads mid-message lands on something editable. This only ever opens the
+// box; closing it stays the pencil's job.
+watch(
+  () => customMid.value !== "" && currentMessage.value === customMid.value,
+  (isLive) => {
+    if (isLive) customEditing.value = true;
+  },
+  { immediate: true },
+);
+
+async function toggleCustom(): Promise<void> {
   customEditing.value = !customEditing.value;
+  if (!customEditing.value) return;
+  await nextTick();
+  customInput.value?.focus();
 }
 </script>
 
@@ -75,8 +114,9 @@ function toggleCustom(): void {
             <div class="form-text">{{ m.title }}</div>
             <div class="form-expand" />
             <div
-              v-if="m.title === 'Custom'"
+              v-if="idx === customIdx"
               class="form-icon form-click"
+              :title="customEditing ? 'Close the edit box' : 'Edit the message'"
               @click="toggleCustom"
             >
               <i class="fa-solid fa-pen-to-square fa-lg" />
@@ -84,7 +124,7 @@ function toggleCustom(): void {
             <div
               class="form-icon form-click"
               :title="
-                currentMessage === `message${idx + 1}`
+                currentMessage === messageId(idx)
                   ? 'Hide message'
                   : 'Show message'
               "
@@ -92,7 +132,7 @@ function toggleCustom(): void {
             >
               <i
                 :class="
-                  currentMessage === `message${idx + 1}`
+                  currentMessage === messageId(idx)
                     ? 'fa-regular fa-eye-slash'
                     : 'fa-regular fa-eye'
                 "
@@ -103,14 +143,32 @@ function toggleCustom(): void {
         </div>
 
         <div class="form-expand">
-          <div
-            v-if="customEditing"
-            class="form-color form-edit"
-            contenteditable="true"
-            @input="customText = ($event.target as HTMLElement).innerText"
-          >
-            <span>{{ customText }}</span>
-          </div>
+          <form v-if="customEditing" @submit.prevent="showCustom">
+            <input
+              ref="customInput"
+              v-model="customText"
+              class="form-color form-edit form-no-form form-text"
+              autocomplete="off"
+              placeholder="Type a message for the crowd screen"
+            />
+            <div class="form-row form-color">
+              <div class="form-expand" />
+              <div
+                class="form-icon form-click"
+                :class="{ disabled: !canSubmit }"
+                :title="
+                  currentMessage === customMid
+                    ? 'Update the message on screen'
+                    : 'Show this message'
+                "
+                @click="showCustom"
+              >
+                <i class="fa-solid fa-paper-plane fa-2x" />
+              </div>
+              <div class="form-expand" />
+            </div>
+            <input type="submit" style="display: none" />
+          </form>
         </div>
       </div>
 
