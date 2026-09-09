@@ -4,6 +4,15 @@
 
 Add type hints to all new functions and methods.
 
+## Comments
+
+Comment sparingly. Write one only where the *why* is not obvious from the
+code, never to restate what the next line does, and delete any that a reader
+of the code would not miss. The same goes for prose in `README.md` and
+`.devcontainer/README.md`: describe the steps and let the code carry the
+detail, which is what stays current. A workaround that needs a paragraph of
+justification is usually a sign to fix the root cause instead.
+
 ## Before every commit
 
 Run the full CI check suite:
