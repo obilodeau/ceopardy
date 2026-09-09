@@ -33,6 +33,7 @@ export interface UiState {
   team: string;
   dailydouble: "" | "enabled" | "revealed";
   message: string;
+  "message-text": string;
   thinking: string;
   "overlay-big": string;
   "overlay-small": string;

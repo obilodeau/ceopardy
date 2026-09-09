@@ -530,6 +530,9 @@ def message_show():
 
     controller.set_state("message", mid)
     controller.set_state("overlay-big", html)
+    # message_hide() leaves this one alone, so the host's draft survives a
+    # hide and a reload.
+    controller.set_state("message-text", text)
 
     app.socketio.emit("overlay-big", {"id": mid, "html": html}, namespace=GAME_NS)
     return jsonify(result="success")
