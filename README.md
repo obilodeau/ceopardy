@@ -152,3 +152,8 @@ See `AGENTS.md` for the conventions the codebase follows.
 
     make build
     pipx install --force dist/ceopardy-*.whl   # test the wheel end-to-end
+
+### To make a release
+
+Push a valid version tag. Release notes are automatically generated from merged PRs,
+see `.github/release.yml`.
