@@ -33,8 +33,14 @@
     // Keep the container's virtualenv and node_modules out of the bind-mounted
     // workspace: the host's .venv has absolute paths that don't resolve here,
     // and native npm deps may differ.
-    "source=ceopardy-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
-    "source=ceopardy-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume"
+    //
+    // ${devcontainerId} scopes the volume to this checkout. A plain name is
+    // shared by every container on the host that uses it, and a virtualenv
+    // records the absolute path it was built for, so a second clone at a
+    // different path silently rewrites this one: .venv/bin/python still
+    // resolves, but every console script in it points at the other workspace.
+    "source=ceopardy-venv-${devcontainerId},target=${containerWorkspaceFolder}/.venv,type=volume",
+    "source=ceopardy-node-modules-${devcontainerId},target=${containerWorkspaceFolder}/frontend/node_modules,type=volume"
   ],
 
   // Deliberately NOT persisting /home/vscode/.claude. Anything a postinstall

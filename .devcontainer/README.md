@@ -129,9 +129,18 @@ CI is unaffected either way.
 
 - Flask back-end on port 5000, Vite dev server on port 5173 — both
   auto-forwarded to the host. `make run` starts them together.
-- `.venv/` and `frontend/node_modules/` live in Docker volumes rather than
-  the bind-mounted workspace, so the container's dependencies don't collide
-  with the ones on your host.
+- `.venv/` and `frontend/node_modules/` are Docker volumes mounted *over*
+  the bind-mounted workspace. Neither path can move — the Makefile builds and
+  runs from `.venv/`, and npm resolves `node_modules/` beside `package.json`
+  — so overlaying them is the only way to keep the container's dependencies
+  out of your host checkout. That keeps the host's absolute paths and native
+  builds from leaking in here, and keeps an npm postinstall script in here
+  from writing into a tree your host will later run.
+- Their names carry `${devcontainerId}`, unique per checkout, so a second
+  clone gets its own pair instead of rewriting this one's: a virtualenv
+  records the absolute path it was built for, and a shared volume leaves
+  whichever container ran `make venv` last as the only one whose console
+  scripts work. `docker volume ls | grep ceopardy` finds them.
 - The headless browser lives in `~/.cache/ms-playwright`; `playwright` is a
   devDependency of the front-end. See above.
 - Claude Code runs from the token in `devcontainer.env`; run `claude` in the
