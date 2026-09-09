@@ -24,8 +24,15 @@ and can run without any app context.
 
 import pytest
 
-from ceopardy.exceptions import InvalidQuestionId
-from ceopardy.utils import filter_answer_form, parse_question_id, question_to_html
+from ceopardy.exceptions import InvalidQuestionId, SoundProblem
+from ceopardy.utils import (
+    SOUND_FILES,
+    filter_answer_form,
+    list_sounds,
+    parse_question_id,
+    question_to_html,
+    validate_sound_request,
+)
 
 # ---------------------------------------------------------------------------
 # parse_question_id
@@ -128,3 +135,47 @@ def test_filter_answer_form_dailydouble_mode_keeps_only_dd_keys():
 def test_filter_answer_form_empty_input():
     assert filter_answer_form({}) == {}
     assert filter_answer_form({}, dailydouble=True) == {}
+
+
+# ---------------------------------------------------------------------------
+# validate_sound_request
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "name",
+    ["buzzer1", "buzzer2", "buzzer3", "timeout", "reveal", "thinking", "dailydouble"],
+)
+@pytest.mark.parametrize("action", ["play", "stop"])
+def test_validate_sound_request_accepts_known_pairs(name, action):
+    assert validate_sound_request(name, action) == (name, action)
+
+
+@pytest.mark.parametrize("name", ["buzzer4", "", None, "THINKING", "../../etc/passwd"])
+def test_validate_sound_request_rejects_unknown_names(name):
+    with pytest.raises(SoundProblem):
+        validate_sound_request(name, "play")
+
+
+@pytest.mark.parametrize("action", ["pause", "", None, "PLAY"])
+def test_validate_sound_request_rejects_unknown_actions(action):
+    with pytest.raises(SoundProblem):
+        validate_sound_request("timeout", action)
+
+
+# ---------------------------------------------------------------------------
+# list_sounds
+# ---------------------------------------------------------------------------
+def test_list_sounds_covers_every_known_sound():
+    sounds = list_sounds()
+    assert set(sounds) == set(SOUND_FILES)
+
+
+def test_list_sounds_returns_served_urls():
+    for url in list_sounds().values():
+        assert url.startswith("/static/sounds/")
+
+
+def test_list_sounds_names_are_all_accepted_by_the_validator():
+    # The front-end plays whatever this map contains, so every entry must be
+    # something the /api/v1/sound endpoint will accept back.
+    for name in list_sounds():
+        assert validate_sound_request(name, "play") == (name, "play")

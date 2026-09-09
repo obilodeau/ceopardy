@@ -88,3 +88,15 @@ else
     echo "==> GITHUB_TOKEN is not set: skipping GitHub auth setup."
     echo "    Add it to .devcontainer/devcontainer.env and rebuild the container."
 fi
+
+# ── Headless browser ─────────────────────────────────────────────────────────
+
+# ~/.cache/ms-playwright is not persisted, so a rebuild comes up without a
+# browser. --only-shell skips the full Chromium build: 266 MB, not 658 MB.
+if [ -x frontend/node_modules/.bin/playwright ]; then
+    echo "==> Making sure the headless browser is installed"
+    frontend/node_modules/.bin/playwright install --only-shell chromium
+else
+    echo "==> Skipping the headless browser: frontend/node_modules is empty."
+    echo "    Run 'npm --prefix frontend install' and restart the container."
+fi

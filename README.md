@@ -57,11 +57,25 @@ Then scaffold a per-game directory and start the server:
     # edit data/Questions.cp and data/1st.round to set up your game
     ceopardy serve              # starts the server on http://127.0.0.1:5000/
     ceopardy serve --debug      # add verbose logging + auto-reload
+    ceopardy serve --online     # play the sounds on the viewer, not the host
 
 Open the two URLs `ceopardy serve` prints:
 
 - Viewer: <http://localhost:5000/> — what the crowd sees on the projector.
 - Host:   <http://localhost:5000/host> — what you (the operator) drive.
+
+### Online events
+
+Normally the buzzers, daily double, timeout and waiting music play on the
+host machine, which is what you want when the crowd is in the room with a
+projector. When you run the game online you share the *viewer* tab instead,
+so the sounds have to come from there: start the server with
+`ceopardy serve --online`.
+
+The viewer then shows a "Click to enable sound" screen once — browsers do
+not let a page play audio until someone has clicked in it. Click it while
+you set up the screen share and it won't come back. Remember to share the
+tab *with audio* so your audience actually hears it.
 
 `ceopardy init` never overwrites existing files; it's safe to re-run. The
 SQLite database, round files, and uploaded media all resolve relative to the
@@ -84,6 +98,7 @@ You need Python 3.11+, pip, virtualenv, and Node.js (LTS).
     source .venv/bin/activate.fish     # fish
     make init                          # seeds data/ + game-media/
     make run                           # starts Flask (:5000) + Vite (:5173)
+    CEOPARDY_ONLINE=1 make run         # same, with online mode on
 
 Then open <http://localhost:5173/> — Vite hot-reloads the UI and proxies
 `/api` and `/socket.io` to Flask on `:5000`. **In dev, always use the Vite

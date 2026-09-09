@@ -15,7 +15,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+import os
+
 from ceopardy import app, create_app, socketio
+from ceopardy.config import config
+
+# Dev-only convenience: `make run` takes no arguments, so this is how you get
+# the equivalent of `ceopardy serve --online` while hacking.
+config["ONLINE_MODE"] = os.environ.get("CEOPARDY_ONLINE", "") not in ("", "0")
 
 create_app()
 
