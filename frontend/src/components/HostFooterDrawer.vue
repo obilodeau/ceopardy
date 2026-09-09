@@ -10,8 +10,8 @@ const customText = ref("");
 const isOpen = computed(() => game.ui_state["container-footer"] === "slide-up");
 const currentMessage = computed(() => game.ui_state.message);
 
-// The "Custom" entry has an empty body and reads from the edit box instead.
-// An operator is free to drop it from their MESSAGES config, hence the -1.
+// The "Custom" entry reads from the edit box instead of its own body. An
+// operator is free to drop it from their MESSAGES config, hence the -1.
 const customIdx = computed(() =>
   game.messages.findIndex((m) => m.title === "Custom"),
 );
@@ -32,8 +32,7 @@ async function toggle(): Promise<void> {
   await api.setSliderState("container-footer", next);
 }
 
-// Submit always shows, never hides: it is "put this on the screen", which is
-// what makes editing a message that is already up a single click.
+// Never hides, so editing a message already on screen is a single click.
 async function showCustom(): Promise<void> {
   if (!canSubmit.value) return;
   await api.showMessage(customMid.value, customText.value.trim());
@@ -58,10 +57,8 @@ async function hideAll(): Promise<void> {
 const customEditing = ref(false);
 const customInput = ref<HTMLInputElement | null>(null);
 
-// Put the host back where they were after a reload: if the custom message is
-// the one on screen, open the box and seed it from the text the server kept.
-// This only ever opens the box; closing it stays the pencil's job. The
-// empty-draft guard means a second host window never loses an unsent draft.
+// Reseed the box after a reload. Only ever opens it -- closing stays the
+// pencil's job -- and never overwrites a draft another host window is typing.
 watch(
   () => [currentMessage.value, game.ui_state["message-text"]] as const,
   ([mid, text]) => {

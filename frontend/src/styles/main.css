@@ -238,7 +238,7 @@ button {
   padding: 10px;
   margin-left: 10px;
   margin-right: 10px;
-  /* Fill the drawer column the way the block-level div it replaced did. */
+  /* Fill the column like the block-level div this replaced. */
   width: calc(100% - 20px);
   box-sizing: border-box;
 }

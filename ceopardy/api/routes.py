@@ -530,11 +530,8 @@ def message_show():
 
     controller.set_state("message", mid)
     controller.set_state("overlay-big", html)
-    # The raw text behind the overlay, so a host that reloads can put it back
-    # in the edit box. Stored for presets too: it is simply "what is on the
-    # screen", and the back-end has no business re-deriving which MESSAGES
-    # entry the operator made custom. message_hide() deliberately leaves it
-    # alone, so the host's draft survives hiding the message.
+    # message_hide() leaves this one alone, so the host's draft survives a
+    # hide and a reload.
     controller.set_state("message-text", text)
 
     app.socketio.emit("overlay-big", {"id": mid, "html": html}, namespace=GAME_NS)
