@@ -27,18 +27,16 @@ Python 3.11, Node 20, the GitHub CLI, and Claude Code.
 
 3. In VS Code: **Dev Containers: Reopen in Container**.
 
-The first build runs `.devcontainer/post-create.sh`, which installs the
-frontend dependencies and Claude Code — the things that live in the
-container's own filesystem and last exactly as long as it does.
+The first build runs `.devcontainer/post-create.sh`. Then
+`.devcontainer/post-start.sh` runs, on that first build and on every later
+start.
 
-Then `.devcontainer/post-start.sh` runs, on that first build and on every
-later start. It creates the virtualenv with `make venv` when `.venv/` is
-empty, writes Claude Code's settings, sets the git identity, and points git
-at the token for GitHub HTTPS. None of that is create-time work: `.venv/` is
-a Docker volume with a lifetime of its own, and `~/.claude` and
-`~/.gitconfig` are deliberately not persisted at all, so a container can
-come up missing any of them. Setting them at start means a *restart* repairs
-that, rather than a rebuild.
+The split between them is by lifetime. Whatever belongs to the container's
+own filesystem is set up at create time; whatever can go missing without the
+container being recreated — the `.venv/` volume, the unpersisted `~/.claude`
+and `~/.gitconfig`, the browser under `~/.cache` — is set up at start, so
+losing any of it costs a restart rather than a rebuild. The scripts say what
+each one does.
 
 If you open the container before creating the token, add it to
 `devcontainer.env` and run **Dev Containers: Rebuild Container**. Docker
@@ -111,6 +109,22 @@ long-lived and identical across rebuilds, so treat `devcontainer.env` as the
 secret it is, keep the GitHub token scoped to this one repo, and rotate both
 if you suspect anything.
 
+## Headless browser
+
+The container carries a headless Chromium so a UI change can be *looked at*
+from in here, not just type-checked: Claude screenshots the viewer and
+checks its own work rather than asking you to be the renderer.
+
+- `post-create.sh` installs the shared libraries it links against.
+- `post-start.sh` downloads `chrome-headless-shell`, 266 MB, into
+  `~/.cache` — which no rebuild persists, so a rebuild re-downloads it.
+- `playwright` is pinned in `frontend/package.json`.
+
+Headless only: `--only-shell` skips the full Chromium build that headed runs
+and video capture need. There are no browser tests yet, so this is tooling
+rather than a regression net — GitHub Actions installs its own browsers, so
+CI is unaffected either way.
+
 ## What runs where
 
 - Flask back-end on port 5000, Vite dev server on port 5173 — both
@@ -127,6 +141,8 @@ if you suspect anything.
   records the absolute path it was built for, and a shared volume leaves
   whichever container ran `make venv` last as the only one whose console
   scripts work. `docker volume ls | grep ceopardy` finds them.
+- The headless browser lives in `~/.cache/ms-playwright`; `playwright` is a
+  devDependency of the front-end. See above.
 - Claude Code runs from the token in `devcontainer.env`; run `claude` in the
   container terminal, or use the Claude tab. Project-level settings that
   should be shared belong in the repo's `.claude/settings.json`, which is

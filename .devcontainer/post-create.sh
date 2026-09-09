@@ -18,3 +18,18 @@ npm --prefix frontend install
 
 echo "==> Installing Claude Code"
 npm install -g @anthropic-ai/claude-code
+
+# The Node feature adds a dl.yarnpkg.com source signed with a key yarn has
+# since rotated, so every apt-get update fails on NO_PUBKEY. Nothing here
+# uses yarn, so drop the source rather than work around the error.
+sudo rm -f /etc/apt/sources.list.d/yarn.list
+
+# Lets Claude screenshot the viewer to check a UI change. Libraries only;
+# post-start.sh downloads the browser. Not `playwright install-deps`, which
+# adds ~80 packages a headless run never uses.
+echo "==> Installing the headless browser's shared libraries"
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
+    fonts-liberation libasound2 libatk-bridge2.0-0 libatk1.0-0 libcairo2 \
+    libcups2 libdrm2 libgbm1 libnspr4 libnss3 libpango-1.0-0 libxcomposite1 \
+    libxdamage1 libxfixes3 libxkbcommon0 libxrandr2
