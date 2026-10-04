@@ -47,6 +47,8 @@ config = {
     # players use; empty means the local one.
     "BUZZER_PORT": 5001,
     "BUZZER_PUBLIC_URL": "",
+    # How BUZZER_PUBLIC_URL came about: "ngrok", "manual" or "none".
+    "BUZZER_TUNNEL": "none",
     "BUZZER_MAX_PLAYERS_PER_TEAM": 16,
     # Web buzzer race judging, see ceopardy/buzzer.py. The RTT cap bounds both
     # how much latency a player is credited and how much a modified client can

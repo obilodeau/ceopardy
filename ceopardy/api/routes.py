@@ -632,7 +632,12 @@ def buzzer_links():
     tokens = _controller().get_buzzer_tokens()
     links = {tid: utils.buzzer_link(public_url, token) for tid, token in tokens.items()}
     presence = app.buzzer.presence(tokens) if app.buzzer is not None else {}
-    return jsonify(public_url=public_url, links=links, presence=presence)
+    return jsonify(
+        public_url=public_url,
+        tunnel=config["BUZZER_TUNNEL"],
+        links=links,
+        presence=presence,
+    )
 
 
 @api_bp.route("/buzzers/links/<tid>", methods=["POST"])

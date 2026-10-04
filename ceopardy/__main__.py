@@ -43,7 +43,7 @@ def _cmd_serve(args):
     if config["ONLINE_MODE"]:
         print("  Online: ON (sounds play on the viewer, not the host)")
         if serving_process(debug):
-            _start_buzzers()
+            _start_buzzers(args)
     if debug:
         print("  Debug:  ON (verbose logging + auto-reload)")
     # Werkzeug is the only WSGI server we use here. Flask-SocketIO refuses it
@@ -61,20 +61,22 @@ def serving_process(debug: bool) -> bool:
     return not debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
 
 
-def _start_buzzers() -> None:
-    from ceopardy import start_buzzer_server
+def _start_buzzers(args: argparse.Namespace) -> None:
+    from ceopardy import start_buzzer_server, tunnel
     from ceopardy.config import config
 
+    status = tunnel.setup(
+        config,
+        no_tunnel=getattr(args, "no_tunnel", False),
+        domain=getattr(args, "tunnel_domain", None) or os.environ.get("NGROK_DOMAIN", ""),
+        env=os.environ,
+    )
     port = config["BUZZER_PORT"]
     try:
         start_buzzer_server()
     except OSError as e:
         sys.exit(f"Cannot serve the buzzers on port {port}: {e}. Try --buzzer-port.")
-    local = f"http://127.0.0.1:{port}/"
-    if config["BUZZER_PUBLIC_URL"]:
-        print(f"  Buzzers: {config['BUZZER_PUBLIC_URL']} (-> {local})")
-    else:
-        print(f"  Buzzers: {local} (local only; tunnel this port, never 5000)")
+    print(f"  Buzzers: {status}")
 
 
 def _walk(traversable, prefix=""):
@@ -146,7 +148,18 @@ def main(argv=None):
     serve.add_argument(
         "--buzzer-url",
         help="Public URL that tunnels to the buzzer port, e.g. a Cloudflare or "
-        "Tailscale address. Team links are built on it.",
+        "Tailscale address. Team links are built on it, and no ngrok tunnel is "
+        "opened.",
+    )
+    serve.add_argument(
+        "--no-tunnel",
+        action="store_true",
+        help="Don't open an ngrok tunnel to the buzzer port, even with an authtoken set.",
+    )
+    serve.add_argument(
+        "--tunnel-domain",
+        help="ngrok domain to use (default: $NGROK_DOMAIN). With a fixed "
+        "domain, team links survive a restart.",
     )
     sub.add_parser(
         "init",
