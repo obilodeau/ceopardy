@@ -79,6 +79,7 @@ export const useGameStore = defineStore("game", {
       "message-text": "",
       thinking: "",
       buzzers: "",
+      "locked-out": "",
       "overlay-big": "",
       "overlay-small": "",
       "overlay-question": "",
@@ -128,6 +129,8 @@ export const useGameStore = defineStore("game", {
     // its on/off state and clients joining mid-break pick it up.
     isThinking: (s): boolean => !!s.ui_state.thinking,
     buzzersOpen: (s): boolean => s.ui_state.buzzers === "open",
+    lockedOut: (s): string[] =>
+      (s.ui_state["locked-out"] || "").split(",").filter(Boolean),
     questionAnswered:
       (s) =>
       (qid: string): boolean =>
@@ -233,6 +236,7 @@ export const useGameStore = defineStore("game", {
 
       s.on("buzzers", (data: BuzzersEvent) => {
         this.ui_state.buzzers = data.open ? "open" : "";
+        this.ui_state["locked-out"] = data.locked_out.join(",");
       });
 
       s.on("team-roulette", (data: TeamRouletteEvent) => {

@@ -179,9 +179,22 @@ def _broadcast_state():
     app.socketio.emit("state", payload, namespace=GAME_NS)
 
 
-def _set_buzzers(is_open: bool) -> None:
-    _controller().set_state("buzzers", "open" if is_open else "")
-    app.socketio.emit("buzzers", {"open": is_open}, namespace=GAME_NS)
+def _locked_out() -> list[str]:
+    return utils.split_locked_out(_controller().get_state("locked-out"))
+
+
+def _set_buzzers(is_open: bool, locked_out: list[str] | None = None) -> None:
+    """Open or close the buzzers; `locked_out` replaces the lock-out list."""
+    controller = _controller()
+    if locked_out is not None:
+        controller.set_state("locked-out", ",".join(locked_out))
+    else:
+        locked_out = _locked_out()
+    # Nobody left to race when every team has already answered wrong.
+    if len(locked_out) >= controller.get_nb_teams():
+        is_open = False
+    controller.set_state("buzzers", "open" if is_open else "")
+    app.socketio.emit("buzzers", {"open": is_open, "locked_out": locked_out}, namespace=GAME_NS)
 
 
 # Two buzzes landing together must not both see the buzzers open.
@@ -400,7 +413,7 @@ def question_select():
         controller.set_state("question", qid)
         controller.set_state("dailydouble", "enabled")
         # No buzzer race in a Daily Double: only the controlling team plays.
-        _set_buzzers(False)
+        _set_buzzers(False, locked_out=[])
 
         # Hide any previous question overlay, show the daily-double animation.
         app.socketio.emit("question-hide", {}, namespace=GAME_NS)
@@ -424,7 +437,7 @@ def question_select():
 
     controller.set_state("question", qid)
     controller.end_dailydouble()
-    _set_buzzers(True)
+    _set_buzzers(True, locked_out=[])
     app.socketio.emit(
         "question-show",
         {
@@ -495,7 +508,7 @@ def question_deselect():
     controller = _controller()
     controller.set_state("question", "")
     controller.end_dailydouble()
-    _set_buzzers(False)
+    _set_buzzers(False, locked_out=[])
     app.socketio.emit("question-hide", {}, namespace=GAME_NS)
     _broadcast_board_update()
     return jsonify(result="success")
@@ -546,13 +559,26 @@ def submit_answer():
 # ---------------------------------------------------------------------------
 @api_bp.route("/buzzers", methods=["POST"])
 def buzzers():
-    """Open or close the buzzers."""
+    """
+    Open or close the buzzers, and/or replace the list of teams locked out
+    of this clue (the ones the host marked wrong).
+
+    Either key may be left out: no `action` keeps the buzzers as they are.
+    """
+    controller = _controller()
     data = request.get_json(force=True, silent=True) or {}
     action = data.get("action")
-    if action not in ("open", "close"):
+    if action not in (None, "open", "close"):
         return jsonify(result="failure", error="Unknown action"), 400
+    locked_out = None
+    if "locked_out" in data:
+        try:
+            locked_out = utils.parse_locked_out(data["locked_out"], controller.get_teams_for_form())
+        except GameProblem as e:
+            return jsonify(result="failure", error=str(e)), 400
     with _buzz_lock:
-        _set_buzzers(action == "open")
+        is_open = controller.get_state("buzzers") == "open" if action is None else action == "open"
+        _set_buzzers(is_open, locked_out)
     return jsonify(result="success")
 
 
@@ -565,7 +591,7 @@ def buzz():
     if tid not in controller.get_teams_for_form():
         return jsonify(result="failure", error="Unknown team"), 400
     with _buzz_lock:
-        if controller.get_state("buzzers") != "open":
+        if controller.get_state("buzzers") != "open" or tid in _locked_out():
             return jsonify(result="ignored")
         _award_buzz(tid)
     return jsonify(result="success", tid=tid)

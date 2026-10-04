@@ -70,8 +70,13 @@ export const api = {
     request<ApiOk>("/team/select", { method: "POST", body: { tid } }),
   roulette: () => request<ApiOk>("/team/roulette", { method: "POST" }),
 
-  setBuzzers: (action: "open" | "close") =>
-    request<ApiOk>("/buzzers", { method: "POST", body: { action } }),
+  // Leave `action` out to keep the buzzers as they are and only replace the
+  // list of teams locked out of the clue.
+  setBuzzers: (action?: "open" | "close", lockedOut?: string[]) =>
+    request<ApiOk>("/buzzers", {
+      method: "POST",
+      body: { action, locked_out: lockedOut },
+    }),
   // A keyboard buzzer press. The server decides whether it counts.
   buzz: (tid: string) =>
     request<ApiOk>("/buzz", { method: "POST", body: { tid } }),

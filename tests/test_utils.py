@@ -24,13 +24,15 @@ and can run without any app context.
 
 import pytest
 
-from ceopardy.exceptions import InvalidQuestionId, SoundProblem
+from ceopardy.exceptions import GameProblem, InvalidQuestionId, SoundProblem
 from ceopardy.utils import (
     SOUND_FILES,
     filter_answer_form,
     list_sounds,
+    parse_locked_out,
     parse_question_id,
     question_to_html,
+    split_locked_out,
     validate_sound_request,
 )
 
@@ -179,3 +181,31 @@ def test_list_sounds_names_are_all_accepted_by_the_validator():
     # something the /api/v1/sound endpoint will accept back.
     for name in list_sounds():
         assert validate_sound_request(name, "play") == (name, "play")
+
+
+# ---------------------------------------------------------------------------
+# split_locked_out / parse_locked_out
+# ---------------------------------------------------------------------------
+TIDS = ["team1", "team2", "team3"]
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [("", []), ("team1", ["team1"]), ("team1,team3", ["team1", "team3"]), (",team2,", ["team2"])],
+)
+def test_split_locked_out(value, expected):
+    assert split_locked_out(value) == expected
+
+
+def test_parse_locked_out_keeps_order_and_drops_duplicates():
+    assert parse_locked_out(["team3", "team1", "team3"], TIDS) == ["team3", "team1"]
+
+
+def test_parse_locked_out_accepts_empty_list():
+    assert parse_locked_out([], TIDS) == []
+
+
+@pytest.mark.parametrize("value", [None, "team1", {"team1": True}, ["team4"], ["team1", None]])
+def test_parse_locked_out_rejects_bad_input(value):
+    with pytest.raises(GameProblem):
+        parse_locked_out(value, TIDS)

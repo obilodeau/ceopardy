@@ -19,9 +19,12 @@ const game = useGameStore();
 // Local form state for the per-team answer sliders.
 const answers = ref<AnswerMap>({});
 
+// Teams the server already has locked out start on "Bad", so a host reload
+// mid-clue keeps the sliders and the lock-out in agreement.
 function resetAnswers(): void {
   const next: AnswerMap = {};
-  for (const t of game.teams) next[t.tid] = 0;
+  for (const t of game.teams)
+    next[t.tid] = game.lockedOut.includes(t.tid) ? -1 : 0;
   answers.value = next;
 }
 
@@ -112,19 +115,21 @@ function toggleThinking(): void {
   api.sound("thinking", game.isThinking ? "stop" : "play");
 }
 
-// Automatically unlock buzzers if any team is marked "Bad" so it can buzz in
-// again.
+// A team marked "Bad" is locked out for the rest of the clue. Marking one
+// re-opens the buzzers for the others; un-marking one (the host correcting a
+// slider) only lifts its lock-out.
 watch(
-  answers,
-  (val) => {
-    for (const t of game.teams) {
-      if (val[t.tid] === -1) {
-        api.setBuzzers("open");
-        break;
-      }
-    }
+  () =>
+    game.teams
+      .filter((t) => answers.value[t.tid] === -1)
+      .map((t) => t.tid)
+      .join(","),
+  (now, before) => {
+    if (now === game.lockedOut.join(",")) return;
+    const wrong = now.split(",").filter(Boolean);
+    const joined = wrong.some((tid) => !before.split(",").includes(tid));
+    api.setBuzzers(joined ? "open" : undefined, wrong);
   },
-  { deep: true },
 );
 
 const activeHtml = computed(() => {

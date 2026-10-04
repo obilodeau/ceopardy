@@ -12,6 +12,9 @@
      Pair with --ceopardy-text-shadow for the embossed look. */
   --ceopardy-gold: #d9a24f;
   --ceopardy-text-shadow: 2px 2px 0 #000000;
+  /* A team that answered wrong and can't buzz again on this clue. */
+  --ceopardy-wrong: #d32f2f;
+  --ceopardy-wrong-dark: #7f1010;
 }
 
 *, *::before, *::after {
@@ -575,6 +578,16 @@ svg:hover polygon {
 }
 .team-selected {
   background-color: #ffffff !important;
+}
+/* After .team-selected on purpose: the team that just missed is usually
+   still the selected one, and the red has to win. */
+.team-locked-out {
+  background-color: var(--ceopardy-wrong) !important;
+}
+.team-locked-out .box-ceopardy,
+.team-locked-out .box-team-side,
+.team-locked-out .box-team-middle {
+  background-color: var(--ceopardy-wrong-dark);
 }
 
 /* Layout helpers */

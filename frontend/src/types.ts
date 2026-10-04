@@ -36,6 +36,8 @@ export interface UiState {
   "message-text": string;
   thinking: string;
   buzzers: "" | "open";
+  // Comma-separated tids marked wrong on this clue, who can't buzz again.
+  "locked-out": string;
   "overlay-big": string;
   "overlay-small": string;
   "overlay-question": string;
@@ -132,6 +134,7 @@ export interface TeamNamesEvent {
 
 export interface BuzzersEvent {
   open: boolean;
+  locked_out: string[];
 }
 
 export interface OverlayBigEvent {
