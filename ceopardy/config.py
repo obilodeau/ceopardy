@@ -42,6 +42,14 @@ config = {
     # online event the viewer is the tab being screen-shared, so that's where
     # the crowd needs to hear the buzzers. Set by `ceopardy serve --online`.
     "ONLINE_MODE": False,
+    # Web buzzer race judging, see ceopardy/buzzer.py. The RTT cap bounds both
+    # how much latency a player is credited and how much a modified client can
+    # gain by faking it.
+    "BUZZER_RTT_CAP_MS": 250,
+    "BUZZER_JITTER_TOLERANCE_MS": 50,
+    "BUZZER_EARLY_LOCKOUT_MS": 250,
+    # Faster than this is flagged to the host, not rejected.
+    "BUZZER_HUMAN_FLOOR_MS": 100,
     "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
     "DAILYDOUBLE_WAIGER_MIN": 5,
     "DAILYDOUBLE_WAIGER_MAX_MIN": 500,
