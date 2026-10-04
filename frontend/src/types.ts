@@ -132,6 +132,21 @@ export interface TeamNamesEvent {
   names: Record<string, string>;
 }
 
+// Players connected per team on the web buzzers.
+export type BuzzerPresence = Record<string, number>;
+
+export interface BuzzResultEntry {
+  tid: string;
+  reaction_ms: number;
+  suspicious: boolean;
+}
+
+// The numbers behind a web buzzer race, fastest first.
+export interface BuzzResultEvent {
+  winner: string;
+  entries: BuzzResultEntry[];
+}
+
 export interface BuzzersEvent {
   open: boolean;
   locked_out: string[];
@@ -175,6 +190,13 @@ export interface SelectQuestionResponse {
 export interface InitPayload {
   action: "new" | string;
   [key: string]: unknown;
+}
+
+export interface BuzzerLinksResponse {
+  public_url: string;
+  tunnel: "ngrok" | "manual" | "none";
+  links: Record<string, string>;
+  presence: BuzzerPresence;
 }
 
 export interface ApiOk {

@@ -404,6 +404,42 @@ svg:hover polygon {
   background-color: #000181;
 }
 
+/* The numbers behind the last web buzzer race, above the clue. */
+.buzz-result {
+  position: absolute;
+  top: calc(var(--ceopardy-pad) * 2);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.3rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: calc(0.8vh + 0.5vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.buzz-result span + span::before {
+  content: " · ";
+}
+.buzz-result .fa-triangle-exclamation {
+  color: var(--ceopardy-gold);
+}
+
+/* Web buzzer players per team, in the top drawer. */
+.buzzer-presence {
+  opacity: 0.5;
+  white-space: nowrap;
+}
+.buzzer-presence.joined {
+  opacity: 1;
+  color: #1fa64a;
+}
+.buzzer-status {
+  font-size: calc(0.9vh + 0.6vw);
+}
+
 /* Fade between TeamRow ↔ TeamRowDailyDouble. */
 .dd-rowfade-enter-active,
 .dd-rowfade-leave-active {

@@ -4,6 +4,7 @@
 
 import type {
   ApiOk,
+  BuzzerLinksResponse,
   InitPayload,
   SelectQuestionResponse,
   ServerState,
@@ -76,6 +77,11 @@ export const api = {
     request<ApiOk>("/buzzers", {
       method: "POST",
       body: { action, locked_out: lockedOut },
+    }),
+  buzzerLinks: () => request<BuzzerLinksResponse>("/buzzers/links"),
+  rotateBuzzerLink: (tid: string) =>
+    request<ApiOk>(`/buzzers/links/${encodeURIComponent(tid)}`, {
+      method: "POST",
     }),
   // A keyboard buzzer press. The server decides whether it counts.
   buzz: (tid: string) =>

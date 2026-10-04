@@ -139,6 +139,22 @@ const activeHtml = computed(() => {
   return game.active_question?.text ?? "";
 });
 
+// "Team 2 212 ms · Team 1 +48 ms" after a web buzzer race, for settling
+// disputes. Reactions under the human floor are flagged.
+const buzzResult = computed(() => {
+  const entries = game.lastBuzz?.entries ?? [];
+  const fastest = entries[0]?.reaction_ms ?? 0;
+  return entries.map((e, i) => ({
+    tid: e.tid,
+    text:
+      `${game.teamByTid(e.tid)?.name ?? e.tid} ` +
+      (i === 0
+        ? `${Math.round(e.reaction_ms)} ms`
+        : `+${Math.round(e.reaction_ms - fastest)} ms`),
+    suspicious: e.suspicious,
+  }));
+});
+
 const canRevealDailyDouble = computed(
   () =>
     game.isDailyDouble &&
@@ -186,6 +202,16 @@ async function onRevealDailyDouble(): Promise<void> {
         <div class="black-box flex-small-pad">
           <div class="box-fake-overlay">
             <div class="box-ceopardy box-question-host" v-html="activeHtml" />
+            <div v-if="buzzResult.length" class="buzz-result">
+              <span v-for="e in buzzResult" :key="e.tid">
+                {{ e.text }}
+                <i
+                  v-if="e.suspicious"
+                  class="fa-solid fa-triangle-exclamation"
+                  title="Faster than a human reaction: possibly automated"
+                />
+              </span>
+            </div>
             <button
               v-if="canRevealDailyDouble"
               type="button"
