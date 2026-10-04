@@ -22,13 +22,18 @@ These tests cover functions that have no Flask or database dependencies
 and can run without any app context.
 """
 
+import re
+
 import pytest
 
 from ceopardy.exceptions import GameProblem, InvalidQuestionId, SoundProblem
 from ceopardy.utils import (
     SOUND_FILES,
+    buzzer_link,
     filter_answer_form,
     list_sounds,
+    match_buzzer_token,
+    new_buzzer_token,
     parse_locked_out,
     parse_question_id,
     question_to_html,
@@ -209,3 +214,40 @@ def test_parse_locked_out_accepts_empty_list():
 def test_parse_locked_out_rejects_bad_input(value):
     with pytest.raises(GameProblem):
         parse_locked_out(value, TIDS)
+
+
+# ---------------------------------------------------------------------------
+# buzzer links
+# ---------------------------------------------------------------------------
+def test_new_buzzer_token_is_long_url_safe_and_random():
+    tokens = {new_buzzer_token() for _ in range(100)}
+    assert len(tokens) == 100
+    for token in tokens:
+        assert len(token) >= 22  # 128 bits in base64
+        assert re.fullmatch(r"[A-Za-z0-9_-]+", token)
+
+
+TOKENS = {"team1": "aaaa", "team2": "bbbb"}
+
+
+def test_match_buzzer_token_finds_the_team():
+    assert match_buzzer_token("bbbb", TOKENS) == "team2"
+
+
+@pytest.mark.parametrize("token", ["", "aaa", "aaaab", "AAAA", None, 1234, ["aaaa"]])
+def test_match_buzzer_token_rejects_anything_else(token):
+    assert match_buzzer_token(token, TOKENS) is None
+
+
+@pytest.mark.parametrize(
+    "public_url,expected",
+    [
+        ("https://quiet-owl.ngrok-free.app", "https://quiet-owl.ngrok-free.app/#tok"),
+        ("https://quiet-owl.ngrok-free.app/", "https://quiet-owl.ngrok-free.app/#tok"),
+        ("http://127.0.0.1:5001/", "http://127.0.0.1:5001/#tok"),
+        ("http://localhost:5173/buzzer.html", "http://localhost:5173/buzzer.html#tok"),
+        ("https://example.com/#old", "https://example.com/#tok"),
+    ],
+)
+def test_buzzer_link_puts_the_token_in_the_fragment(public_url, expected):
+    assert buzzer_link(public_url, "tok") == expected

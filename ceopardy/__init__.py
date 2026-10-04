@@ -73,7 +73,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 try:
     from flask_cors import CORS
 
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Never on the buzzer links: any page the host visits could read every
+    # team's secret.
+    CORS(app, resources={r"/api/(?!v1/buzzers/links).*": {"origins": "*"}})
 except ImportError:
     # flask-cors is optional; prod serves everything from the same origin.
     pass

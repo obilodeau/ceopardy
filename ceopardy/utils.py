@@ -16,10 +16,13 @@
 # GNU General Public License for more details.
 #
 import glob
+import hmac
 import html
 import os
 import re
-from collections.abc import Iterable
+import secrets
+from collections.abc import Iterable, Mapping
+from urllib.parse import urlsplit, urlunsplit
 
 from ceopardy.config import config
 from ceopardy.exceptions import (
@@ -243,3 +246,28 @@ def parse_locked_out(value: object, known_tids: Iterable[str]) -> list[str]:
         if tid not in result:
             result.append(tid)
     return result
+
+
+def new_buzzer_token() -> str:
+    """128 random bits: the only thing standing between a team and its buzzer."""
+    return secrets.token_urlsafe(16)
+
+
+def match_buzzer_token(token: object, tokens: Mapping[str, str]) -> str | None:
+    """The tid whose token this is, compared in constant time; None if none."""
+    if not isinstance(token, str) or not token:
+        return None
+    found = None
+    for tid, candidate in tokens.items():
+        if hmac.compare_digest(token.encode(), candidate.encode()):
+            found = tid
+    return found
+
+
+def buzzer_link(public_url: str, token: str) -> str:
+    """
+    A team's link. The token goes in the fragment, which browsers never send
+    to the server, so it stays out of tunnel and server logs.
+    """
+    parts = urlsplit(public_url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", parts.query, token))

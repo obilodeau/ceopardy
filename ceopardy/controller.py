@@ -27,6 +27,7 @@ from ceopardy.config import config
 from ceopardy.exceptions import GameProblem, UnknownTeamError
 from ceopardy.model import (
     Answer,
+    BuzzerLink,
     FinalQuestion,
     Game,
     GameState,
@@ -36,6 +37,7 @@ from ceopardy.model import (
     Team,
 )
 from ceopardy.utils import (
+    new_buzzer_token,
     parse_gamefile,
     parse_question_id,
     parse_questions,
@@ -484,6 +486,31 @@ class Controller:
             results[qid][tid] = points
 
         return results
+
+    @staticmethod
+    def get_buzzer_tokens() -> dict[str, str]:
+        """{tid: token} for every team, creating the missing ones."""
+        tokens = {link.tid: link.token for link in BuzzerLink.query.all()}
+        missing = [team.tid for team in Team.query.all() if team.tid not in tokens]
+        for tid in missing:
+            tokens[tid] = new_buzzer_token()
+            db.session.add(BuzzerLink(tid, tokens[tid]))
+        if missing:
+            db.session.commit()
+        return tokens
+
+    @staticmethod
+    def rotate_buzzer_token(tid: str) -> str:
+        if Team.query.filter_by(tid=tid).one_or_none() is None:
+            raise UnknownTeamError(f"Unknown team {tid!r}")
+        token = new_buzzer_token()
+        link = BuzzerLink.query.filter_by(tid=tid).one_or_none()
+        if link is None:
+            db.session.add(BuzzerLink(tid, token))
+        else:
+            link.token = token
+        db.session.commit()
+        return token
 
     @staticmethod
     def get_state(name):

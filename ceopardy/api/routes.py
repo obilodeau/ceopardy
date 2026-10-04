@@ -54,6 +54,10 @@ def _controller():
     return app.controller
 
 
+def _buzzer_public_url() -> str:
+    return config["BUZZER_PUBLIC_URL"] or "http://127.0.0.1:{}/".format(config["BUZZER_PORT"])
+
+
 def _public_config():
     """Subset of config safe to expose to the front-end."""
     keys = (
@@ -595,6 +599,30 @@ def buzz():
             return jsonify(result="ignored")
         _award_buzz(tid)
     return jsonify(result="success", tid=tid)
+
+
+# Links carry the team's secret, so they are served here, on the host's port,
+# and never put in /api/v1/state or on /game: the viewer receives both, and
+# the viewer is the tab being screen-shared.
+@api_bp.route("/buzzers/links", methods=["GET"])
+def buzzer_links():
+    public_url = _buzzer_public_url()
+    tokens = _controller().get_buzzer_tokens()
+    links = {tid: utils.buzzer_link(public_url, token) for tid, token in tokens.items()}
+    return jsonify(public_url=public_url, links=links)
+
+
+@api_bp.route("/buzzers/links/<tid>", methods=["POST"])
+def rotate_buzzer_link(tid: str):
+    """Replace a team's link, e.g. after it leaked to another team."""
+    try:
+        token = _controller().rotate_buzzer_token(tid)
+    except UnknownTeamError:
+        return jsonify(result="failure", error="Unknown team"), 400
+    # Tells other host windows to fetch the links again; no data, since the
+    # viewer gets this too.
+    app.socketio.emit("buzzer-links", {}, namespace=GAME_NS)
+    return jsonify(result="success", link=utils.buzzer_link(_buzzer_public_url(), token))
 
 
 # ---------------------------------------------------------------------------
