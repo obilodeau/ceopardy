@@ -122,6 +122,11 @@ class BuzzArbiter:
         with self._lock:
             self._players.pop(pid, None)
 
+    def players(self) -> list[tuple[str, str]]:
+        """(pid, tid) for every connected player."""
+        with self._lock:
+            return [(pid, p.tid) for pid, p in self._players.items()]
+
     def team_of(self, pid: str) -> str | None:
         with self._lock:
             player = self._players.get(pid)

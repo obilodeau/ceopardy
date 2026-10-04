@@ -17,12 +17,14 @@
 #
 import os
 
-from ceopardy import app, create_app, socketio
+from ceopardy import app, create_app, socketio, start_buzzer_server
 from ceopardy.config import config
 
 # Dev-only convenience: `make run` takes no arguments, so this is how you get
 # the equivalent of `ceopardy serve --online` while hacking.
 config["ONLINE_MODE"] = os.environ.get("CEOPARDY_ONLINE", "") not in ("", "0")
+# In dev the buzzer page comes from Vite: http://localhost:5173/buzzer.html
+config["BUZZER_PUBLIC_URL"] = os.environ.get("CEOPARDY_BUZZER_URL", "")
 
 create_app()
 
@@ -34,6 +36,9 @@ if __name__ == "__main__":
     #          Game host interface would be exposed.
     # allow_unsafe_werkzeug: Flask-SocketIO refuses Werkzeug otherwise. See
     # the same opt-in (and rationale) in ceopardy/__main__.py:_cmd_serve.
+    # Only in the reloader's child, the process that actually serves.
+    if config["ONLINE_MODE"] and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        start_buzzer_server()
     socketio.run(
         app,
         host="127.0.0.1",
