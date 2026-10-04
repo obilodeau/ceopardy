@@ -18,8 +18,13 @@ This is the host interface, how you control the game:
 
 Note that there are two drawers that can be opened by clicking on the brown
 arrows at the top and at the bottom of the screen. The top drawer contains
-the functions to change team names. The bottom drawer provides functions to
-display a custom message on the board or to pause a game.
+the functions to change team names and, online, to hand out buzzer links. The
+bottom drawer provides functions to display a custom message on the board or
+to pause a game.
+
+Teams buzz in with keys `1`, `2`, `3`... (USB buzzers that type a digit), or
+from a web page in online mode. A team marked *Bad* can't buzz again on that
+clue and its panel turns red; move its slider back to undo.
 
 
 ## Architecture
@@ -34,6 +39,10 @@ Starting with v0.5, Ceopardy is split in two parts:
 Ceopardy is designed for single-operator local-network use: the server binds
 to `127.0.0.1` and there is no authentication on the host UI. If you need to
 expose it on a LAN, put your own reverse proxy (and auth) in front.
+
+The one exception is the players' buzzer port, `5001`, in online mode. It is a
+separate server that serves only the buzzer page and is meant to be reachable
+from the internet; see [Remote buzzers](#remote-buzzers).
 
 
 ## Running Ceopardy (operators)
@@ -57,7 +66,7 @@ Then scaffold a per-game directory and start the server:
     # edit data/Questions.cp and data/1st.round to set up your game
     ceopardy serve              # starts the server on http://127.0.0.1:5000/
     ceopardy serve --debug      # add verbose logging + auto-reload
-    ceopardy serve --online     # play the sounds on the viewer, not the host
+    ceopardy serve --online     # sounds on the viewer, web buzzers for players
 
 Open the two URLs `ceopardy serve` prints:
 
@@ -76,6 +85,31 @@ The viewer then shows a "Click to enable sound" screen once — browsers do
 not let a page play audio until someone has clicked in it. Click it while
 you set up the screen share and it won't come back. Remember to share the
 tab *with audio* so your audience actually hears it.
+
+### Remote buzzers
+
+Online, players buzz from a web page. Each team gets a secret link, any number
+of players can share it, and the server judges who was first, correcting for
+each player's network latency. Ceopardy opens the tunnel to players itself,
+through ngrok:
+
+1. Once: create a free account on [ngrok](https://ngrok.com) and put your
+   [authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) in your
+   shell profile, `export NGROK_AUTHTOKEN=...` (or run
+   `ngrok config add-authtoken` if you have the ngrok agent). Optionally set
+   `NGROK_DOMAIN` to the free static domain from your ngrok dashboard, so the
+   links keep working across a restart.
+2. `ceopardy serve --online`. The banner shows the buzzer URL.
+3. On the host, open the top drawer and click the copy icon next to each team.
+   Send each link **only to that team**: anyone with it plays as that team.
+   The key icon replaces a leaked link; the person icon counts who has joined.
+
+Players click through ngrok's "You are about to visit" page once.
+
+To use another tunnel (Cloudflare Tunnel, Tailscale Funnel...), point it at
+`http://127.0.0.1:5001` and pass its address with `--buzzer-url`;
+`--no-tunnel` keeps the links local. **Never tunnel port 5000**: it is the
+host's interface.
 
 `ceopardy init` never overwrites existing files; it's safe to re-run. The
 SQLite database, round files, and uploaded media all resolve relative to the
@@ -103,6 +137,14 @@ You need Python 3.11+, pip, virtualenv, and Node.js (LTS).
 Then open <http://localhost:5173/> — Vite hot-reloads the UI and proxies
 `/api` and `/socket.io` to Flask on `:5000`. **In dev, always use the Vite
 URL** (`:5173`); the Flask port serves the *built* SPA which gets stale.
+
+For the web buzzers, build the team links on Vite too:
+
+    CEOPARDY_ONLINE=1 CEOPARDY_BUZZER_URL=http://localhost:5173/buzzer.html make run
+
+`CEOPARDY_TUNNEL=1` (without `CEOPARDY_BUZZER_URL`) opens a real ngrok
+tunnel to `:5001`, which serves the *built* buzzer page. Never tunnel `:5173`:
+Vite proxies `/api` to the host.
 
 ### Optional: dev container
 
