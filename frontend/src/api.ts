@@ -70,6 +70,12 @@ export const api = {
     request<ApiOk>("/team/select", { method: "POST", body: { tid } }),
   roulette: () => request<ApiOk>("/team/roulette", { method: "POST" }),
 
+  setBuzzers: (action: "open" | "close") =>
+    request<ApiOk>("/buzzers", { method: "POST", body: { action } }),
+  // A keyboard buzzer press. The server decides whether it counts.
+  buzz: (tid: string) =>
+    request<ApiOk>("/buzz", { method: "POST", body: { tid } }),
+
   setWager: (amount: number) =>
     request<ApiOk>("/dailydouble/wager", {
       method: "POST",

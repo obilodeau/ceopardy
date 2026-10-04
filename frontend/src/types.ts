@@ -35,6 +35,7 @@ export interface UiState {
   message: string;
   "message-text": string;
   thinking: string;
+  buzzers: "" | "open";
   "overlay-big": string;
   "overlay-small": string;
   "overlay-question": string;
@@ -127,6 +128,10 @@ export interface TeamRouletteEvent {
 
 export interface TeamNamesEvent {
   names: Record<string, string>;
+}
+
+export interface BuzzersEvent {
+  open: boolean;
 }
 
 export interface OverlayBigEvent {

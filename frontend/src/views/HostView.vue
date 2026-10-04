@@ -45,28 +45,20 @@ watch(
 );
 
 // ---- Buzzer handling ----
-const buzzersLocked = ref(true);
+// The server owns the lock: it opens on question select, closes on a buzz or
+// a deselect, and awards the buzz (team select + sound) itself.
 function toggleBuzzers(): void {
-  buzzersLocked.value = !buzzersLocked.value;
-}
-function lockBuzzers(): void {
-  buzzersLocked.value = true;
-}
-function unlockBuzzers(): void {
-  buzzersLocked.value = false;
+  api.setBuzzers(game.buzzersOpen ? "close" : "open");
 }
 
 // Keyboard events from the emulated-keyboard buzzers.
 function onKeyPress(e: KeyboardEvent): void {
-  if (buzzersLocked.value) return;
+  if (!game.buzzersOpen) return;
   // Only numeric keys 1..N.
   const num = parseInt(e.key, 10);
   if (!Number.isInteger(num)) return;
   if (num < 1 || num > game.teams.length) return;
-  const tid = `team${num}`;
-  api.selectTeam(tid);
-  api.sound(`buzzer${num}`);
-  lockBuzzers();
+  api.buzz(`team${num}`);
 }
 
 onMounted(() => {
@@ -77,18 +69,13 @@ onMounted(() => {
 async function onSelectQuestion(qid: string): Promise<void> {
   if (game.activeQuestionId === qid) {
     await api.deselectQuestion();
-    lockBuzzers();
     return;
   }
   const data = await api.selectQuestion(qid);
   if (data?.dailydouble) {
     if (data.dailydouble_range) game.dailydouble_range = data.dailydouble_range;
     if (data.team) game.ui_state.team = data.team;
-    // No buzzer race in a Daily Double — only the controlling team plays.
-    lockBuzzers();
     api.sound("dailydouble");
-  } else {
-    unlockBuzzers();
   }
 }
 
@@ -99,7 +86,6 @@ async function submitAnswers(): Promise<void> {
   const res = await api.submitAnswer(payload);
   if (res?.result === "success") {
     await api.deselectQuestion();
-    lockBuzzers();
   }
 }
 
@@ -133,7 +119,7 @@ watch(
   (val) => {
     for (const t of game.teams) {
       if (val[t.tid] === -1) {
-        unlockBuzzers();
+        api.setBuzzers("open");
         break;
       }
     }
@@ -171,7 +157,7 @@ async function onRevealDailyDouble(): Promise<void> {
 
     <div class="container-bottom container-all container-light">
       <HostControls
-        :buzzers-locked="buzzersLocked"
+        :buzzers-locked="!game.buzzersOpen"
         @roulette="onRoulette"
         @timeout="playTimeout"
         @thinking="toggleThinking"

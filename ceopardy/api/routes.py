@@ -25,6 +25,7 @@ namespace for broadcast events.
 """
 
 import random
+import threading
 
 from flask import Blueprint, jsonify, request
 from flask import current_app as app
@@ -176,6 +177,25 @@ def _broadcast_state():
     """Push a full state refresh on the /game namespace."""
     payload = _full_state_payload()
     app.socketio.emit("state", payload, namespace=GAME_NS)
+
+
+def _set_buzzers(is_open: bool) -> None:
+    _controller().set_state("buzzers", "open" if is_open else "")
+    app.socketio.emit("buzzers", {"open": is_open}, namespace=GAME_NS)
+
+
+# Two buzzes landing together must not both see the buzzers open.
+_buzz_lock = threading.Lock()
+
+
+def _award_buzz(tid: str) -> None:
+    """The one place a buzz takes effect: select the team, close, sound."""
+    _controller().set_state("team", tid)
+    _set_buzzers(False)
+    app.socketio.emit("team-select", {"tid": tid}, namespace=GAME_NS)
+    sound = "buzzer{}".format(tid.removeprefix("team"))
+    if sound in utils.SOUND_NAMES:
+        app.socketio.emit("sound", {"name": sound, "action": "play"}, namespace=GAME_NS)
 
 
 def _broadcast_board_update():
@@ -379,6 +399,8 @@ def question_select():
 
         controller.set_state("question", qid)
         controller.set_state("dailydouble", "enabled")
+        # No buzzer race in a Daily Double: only the controlling team plays.
+        _set_buzzers(False)
 
         # Hide any previous question overlay, show the daily-double animation.
         app.socketio.emit("question-hide", {}, namespace=GAME_NS)
@@ -402,6 +424,7 @@ def question_select():
 
     controller.set_state("question", qid)
     controller.end_dailydouble()
+    _set_buzzers(True)
     app.socketio.emit(
         "question-show",
         {
@@ -472,6 +495,7 @@ def question_deselect():
     controller = _controller()
     controller.set_state("question", "")
     controller.end_dailydouble()
+    _set_buzzers(False)
     app.socketio.emit("question-hide", {}, namespace=GAME_NS)
     _broadcast_board_update()
     return jsonify(result="success")
@@ -515,6 +539,36 @@ def submit_answer():
     app.socketio.emit("team-select", {"tid": ctl_team or None}, namespace=GAME_NS)
     _broadcast_board_update()
     return jsonify(result="success", ctl_team=ctl_team)
+
+
+# ---------------------------------------------------------------------------
+# Buzzers
+# ---------------------------------------------------------------------------
+@api_bp.route("/buzzers", methods=["POST"])
+def buzzers():
+    """Open or close the buzzers."""
+    data = request.get_json(force=True, silent=True) or {}
+    action = data.get("action")
+    if action not in ("open", "close"):
+        return jsonify(result="failure", error="Unknown action"), 400
+    with _buzz_lock:
+        _set_buzzers(action == "open")
+    return jsonify(result="success")
+
+
+@api_bp.route("/buzz", methods=["POST"])
+def buzz():
+    """A buzzer press from the host's keyboard."""
+    controller = _controller()
+    data = request.get_json(force=True, silent=True) or {}
+    tid = data.get("tid")
+    if tid not in controller.get_teams_for_form():
+        return jsonify(result="failure", error="Unknown team"), 400
+    with _buzz_lock:
+        if controller.get_state("buzzers") != "open":
+            return jsonify(result="ignored")
+        _award_buzz(tid)
+    return jsonify(result="success", tid=tid)
 
 
 # ---------------------------------------------------------------------------

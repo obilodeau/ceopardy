@@ -9,6 +9,7 @@ import type {
   ActiveQuestion,
   AppConfig,
   BoardUpdateEvent,
+  BuzzersEvent,
   DailyDoubleEvent,
   DailyDoubleRangeEvent,
   DailyDoubleRevealEvent,
@@ -77,6 +78,7 @@ export const useGameStore = defineStore("game", {
       message: "",
       "message-text": "",
       thinking: "",
+      buzzers: "",
       "overlay-big": "",
       "overlay-small": "",
       "overlay-question": "",
@@ -125,6 +127,7 @@ export const useGameStore = defineStore("game", {
     // Waiting music is the only sound with duration, so the server keeps
     // its on/off state and clients joining mid-break pick it up.
     isThinking: (s): boolean => !!s.ui_state.thinking,
+    buzzersOpen: (s): boolean => s.ui_state.buzzers === "open",
     questionAnswered:
       (s) =>
       (qid: string): boolean =>
@@ -226,6 +229,10 @@ export const useGameStore = defineStore("game", {
 
       s.on("team-select", (data: TeamSelectEvent) => {
         this.ui_state.team = data.tid ?? "";
+      });
+
+      s.on("buzzers", (data: BuzzersEvent) => {
+        this.ui_state.buzzers = data.open ? "open" : "";
       });
 
       s.on("team-roulette", (data: TeamRouletteEvent) => {
