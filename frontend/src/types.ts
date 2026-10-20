@@ -35,6 +35,9 @@ export interface UiState {
   message: string;
   "message-text": string;
   thinking: string;
+  buzzers: "" | "open";
+  // Comma-separated tids marked wrong on this clue, who can't buzz again.
+  "locked-out": string;
   "overlay-big": string;
   "overlay-small": string;
   "overlay-question": string;
@@ -129,6 +132,26 @@ export interface TeamNamesEvent {
   names: Record<string, string>;
 }
 
+// Players connected per team on the web buzzers.
+export type BuzzerPresence = Record<string, number>;
+
+export interface BuzzResultEntry {
+  tid: string;
+  reaction_ms: number;
+  suspicious: boolean;
+}
+
+// The numbers behind a web buzzer race, fastest first.
+export interface BuzzResultEvent {
+  winner: string;
+  entries: BuzzResultEntry[];
+}
+
+export interface BuzzersEvent {
+  open: boolean;
+  locked_out: string[];
+}
+
 export interface OverlayBigEvent {
   html?: string;
   id?: string;
@@ -167,6 +190,13 @@ export interface SelectQuestionResponse {
 export interface InitPayload {
   action: "new" | string;
   [key: string]: unknown;
+}
+
+export interface BuzzerLinksResponse {
+  public_url: string;
+  tunnel: "ngrok" | "manual" | "none";
+  links: Record<string, string>;
+  presence: BuzzerPresence;
 }
 
 export interface ApiOk {

@@ -9,6 +9,10 @@ import { fileURLToPath, URL } from 'node:url'
 //
 // In production, `npm run build` emits to ../ceopardy/static/dist which Flask
 // serves out of the package's static folder (and ships in the wheel).
+//
+// buzzer.html is a second entry: the players' page, served from the buzzer
+// port. The manifest tells that server exactly which files the page loads,
+// and it serves nothing else.
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -33,6 +37,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
+      '/buzz-io': {
+        target: 'http://127.0.0.1:5001',
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
   build: {
@@ -40,5 +49,12 @@ export default defineConfig({
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: true,
+    manifest: true,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        buzzer: fileURLToPath(new URL('./buzzer.html', import.meta.url)),
+      },
+    },
   },
 })
