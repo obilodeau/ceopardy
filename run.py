@@ -38,10 +38,9 @@ if __name__ == "__main__":
     # the same opt-in (and rationale) in ceopardy/__main__.py:_cmd_serve.
     # Only in the reloader's child, the process that actually serves.
     if config["ONLINE_MODE"] and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        # A dev machine opens a tunnel only when asked to.
         status = tunnel.setup(
             config,
-            no_tunnel=os.environ.get("CEOPARDY_TUNNEL", "") in ("", "0"),
+            no_tunnel=os.environ.get("CEOPARDY_TUNNEL") == "0",
             domain=os.environ.get("NGROK_DOMAIN", ""),
             env=os.environ,
         )

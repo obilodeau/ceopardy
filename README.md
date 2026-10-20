@@ -142,9 +142,10 @@ For the web buzzers, build the team links on Vite too:
 
     CEOPARDY_ONLINE=1 CEOPARDY_BUZZER_URL=http://localhost:5173/buzzer.html make run
 
-`CEOPARDY_TUNNEL=1` (without `CEOPARDY_BUZZER_URL`) opens a real ngrok
-tunnel to `:5001`, which serves the *built* buzzer page. Never tunnel `:5173`:
-Vite proxies `/api` to the host.
+As with `ceopardy serve`, an ngrok authtoken in the environment opens a real
+tunnel to `:5001`, which serves the *built* buzzer page, unless
+`CEOPARDY_BUZZER_URL` is set. `CEOPARDY_TUNNEL=0` keeps the links local. Never
+tunnel `:5173`: Vite proxies `/api` to the host.
 
 ### Optional: dev container
 
