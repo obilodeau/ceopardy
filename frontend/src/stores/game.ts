@@ -9,6 +9,9 @@ import type {
   ActiveQuestion,
   AppConfig,
   BoardUpdateEvent,
+  BuzzerPresence,
+  BuzzersEvent,
+  BuzzResultEvent,
   DailyDoubleEvent,
   DailyDoubleRangeEvent,
   DailyDoubleRevealEvent,
@@ -54,6 +57,11 @@ interface GameStoreState {
   // viewer trigger the flip animation without watching for state changes
   // that might bounce during reconnects.
   dailydoubleTrigger: number;
+  buzzerPresence: BuzzerPresence;
+  // The last web buzzer race, shown to the host until the next clue.
+  lastBuzz: BuzzResultEvent | null;
+  // Bumped when a team's link is replaced, so drawers fetch them again.
+  buzzerLinksVersion: number;
   socket: Socket | null;
   rouletteTarget: string | null;
   // Set by HostView on mount. Host skips the roulette animation and jumps
@@ -77,6 +85,8 @@ export const useGameStore = defineStore("game", {
       message: "",
       "message-text": "",
       thinking: "",
+      buzzers: "",
+      "locked-out": "",
       "overlay-big": "",
       "overlay-small": "",
       "overlay-question": "",
@@ -91,6 +101,9 @@ export const useGameStore = defineStore("game", {
     // outside DD or before the operator has set anything.
     dailydouble_wager: null,
     dailydoubleTrigger: 0,
+    buzzerPresence: {},
+    lastBuzz: null,
+    buzzerLinksVersion: 0,
     socket: null,
     rouletteTarget: null,
     isHost: false,
@@ -125,6 +138,9 @@ export const useGameStore = defineStore("game", {
     // Waiting music is the only sound with duration, so the server keeps
     // its on/off state and clients joining mid-break pick it up.
     isThinking: (s): boolean => !!s.ui_state.thinking,
+    buzzersOpen: (s): boolean => s.ui_state.buzzers === "open",
+    lockedOut: (s): string[] =>
+      (s.ui_state["locked-out"] || "").split(",").filter(Boolean),
     questionAnswered:
       (s) =>
       (qid: string): boolean =>
@@ -171,6 +187,7 @@ export const useGameStore = defineStore("game", {
       s.on("state", (data: ServerState) => this.applyServerState(data));
 
       s.on("question-show", (data: QuestionShowEvent) => {
+        this.lastBuzz = null;
         this.active_question = {
           text: data.text,
           category: data.category,
@@ -181,6 +198,7 @@ export const useGameStore = defineStore("game", {
       });
 
       s.on("question-hide", () => {
+        this.lastBuzz = null;
         this.active_question = {};
         this.ui_state.question = "";
         this.ui_state.dailydouble = "";
@@ -226,6 +244,23 @@ export const useGameStore = defineStore("game", {
 
       s.on("team-select", (data: TeamSelectEvent) => {
         this.ui_state.team = data.tid ?? "";
+      });
+
+      s.on("buzzers", (data: BuzzersEvent) => {
+        this.ui_state.buzzers = data.open ? "open" : "";
+        this.ui_state["locked-out"] = data.locked_out.join(",");
+      });
+
+      s.on("buzz-result", (data: BuzzResultEvent) => {
+        this.lastBuzz = data;
+      });
+
+      s.on("buzzer-presence", (data: BuzzerPresence) => {
+        this.buzzerPresence = data;
+      });
+
+      s.on("buzzer-links", () => {
+        this.buzzerLinksVersion += 1;
       });
 
       s.on("team-roulette", (data: TeamRouletteEvent) => {

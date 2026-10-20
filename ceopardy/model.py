@@ -140,6 +140,25 @@ class Category:
         self.column = column
 
 
+class BuzzerLink(db.Model):
+    """
+    The secret in a team's buzzer link. A table of its own rather than a
+    column on Team: create_all() adds missing tables to an existing database
+    but never alters one.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    tid = db.Column(db.String(7), unique=True)
+    token = db.Column(db.String(64))
+
+    def __init__(self, tid, token):
+        self.tid = tid
+        self.token = token
+
+    def __repr__(self):
+        return "<BuzzerLink for {}>".format(self.tid)
+
+
 class State(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(10), unique=True)

@@ -29,6 +29,8 @@ def _cmd_serve(args):
     # Must be set before create_app() so the first /api/v1/state a client
     # fetches already advertises the mode.
     config["ONLINE_MODE"] = getattr(args, "online", False)
+    config["BUZZER_PORT"] = getattr(args, "buzzer_port", None) or config["BUZZER_PORT"]
+    config["BUZZER_PUBLIC_URL"] = getattr(args, "buzzer_url", None) or ""
 
     # WARNING: This app is not ready to be exposed on the network.
     #          Game host interface would be exposed.
@@ -40,12 +42,41 @@ def _cmd_serve(args):
     print(f"  Host:   http://localhost:{port}/host")
     if config["ONLINE_MODE"]:
         print("  Online: ON (sounds play on the viewer, not the host)")
+        if serving_process(debug):
+            _start_buzzers(args)
     if debug:
         print("  Debug:  ON (verbose logging + auto-reload)")
     # Werkzeug is the only WSGI server we use here. Flask-SocketIO refuses it
     # by default; we opt in because Ceopardy is meant for single-operator
     # local use (binds to 127.0.0.1, see README on exposing via nginx).
     socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)
+
+
+def serving_process(debug: bool) -> bool:
+    """
+    False in the parent process of Werkzeug's reloader, which only watches
+    files: starting the buzzer server there would take its port from the
+    child that actually serves.
+    """
+    return not debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+
+
+def _start_buzzers(args: argparse.Namespace) -> None:
+    from ceopardy import start_buzzer_server, tunnel
+    from ceopardy.config import config
+
+    status = tunnel.setup(
+        config,
+        no_tunnel=getattr(args, "no_tunnel", False),
+        domain=getattr(args, "tunnel_domain", None) or os.environ.get("NGROK_DOMAIN", ""),
+        env=os.environ,
+    )
+    port = config["BUZZER_PORT"]
+    try:
+        start_buzzer_server()
+    except OSError as e:
+        sys.exit(f"Cannot serve the buzzers on port {port}: {e}. Try --buzzer-port.")
+    print(f"  Buzzers: {status}")
 
 
 def _walk(traversable, prefix=""):
@@ -106,7 +137,29 @@ def main(argv=None):
     serve.add_argument(
         "--online",
         action="store_true",
-        help="Online mode: play sounds on the viewer instead of the host.",
+        help="Online mode: play sounds on the viewer instead of the host, and "
+        "serve web buzzers to remote players.",
+    )
+    serve.add_argument(
+        "--buzzer-port",
+        type=int,
+        help="Port for the players' buzzer pages (default: 5001).",
+    )
+    serve.add_argument(
+        "--buzzer-url",
+        help="Public URL that tunnels to the buzzer port, e.g. a Cloudflare or "
+        "Tailscale address. Team links are built on it, and no ngrok tunnel is "
+        "opened.",
+    )
+    serve.add_argument(
+        "--no-tunnel",
+        action="store_true",
+        help="Don't open an ngrok tunnel to the buzzer port, even with an authtoken set.",
+    )
+    serve.add_argument(
+        "--tunnel-domain",
+        help="ngrok domain to use (default: $NGROK_DOMAIN). With a fixed "
+        "domain, team links survive a restart.",
     )
     sub.add_parser(
         "init",

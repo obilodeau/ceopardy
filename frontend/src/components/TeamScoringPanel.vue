@@ -23,6 +23,9 @@ const tid = computed(() => props.team.tid);
 const dailydouble = computed(() => game.isDailyDouble);
 
 const teamSelected = computed(() => game.selectedTeam === tid.value);
+const lockedOut = computed(
+  () => !dailydouble.value && game.lockedOut.includes(tid.value),
+);
 
 const disabled = computed(
   () => dailydouble.value && game.selectedTeam !== tid.value,
@@ -81,6 +84,7 @@ const teamFontClass = `team${props.idx + 1}-font`;
       class="black-box flex-small-pad"
       :class="{
         'team-selected': teamSelected,
+        'team-locked-out': lockedOut,
       }"
       style="width: 100%; margin: auto"
     >

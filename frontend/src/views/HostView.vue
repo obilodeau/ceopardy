@@ -19,9 +19,12 @@ const game = useGameStore();
 // Local form state for the per-team answer sliders.
 const answers = ref<AnswerMap>({});
 
+// Teams the server already has locked out start on "Bad", so a host reload
+// mid-clue keeps the sliders and the lock-out in agreement.
 function resetAnswers(): void {
   const next: AnswerMap = {};
-  for (const t of game.teams) next[t.tid] = 0;
+  for (const t of game.teams)
+    next[t.tid] = game.lockedOut.includes(t.tid) ? -1 : 0;
   answers.value = next;
 }
 
@@ -45,28 +48,20 @@ watch(
 );
 
 // ---- Buzzer handling ----
-const buzzersLocked = ref(true);
+// The server owns the lock: it opens on question select, closes on a buzz or
+// a deselect, and awards the buzz (team select + sound) itself.
 function toggleBuzzers(): void {
-  buzzersLocked.value = !buzzersLocked.value;
-}
-function lockBuzzers(): void {
-  buzzersLocked.value = true;
-}
-function unlockBuzzers(): void {
-  buzzersLocked.value = false;
+  api.setBuzzers(game.buzzersOpen ? "close" : "open");
 }
 
 // Keyboard events from the emulated-keyboard buzzers.
 function onKeyPress(e: KeyboardEvent): void {
-  if (buzzersLocked.value) return;
+  if (!game.buzzersOpen) return;
   // Only numeric keys 1..N.
   const num = parseInt(e.key, 10);
   if (!Number.isInteger(num)) return;
   if (num < 1 || num > game.teams.length) return;
-  const tid = `team${num}`;
-  api.selectTeam(tid);
-  api.sound(`buzzer${num}`);
-  lockBuzzers();
+  api.buzz(`team${num}`);
 }
 
 onMounted(() => {
@@ -77,18 +72,13 @@ onMounted(() => {
 async function onSelectQuestion(qid: string): Promise<void> {
   if (game.activeQuestionId === qid) {
     await api.deselectQuestion();
-    lockBuzzers();
     return;
   }
   const data = await api.selectQuestion(qid);
   if (data?.dailydouble) {
     if (data.dailydouble_range) game.dailydouble_range = data.dailydouble_range;
     if (data.team) game.ui_state.team = data.team;
-    // No buzzer race in a Daily Double — only the controlling team plays.
-    lockBuzzers();
     api.sound("dailydouble");
-  } else {
-    unlockBuzzers();
   }
 }
 
@@ -99,7 +89,6 @@ async function submitAnswers(): Promise<void> {
   const res = await api.submitAnswer(payload);
   if (res?.result === "success") {
     await api.deselectQuestion();
-    lockBuzzers();
   }
 }
 
@@ -126,19 +115,21 @@ function toggleThinking(): void {
   api.sound("thinking", game.isThinking ? "stop" : "play");
 }
 
-// Automatically unlock buzzers if any team is marked "Bad" so it can buzz in
-// again.
+// A team marked "Bad" is locked out for the rest of the clue. Marking one
+// re-opens the buzzers for the others; un-marking one (the host correcting a
+// slider) only lifts its lock-out.
 watch(
-  answers,
-  (val) => {
-    for (const t of game.teams) {
-      if (val[t.tid] === -1) {
-        unlockBuzzers();
-        break;
-      }
-    }
+  () =>
+    game.teams
+      .filter((t) => answers.value[t.tid] === -1)
+      .map((t) => t.tid)
+      .join(","),
+  (now, before) => {
+    if (now === game.lockedOut.join(",")) return;
+    const wrong = now.split(",").filter(Boolean);
+    const joined = wrong.some((tid) => !before.split(",").includes(tid));
+    api.setBuzzers(joined ? "open" : undefined, wrong);
   },
-  { deep: true },
 );
 
 const activeHtml = computed(() => {
@@ -146,6 +137,22 @@ const activeHtml = computed(() => {
     return "<p>Daily Double!<br/>Please input user bet.</p>";
   }
   return game.active_question?.text ?? "";
+});
+
+// "Team 2 212 ms · Team 1 +48 ms" after a web buzzer race, for settling
+// disputes. Reactions under the human floor are flagged.
+const buzzResult = computed(() => {
+  const entries = game.lastBuzz?.entries ?? [];
+  const fastest = entries[0]?.reaction_ms ?? 0;
+  return entries.map((e, i) => ({
+    tid: e.tid,
+    text:
+      `${game.teamByTid(e.tid)?.name ?? e.tid} ` +
+      (i === 0
+        ? `${Math.round(e.reaction_ms)} ms`
+        : `+${Math.round(e.reaction_ms - fastest)} ms`),
+    suspicious: e.suspicious,
+  }));
 });
 
 const canRevealDailyDouble = computed(
@@ -171,7 +178,7 @@ async function onRevealDailyDouble(): Promise<void> {
 
     <div class="container-bottom container-all container-light">
       <HostControls
-        :buzzers-locked="buzzersLocked"
+        :buzzers-locked="!game.buzzersOpen"
         @roulette="onRoulette"
         @timeout="playTimeout"
         @thinking="toggleThinking"
@@ -195,6 +202,16 @@ async function onRevealDailyDouble(): Promise<void> {
         <div class="black-box flex-small-pad">
           <div class="box-fake-overlay">
             <div class="box-ceopardy box-question-host" v-html="activeHtml" />
+            <div v-if="buzzResult.length" class="buzz-result">
+              <span v-for="e in buzzResult" :key="e.tid">
+                {{ e.text }}
+                <i
+                  v-if="e.suspicious"
+                  class="fa-solid fa-triangle-exclamation"
+                  title="Faster than a human reaction: possibly automated"
+                />
+              </span>
+            </div>
             <button
               v-if="canRevealDailyDouble"
               type="button"

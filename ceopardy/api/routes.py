@@ -25,12 +25,14 @@ namespace for broadcast events.
 """
 
 import random
+import threading
 
 from flask import Blueprint, jsonify, request
 from flask import current_app as app
 from sqlalchemy.exc import NoResultFound
 
 from ceopardy import utils
+from ceopardy.buzzer import Decision, result_payload
 from ceopardy.config import config
 from ceopardy.exceptions import (
     GamefileParsingError,
@@ -51,6 +53,10 @@ GAME_NS = "/game"
 # ---------------------------------------------------------------------------
 def _controller():
     return app.controller
+
+
+def _buzzer_public_url() -> str:
+    return config["BUZZER_PUBLIC_URL"] or "http://127.0.0.1:{}/".format(config["BUZZER_PORT"])
 
 
 def _public_config():
@@ -178,6 +184,53 @@ def _broadcast_state():
     app.socketio.emit("state", payload, namespace=GAME_NS)
 
 
+def _locked_out() -> list[str]:
+    return utils.split_locked_out(_controller().get_state("locked-out"))
+
+
+def _set_buzzers(
+    is_open: bool, locked_out: list[str] | None = None, winner: str | None = None
+) -> None:
+    """Open or close the buzzers; `locked_out` replaces the lock-out list."""
+    controller = _controller()
+    if locked_out is not None:
+        controller.set_state("locked-out", ",".join(locked_out))
+    else:
+        locked_out = _locked_out()
+    # Nobody left to race when every team has already answered wrong.
+    if len(locked_out) >= controller.get_nb_teams():
+        is_open = False
+    controller.set_state("buzzers", "open" if is_open else "")
+    app.socketio.emit("buzzers", {"open": is_open, "locked_out": locked_out}, namespace=GAME_NS)
+    if app.buzzer is not None:
+        app.buzzer.set_open(is_open, locked_out, winner)
+
+
+# Two buzzes landing together must not both see the buzzers open.
+_buzz_lock = threading.Lock()
+
+
+def _award_buzz(tid: str, result: dict | None = None) -> None:
+    """The one place a buzz takes effect: select the team, close, sound."""
+    _controller().set_state("team", tid)
+    _set_buzzers(False, winner=tid)
+    app.socketio.emit("team-select", {"tid": tid}, namespace=GAME_NS)
+    sound = "buzzer{}".format(tid.removeprefix("team"))
+    if sound in utils.SOUND_NAMES:
+        app.socketio.emit("sound", {"name": sound, "action": "play"}, namespace=GAME_NS)
+    if result is not None:
+        app.socketio.emit("buzz-result", result, namespace=GAME_NS)
+
+
+def award_race(decision: Decision) -> None:
+    """Called from the buzzer server once a web race is decided."""
+    with _buzz_lock:
+        # The host may have closed the buzzers while the race was being judged.
+        if _controller().get_state("buzzers") != "open":
+            return
+        _award_buzz(decision.winner, result_payload(decision))
+
+
 def _broadcast_board_update():
     """Push just the board + team scores without disturbing active overlays."""
     controller = _controller()
@@ -297,6 +350,8 @@ def update_teams():
         return jsonify(result="failure", error="Team names must be unique"), 400
 
     controller.update_teams(data)
+    if app.buzzer is not None:
+        app.buzzer.rename(data)
 
     app.socketio.emit("team-names", {"names": data}, namespace=GAME_NS)
     _broadcast_state()
@@ -379,6 +434,8 @@ def question_select():
 
         controller.set_state("question", qid)
         controller.set_state("dailydouble", "enabled")
+        # No buzzer race in a Daily Double: only the controlling team plays.
+        _set_buzzers(False, locked_out=[])
 
         # Hide any previous question overlay, show the daily-double animation.
         app.socketio.emit("question-hide", {}, namespace=GAME_NS)
@@ -402,6 +459,7 @@ def question_select():
 
     controller.set_state("question", qid)
     controller.end_dailydouble()
+    _set_buzzers(True, locked_out=[])
     app.socketio.emit(
         "question-show",
         {
@@ -472,6 +530,7 @@ def question_deselect():
     controller = _controller()
     controller.set_state("question", "")
     controller.end_dailydouble()
+    _set_buzzers(False, locked_out=[])
     app.socketio.emit("question-hide", {}, namespace=GAME_NS)
     _broadcast_board_update()
     return jsonify(result="success")
@@ -515,6 +574,85 @@ def submit_answer():
     app.socketio.emit("team-select", {"tid": ctl_team or None}, namespace=GAME_NS)
     _broadcast_board_update()
     return jsonify(result="success", ctl_team=ctl_team)
+
+
+# ---------------------------------------------------------------------------
+# Buzzers
+# ---------------------------------------------------------------------------
+@api_bp.route("/buzzers", methods=["POST"])
+def buzzers():
+    """
+    Open or close the buzzers, and/or replace the list of teams locked out
+    of this clue (the ones the host marked wrong).
+
+    Either key may be left out: no `action` keeps the buzzers as they are.
+    """
+    controller = _controller()
+    data = request.get_json(force=True, silent=True) or {}
+    action = data.get("action")
+    if action not in (None, "open", "close"):
+        return jsonify(result="failure", error="Unknown action"), 400
+    locked_out = None
+    if "locked_out" in data:
+        try:
+            locked_out = utils.parse_locked_out(data["locked_out"], controller.get_teams_for_form())
+        except GameProblem as e:
+            return jsonify(result="failure", error=str(e)), 400
+    with _buzz_lock:
+        is_open = controller.get_state("buzzers") == "open" if action is None else action == "open"
+        _set_buzzers(is_open, locked_out)
+    return jsonify(result="success")
+
+
+@api_bp.route("/buzz", methods=["POST"])
+def buzz():
+    """A buzzer press from the host's keyboard."""
+    controller = _controller()
+    data = request.get_json(force=True, silent=True) or {}
+    tid = data.get("tid")
+    if tid not in controller.get_teams_for_form():
+        return jsonify(result="failure", error="Unknown team"), 400
+    with _buzz_lock:
+        if controller.get_state("buzzers") != "open" or tid in _locked_out():
+            return jsonify(result="ignored")
+        # Online, keyboard buzzers race the web ones through the arbiter.
+        if app.buzzer is not None:
+            app.buzzer.buzz_local(tid)
+            return jsonify(result="pending")
+        _award_buzz(tid)
+    return jsonify(result="success", tid=tid)
+
+
+# Links carry the team's secret, so they are served here, on the host's port,
+# and never put in /api/v1/state or on /game: the viewer receives both, and
+# the viewer is the tab being screen-shared.
+@api_bp.route("/buzzers/links", methods=["GET"])
+def buzzer_links():
+    public_url = _buzzer_public_url()
+    tokens = _controller().get_buzzer_tokens()
+    links = {tid: utils.buzzer_link(public_url, token) for tid, token in tokens.items()}
+    presence = app.buzzer.presence(tokens) if app.buzzer is not None else {}
+    return jsonify(
+        public_url=public_url,
+        tunnel=config["BUZZER_TUNNEL"],
+        links=links,
+        presence=presence,
+    )
+
+
+@api_bp.route("/buzzers/links/<tid>", methods=["POST"])
+def rotate_buzzer_link(tid: str):
+    """Replace a team's link, e.g. after it leaked to another team."""
+    try:
+        token = _controller().rotate_buzzer_token(tid)
+    except UnknownTeamError:
+        return jsonify(result="failure", error="Unknown team"), 400
+    if app.buzzer is not None:
+        app.buzzer.revoke(tid)
+    # Tells other host windows to fetch the links again; no data, since the
+    # viewer gets this too.
+    app.socketio.emit("buzzer-links", {}, namespace=GAME_NS)
+    return jsonify(result="success", link=utils.buzzer_link(_buzzer_public_url(), token))
 
 
 # ---------------------------------------------------------------------------

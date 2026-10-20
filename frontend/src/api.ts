@@ -4,6 +4,7 @@
 
 import type {
   ApiOk,
+  BuzzerLinksResponse,
   InitPayload,
   SelectQuestionResponse,
   ServerState,
@@ -69,6 +70,22 @@ export const api = {
   selectTeam: (tid: string) =>
     request<ApiOk>("/team/select", { method: "POST", body: { tid } }),
   roulette: () => request<ApiOk>("/team/roulette", { method: "POST" }),
+
+  // Leave `action` out to keep the buzzers as they are and only replace the
+  // list of teams locked out of the clue.
+  setBuzzers: (action?: "open" | "close", lockedOut?: string[]) =>
+    request<ApiOk>("/buzzers", {
+      method: "POST",
+      body: { action, locked_out: lockedOut },
+    }),
+  buzzerLinks: () => request<BuzzerLinksResponse>("/buzzers/links"),
+  rotateBuzzerLink: (tid: string) =>
+    request<ApiOk>(`/buzzers/links/${encodeURIComponent(tid)}`, {
+      method: "POST",
+    }),
+  // A keyboard buzzer press. The server decides whether it counts.
+  buzz: (tid: string) =>
+    request<ApiOk>("/buzz", { method: "POST", body: { tid } }),
 
   setWager: (amount: number) =>
     request<ApiOk>("/dailydouble/wager", {

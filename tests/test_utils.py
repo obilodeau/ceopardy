@@ -22,15 +22,22 @@ These tests cover functions that have no Flask or database dependencies
 and can run without any app context.
 """
 
+import re
+
 import pytest
 
-from ceopardy.exceptions import InvalidQuestionId, SoundProblem
+from ceopardy.exceptions import GameProblem, InvalidQuestionId, SoundProblem
 from ceopardy.utils import (
     SOUND_FILES,
+    buzzer_link,
     filter_answer_form,
     list_sounds,
+    match_buzzer_token,
+    new_buzzer_token,
+    parse_locked_out,
     parse_question_id,
     question_to_html,
+    split_locked_out,
     validate_sound_request,
 )
 
@@ -179,3 +186,68 @@ def test_list_sounds_names_are_all_accepted_by_the_validator():
     # something the /api/v1/sound endpoint will accept back.
     for name in list_sounds():
         assert validate_sound_request(name, "play") == (name, "play")
+
+
+# ---------------------------------------------------------------------------
+# split_locked_out / parse_locked_out
+# ---------------------------------------------------------------------------
+TIDS = ["team1", "team2", "team3"]
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [("", []), ("team1", ["team1"]), ("team1,team3", ["team1", "team3"]), (",team2,", ["team2"])],
+)
+def test_split_locked_out(value, expected):
+    assert split_locked_out(value) == expected
+
+
+def test_parse_locked_out_keeps_order_and_drops_duplicates():
+    assert parse_locked_out(["team3", "team1", "team3"], TIDS) == ["team3", "team1"]
+
+
+def test_parse_locked_out_accepts_empty_list():
+    assert parse_locked_out([], TIDS) == []
+
+
+@pytest.mark.parametrize("value", [None, "team1", {"team1": True}, ["team4"], ["team1", None]])
+def test_parse_locked_out_rejects_bad_input(value):
+    with pytest.raises(GameProblem):
+        parse_locked_out(value, TIDS)
+
+
+# ---------------------------------------------------------------------------
+# buzzer links
+# ---------------------------------------------------------------------------
+def test_new_buzzer_token_is_long_url_safe_and_random():
+    tokens = {new_buzzer_token() for _ in range(100)}
+    assert len(tokens) == 100
+    for token in tokens:
+        assert len(token) >= 22  # 128 bits in base64
+        assert re.fullmatch(r"[A-Za-z0-9_-]+", token)
+
+
+TOKENS = {"team1": "aaaa", "team2": "bbbb"}
+
+
+def test_match_buzzer_token_finds_the_team():
+    assert match_buzzer_token("bbbb", TOKENS) == "team2"
+
+
+@pytest.mark.parametrize("token", ["", "aaa", "aaaab", "AAAA", None, 1234, ["aaaa"]])
+def test_match_buzzer_token_rejects_anything_else(token):
+    assert match_buzzer_token(token, TOKENS) is None
+
+
+@pytest.mark.parametrize(
+    "public_url,expected",
+    [
+        ("https://quiet-owl.ngrok-free.app", "https://quiet-owl.ngrok-free.app/#tok"),
+        ("https://quiet-owl.ngrok-free.app/", "https://quiet-owl.ngrok-free.app/#tok"),
+        ("http://127.0.0.1:5001/", "http://127.0.0.1:5001/#tok"),
+        ("http://localhost:5173/buzzer.html", "http://localhost:5173/buzzer.html#tok"),
+        ("https://example.com/#old", "https://example.com/#tok"),
+    ],
+)
+def test_buzzer_link_puts_the_token_in_the_fragment(public_url, expected):
+    assert buzzer_link(public_url, "tok") == expected

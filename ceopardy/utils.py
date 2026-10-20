@@ -16,13 +16,18 @@
 # GNU General Public License for more details.
 #
 import glob
+import hmac
 import html
 import os
 import re
+import secrets
+from collections.abc import Iterable, Mapping
+from urllib.parse import urlsplit, urlunsplit
 
 from ceopardy.config import config
 from ceopardy.exceptions import (
     GamefileParsingError,
+    GameProblem,
     InvalidQuestionId,
     QuestionParsingError,
     SoundProblem,
@@ -217,3 +222,52 @@ def validate_sound_request(name: object, action: object) -> tuple[str, str]:
     if action not in SOUND_ACTIONS:
         raise SoundProblem("Unknown sound action: {}".format(action))
     return (name, action)
+
+
+def split_locked_out(value: str) -> list[str]:
+    """The "locked-out" State row (comma-separated tids) as a list."""
+    return [tid for tid in value.split(",") if tid]
+
+
+def parse_locked_out(value: object, known_tids: Iterable[str]) -> list[str]:
+    """
+    Validate the list of teams the host has marked wrong on this clue.
+
+    Returns the tids in the order given, without duplicates; raises
+    GameProblem on anything that is not a list of known team ids.
+    """
+    if not isinstance(value, list):
+        raise GameProblem("locked_out must be a list of team ids")
+    known = set(known_tids)
+    result = []
+    for tid in value:
+        if tid not in known:
+            raise GameProblem("Unknown team: {}".format(tid))
+        if tid not in result:
+            result.append(tid)
+    return result
+
+
+def new_buzzer_token() -> str:
+    """128 random bits: the only thing standing between a team and its buzzer."""
+    return secrets.token_urlsafe(16)
+
+
+def match_buzzer_token(token: object, tokens: Mapping[str, str]) -> str | None:
+    """The tid whose token this is, compared in constant time; None if none."""
+    if not isinstance(token, str) or not token:
+        return None
+    found = None
+    for tid, candidate in tokens.items():
+        if hmac.compare_digest(token.encode(), candidate.encode()):
+            found = tid
+    return found
+
+
+def buzzer_link(public_url: str, token: str) -> str:
+    """
+    A team's link. The token goes in the fragment, which browsers never send
+    to the server, so it stays out of tunnel and server logs.
+    """
+    parts = urlsplit(public_url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", parts.query, token))

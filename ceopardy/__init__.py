@@ -73,7 +73,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 try:
     from flask_cors import CORS
 
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Never on the buzzer links: any page the host visits could read every
+    # team's secret.
+    CORS(app, resources={r"/api/(?!v1/buzzers/links).*": {"origins": "*"}})
 except ImportError:
     # flask-cors is optional; prod serves everything from the same origin.
     pass
@@ -171,6 +173,8 @@ def create_app():
         # import from here can still reach them.
         app.db = db
         app.socketio = socketio
+        # Set by start_buzzer_server() in online mode.
+        app.buzzer = None
 
         from ceopardy.controller import Controller
 
@@ -189,3 +193,31 @@ def create_app():
                 _ctl = None
 
     return app
+
+
+def start_buzzer_server():
+    """Serve the players' buzzer pages on BUZZER_PORT (online mode only)."""
+    from ceopardy.api import routes
+    from ceopardy.buzzer import FairnessSettings
+    from ceopardy.buzzer_server import BuzzerServer
+
+    # The buzzer server calls back from its own threads.
+    def in_app_context(fn):
+        def wrapped(*args):
+            with app.app_context():
+                return fn(*args)
+
+        return wrapped
+
+    server = BuzzerServer(
+        FairnessSettings.from_config(config),
+        tokens=in_app_context(app.controller.get_buzzer_tokens),
+        team_names=in_app_context(app.controller.get_teams_for_form),
+        on_decision=in_app_context(routes.award_race),
+        on_presence=lambda counts: socketio.emit("buzzer-presence", counts, namespace=GAME_NS),
+        public_url=config["BUZZER_PUBLIC_URL"],
+        max_players_per_team=config["BUZZER_MAX_PLAYERS_PER_TEAM"],
+    )
+    server.serve(config["BUZZER_PORT"], FRONTEND_DIST)
+    app.buzzer = server
+    return server
