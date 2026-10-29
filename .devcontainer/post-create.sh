@@ -19,6 +19,9 @@ npm --prefix frontend install
 echo "==> Installing Claude Code"
 npm install -g @anthropic-ai/claude-code
 
+echo "==> Installing OpenSpec"
+npm install -g @fission-ai/openspec
+
 # The Node feature adds a dl.yarnpkg.com source signed with a key yarn has
 # since rotated, so every apt-get update fails on NO_PUBKEY. Nothing here
 # uses yarn, so drop the source rather than work around the error.
