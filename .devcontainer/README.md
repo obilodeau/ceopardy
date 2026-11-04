@@ -1,7 +1,7 @@
 # Dev container
 
 Opens Ceopardy in a container with everything the dev workflow needs:
-Python 3.11, Node 20, the GitHub CLI, and Claude Code.
+Python 3.11, Node 20, the GitHub CLI, Claude Code, and OpenSpec.
 
 ## First run
 

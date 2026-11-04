@@ -1,4 +1,4 @@
-// Dev container for Ceopardy: Python 3.11 + Node 20 + gh CLI + Claude Code.
+// Dev container for Ceopardy: Python 3.11 + Node 20 + gh CLI + Claude Code + OpenSpec.
 // See .devcontainer/README.md for the GitHub token setup.
 {
   "name": "ceopardy",
