@@ -1,11 +1,5 @@
 # Spec Delta
 
-## Purpose
-
-Defines what the development container guarantees when it is created and every
-time it starts, so that state with a shorter lifetime than the container is
-restored by a restart rather than a rebuild.
-
 ## ADDED Requirements
 
 ### Requirement: Per-start setup runs on every start

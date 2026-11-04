@@ -26,13 +26,15 @@ settings.
 
 ### New Capabilities
 
-- `dev-container`: what the dev container guarantees on create and on every
-  start — a working virtualenv, Claude Code settings, git identity and GitHub
-  credentials, restored by a restart rather than a rebuild.
+None.
 
 ### Modified Capabilities
 
-None.
+- `dev-container`: adds what the container restores on every start (a
+  working virtualenv, Claude Code settings, git identity and GitHub
+  credentials), so a restart rather than a rebuild repairs them. Rewriting
+  Claude Code's settings on every start also shortens how long a tampered
+  settings file can live, from the next rebuild to the next start.
 
 ## Impact
 
