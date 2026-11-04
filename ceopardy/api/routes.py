@@ -26,9 +26,11 @@ namespace for broadcast events.
 
 import random
 import threading
+from urllib.parse import quote
 
 from flask import Blueprint, jsonify, request
 from flask import current_app as app
+from flask.typing import ResponseReturnValue
 from sqlalchemy.exc import NoResultFound
 
 from ceopardy import utils
@@ -229,6 +231,14 @@ def award_race(decision: Decision) -> None:
         if _controller().get_state("buzzers") != "open":
             return
         _award_buzz(decision.winner, result_payload(decision))
+
+
+def relay_soundboard(action: str, sound_id: str | None) -> None:
+    """Called from the buzzer server when a soundboard page plays or stops."""
+    payload = {"action": action}
+    if sound_id is not None:
+        payload["url"] = "/static/soundboard/" + quote(sound_id)
+    app.socketio.emit("soundboard", payload, namespace=GAME_NS)
 
 
 def _broadcast_board_update():
@@ -653,6 +663,29 @@ def rotate_buzzer_link(tid: str):
     # viewer gets this too.
     app.socketio.emit("buzzer-links", {}, namespace=GAME_NS)
     return jsonify(result="success", link=utils.buzzer_link(_buzzer_public_url(), token))
+
+
+# The same rule as the buzzer links: the host's port only, never the viewer.
+@api_bp.route("/soundboard/link", methods=["GET"])
+def soundboard_link() -> ResponseReturnValue:
+    if app.buzzer is None:
+        return jsonify(result="failure", error="Not in online mode"), 400
+    token = _controller().get_soundboard_token()
+    return jsonify(
+        link=utils.soundboard_link(_buzzer_public_url(), token),
+        presence=app.buzzer.soundboard_presence(),
+    )
+
+
+@api_bp.route("/soundboard/link", methods=["POST"])
+def rotate_soundboard_link() -> ResponseReturnValue:
+    """Replace the soundboard link, disconnecting whoever holds the old one."""
+    if app.buzzer is None:
+        return jsonify(result="failure", error="Not in online mode"), 400
+    token = _controller().rotate_soundboard_token()
+    app.buzzer.revoke_soundboard()
+    app.socketio.emit("soundboard-links", {}, namespace=GAME_NS)
+    return jsonify(result="success", link=utils.soundboard_link(_buzzer_public_url(), token))
 
 
 # ---------------------------------------------------------------------------

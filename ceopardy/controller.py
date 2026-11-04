@@ -33,6 +33,7 @@ from ceopardy.model import (
     GameState,
     Question,
     Response,
+    SoundboardLink,
     State,
     Team,
 )
@@ -507,6 +508,26 @@ class Controller:
         link = BuzzerLink.query.filter_by(tid=tid).one_or_none()
         if link is None:
             db.session.add(BuzzerLink(tid, token))
+        else:
+            link.token = token
+        db.session.commit()
+        return token
+
+    @staticmethod
+    def get_soundboard_token() -> str:
+        link = SoundboardLink.query.first()
+        if link is None:
+            link = SoundboardLink(new_buzzer_token())
+            db.session.add(link)
+            db.session.commit()
+        return link.token
+
+    @staticmethod
+    def rotate_soundboard_token() -> str:
+        token = new_buzzer_token()
+        link = SoundboardLink.query.first()
+        if link is None:
+            db.session.add(SoundboardLink(token))
         else:
             link.token = token
         db.session.commit()

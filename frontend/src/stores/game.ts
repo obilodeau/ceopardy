@@ -26,6 +26,8 @@ import type {
   ServerMessage,
   ServerState,
   SliderEvent,
+  SoundboardEvent,
+  SoundboardPresenceEvent,
   SoundEvent,
   SoundMap,
   Team,
@@ -62,6 +64,9 @@ interface GameStoreState {
   lastBuzz: BuzzResultEvent | null;
   // Bumped when a team's link is replaced, so drawers fetch them again.
   buzzerLinksVersion: number;
+  soundboardPresence: number;
+  // Bumped when the soundboard link is replaced.
+  soundboardLinkVersion: number;
   socket: Socket | null;
   rouletteTarget: string | null;
   // Set by HostView on mount. Host skips the roulette animation and jumps
@@ -104,6 +109,8 @@ export const useGameStore = defineStore("game", {
     buzzerPresence: {},
     lastBuzz: null,
     buzzerLinksVersion: 0,
+    soundboardPresence: 0,
+    soundboardLinkVersion: 0,
     socket: null,
     rouletteTarget: null,
     isHost: false,
@@ -261,6 +268,20 @@ export const useGameStore = defineStore("game", {
 
       s.on("buzzer-links", () => {
         this.buzzerLinksVersion += 1;
+      });
+
+      s.on("soundboard", (data: SoundboardEvent) => {
+        const sound = useSound();
+        if (data.action === "play") sound.playSoundboard(data.url);
+        else sound.stopSoundboard();
+      });
+
+      s.on("soundboard-presence", (data: SoundboardPresenceEvent) => {
+        this.soundboardPresence = data.count;
+      });
+
+      s.on("soundboard-links", () => {
+        this.soundboardLinkVersion += 1;
       });
 
       s.on("team-roulette", (data: TeamRouletteEvent) => {

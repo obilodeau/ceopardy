@@ -18,7 +18,8 @@ This is the host interface, how you control the game:
 
 Note that there are two drawers that can be opened by clicking on the brown
 arrows at the top and at the bottom of the screen. The top drawer contains
-the functions to change team names and, online, to hand out buzzer links. The
+the functions to change team names and, online, to hand out buzzer and
+soundboard links. The
 bottom drawer provides functions to display a custom message on the board or
 to pause a game.
 
@@ -41,8 +42,8 @@ to `127.0.0.1` and there is no authentication on the host UI. If you need to
 expose it on a LAN, put your own reverse proxy (and auth) in front.
 
 The one exception is the players' buzzer port, `5001`, in online mode. It is a
-separate server that serves only the buzzer page and is meant to be reachable
-from the internet; see [Remote buzzers](#remote-buzzers).
+separate server that serves only the buzzer and soundboard pages and is meant
+to be reachable from the internet; see [Remote buzzers](#remote-buzzers).
 
 
 ## Running Ceopardy (operators)
@@ -62,7 +63,7 @@ Or pin a specific version from the
 Then scaffold a per-game directory and start the server:
 
     mkdir my-game && cd my-game
-    ceopardy init               # writes data/ + game-media/ starter content
+    ceopardy init               # writes data/, game-media/ and soundboard/
     # edit data/Questions.cp and data/1st.round to set up your game
     ceopardy serve              # starts the server on http://127.0.0.1:5000/
     ceopardy serve --debug      # add verbose logging + auto-reload
@@ -111,6 +112,23 @@ To use another tunnel (Cloudflare Tunnel, Tailscale Funnel...), point it at
 `--no-tunnel` keeps the links local. **Never tunnel port 5000**: it is the
 host's interface.
 
+### Soundboard
+
+Online, whoever runs sounds can play them on the stream from a web page of
+their own, through the same tunnel as the buzzers:
+
+1. Put short audio files (`.mp3`, `.wav`, `.ogg`, `.m4a` or `.opus`) in the
+   game directory's `soundboard/` folder. Each file becomes a button named
+   after it.
+2. On the host, open the top drawer and click the copy icon on the
+   *Soundboard* row. Send the link **only to your sound operator**. The key
+   icon replaces a leaked link; the person icon counts open soundboards.
+
+Sounds play on the viewer tab, the one you share, and only after its
+"Click to enable sound" screen. *Stop all* cuts every soundboard sound but not
+the game's own. Files added during the game appear when the operator clicks
+*Refresh*.
+
 `ceopardy init` never overwrites existing files; it's safe to re-run. The
 SQLite database, round files, and uploaded media all resolve relative to the
 directory you run `ceopardy` from, so **keep one directory per game**.
@@ -130,7 +148,7 @@ You need Python 3.11+, pip, virtualenv, and Node.js (LTS).
     make venv                          # creates .venv/ + installs deps
     source .venv/bin/activate          # bash/zsh
     source .venv/bin/activate.fish     # fish
-    make init                          # seeds data/ + game-media/
+    make init                          # seeds data/, game-media/, soundboard/
     make run                           # starts Flask (:5000) + Vite (:5173)
     CEOPARDY_ONLINE=1 make run         # same, with online mode on
 

@@ -20,8 +20,9 @@ The players' buzzer server: the one port meant to be reachable from the
 internet.
 
 It is a bare python-socketio server, not a Flask app, so nothing the host
-uses can be reached through it: it serves buzzer.html, the files that page
-loads, and the /buzz Socket.IO namespace. Everything else is a 404.
+uses can be reached through it: it serves buzzer.html, soundboard.html, the
+files those pages load, and the /buzz and /soundboard Socket.IO namespaces.
+Everything else is a 404.
 """
 
 import json
@@ -36,14 +37,19 @@ from urllib.parse import urlsplit
 import socketio
 from werkzeug.serving import make_server
 
-from ceopardy import buzzer, utils
+from ceopardy import buzzer, soundboard, utils
 from ceopardy.buzzer import BuzzArbiter, Decision, FairnessSettings
+from ceopardy.soundboard import PlayLimiter
 
 log = logging.getLogger(__name__)
 
 BUZZ_NS = "/buzz"
+SOUNDBOARD_NS = "/soundboard"
+MAX_SOUNDBOARDS = 4
 SOCKETIO_PATH = "buzz-io"
 ENTRY = "buzzer.html"
+# URL path -> Vite entry. The buzzer page is the root.
+PAGES = {"/": ENTRY, "/soundboard.html": "soundboard.html"}
 PING_INTERVAL_S = 2
 
 SECURITY_HEADERS = [
@@ -83,16 +89,20 @@ def entry_files(manifest: dict, entry: str = ENTRY) -> set[str]:
 
 
 def allowed_files(dist_dir: str) -> dict[str, str]:
-    """URL path -> file on disk, for the buzzer page only; {} if not built."""
+    """URL path -> file on disk, for the public pages only; {} if not built."""
     manifest_path = os.path.join(dist_dir, ".vite", "manifest.json")
-    page = os.path.join(dist_dir, ENTRY)
-    if not (os.path.exists(manifest_path) and os.path.exists(page)):
+    if not (os.path.exists(manifest_path) and os.path.exists(os.path.join(dist_dir, ENTRY))):
         return {}
     with open(manifest_path) as f:
         manifest = json.load(f)
-    files = {"/": page}
-    for rel in entry_files(manifest):
-        files["/" + rel] = os.path.join(dist_dir, rel)
+    files = {}
+    for url, entry in PAGES.items():
+        page = os.path.join(dist_dir, entry)
+        if not os.path.exists(page):
+            continue
+        files[url] = page
+        for rel in entry_files(manifest, entry):
+            files["/" + rel] = os.path.join(dist_dir, rel)
     return files
 
 
@@ -148,14 +158,16 @@ def origin_allowed(origin: str | None, environ: dict, public_url: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Socket.IO: the /buzz namespace
+# Socket.IO: the /buzz and /soundboard namespaces
 # ---------------------------------------------------------------------------
 class BuzzerServer:
     """
-    Glue between buzzer pages, the arbiter, and the game.
+    Glue between buzzer pages, the arbiter, and the game, and between
+    soundboard pages and the viewer.
 
-    `tokens()`, `team_names()` and `on_decision()` are called from this
-    server's threads and must set up their own Flask app context.
+    `tokens()`, `team_names()`, `on_decision()`, `soundboard_token()` and
+    `on_soundboard()` are called from this server's threads and must set up
+    their own Flask app context.
     """
 
     def __init__(
@@ -167,6 +179,10 @@ class BuzzerServer:
         on_presence: Callable[[dict[str, int]], None],
         public_url: str = "",
         max_players_per_team: int = 16,
+        soundboard_token: Callable[[], str] = lambda: "",
+        soundboard_folder: str = "",
+        on_soundboard: Callable[[str, str | None], None] = lambda action, sound_id: None,
+        on_soundboard_presence: Callable[[int], None] = lambda count: None,
     ) -> None:
         self.arbiter = BuzzArbiter(settings)
         self._tokens = tokens
@@ -175,6 +191,12 @@ class BuzzerServer:
         self._on_presence = on_presence
         self._max_players = max_players_per_team
         self._ping_n = 0
+        self._soundboard_token = soundboard_token
+        self._soundboard_folder = soundboard_folder
+        self._on_soundboard = on_soundboard
+        self._on_soundboard_presence = on_soundboard_presence
+        self._soundboards: dict[str, PlayLimiter] = {}
+        self._soundboards_lock = threading.Lock()
         self.sio = socketio.Server(
             async_mode="threading",
             cors_allowed_origins=lambda origin, environ: origin_allowed(
@@ -185,6 +207,11 @@ class BuzzerServer:
         self.sio.on("connect", self._connect, namespace=BUZZ_NS)
         self.sio.on("disconnect", self._disconnect, namespace=BUZZ_NS)
         self.sio.on("buzz", self._buzz, namespace=BUZZ_NS)
+        self.sio.on("connect", self._soundboard_connect, namespace=SOUNDBOARD_NS)
+        self.sio.on("disconnect", self._soundboard_disconnect, namespace=SOUNDBOARD_NS)
+        self.sio.on("play", self._soundboard_play, namespace=SOUNDBOARD_NS)
+        self.sio.on("stop", self._soundboard_stop, namespace=SOUNDBOARD_NS)
+        self.sio.on("refresh", self._soundboard_refresh, namespace=SOUNDBOARD_NS)
 
     def wsgi_app(self, dist_dir: str) -> WSGIApp:
         return with_security_headers(
@@ -219,6 +246,39 @@ class BuzzerServer:
         delay = self.arbiter.buzz(sid, data.get("epoch"), data.get("reaction_ms"))
         self._schedule(delay)
 
+    def _soundboard_connect(self, sid: str, environ: dict, auth: object = None) -> None:
+        token = auth.get("token") if isinstance(auth, dict) else None
+        if utils.match_buzzer_token(token, {"soundboard": self._soundboard_token()}) is None:
+            raise socketio.exceptions.ConnectionRefusedError("invalid link")
+        with self._soundboards_lock:
+            if len(self._soundboards) >= MAX_SOUNDBOARDS:
+                raise socketio.exceptions.ConnectionRefusedError("full")
+            self._soundboards[sid] = PlayLimiter()
+        self._send_sounds(sid)
+        self._soundboard_presence_changed()
+
+    def _soundboard_disconnect(self, sid: str, *_args: object) -> None:
+        with self._soundboards_lock:
+            self._soundboards.pop(sid, None)
+        self._soundboard_presence_changed()
+
+    def _soundboard_play(self, sid: str, data: object = None) -> None:
+        with self._soundboards_lock:
+            limiter = self._soundboards.get(sid)
+        if limiter is None or not isinstance(data, dict) or not limiter.allow():
+            return
+        sound_id = soundboard.resolve(self._soundboard_folder, data.get("id"))
+        if sound_id is not None:
+            self._on_soundboard("play", sound_id)
+
+    def _soundboard_stop(self, sid: str, *_args: object) -> None:
+        if sid in self._soundboards:
+            self._on_soundboard("stop", None)
+
+    def _soundboard_refresh(self, sid: str, *_args: object) -> None:
+        if sid in self._soundboards:
+            self._send_sounds(sid)
+
     # ---- driven by the game -----------------------------------------------
     def buzz_local(self, tid: str) -> None:
         self._schedule(self.arbiter.buzz_local(tid))
@@ -247,6 +307,18 @@ class BuzzerServer:
 
     def presence(self, tids: Iterable[str]) -> dict[str, int]:
         return self.arbiter.presence(tids)
+
+    def revoke_soundboard(self) -> None:
+        """Disconnect every soundboard page; their link was just replaced."""
+        with self._soundboards_lock:
+            sids = list(self._soundboards)
+        for sid in sids:
+            self.sio.emit("revoked", soundboard.revoked_payload(), to=sid, namespace=SOUNDBOARD_NS)
+            self.sio.disconnect(sid, namespace=SOUNDBOARD_NS)
+
+    def soundboard_presence(self) -> int:
+        with self._soundboards_lock:
+            return len(self._soundboards)
 
     # ---- internals --------------------------------------------------------
     def _send_open(self, sid: str, tid: str) -> None:
@@ -297,6 +369,13 @@ class BuzzerServer:
 
     def _presence_changed(self) -> None:
         self._on_presence(self.arbiter.presence(self._team_names()))
+
+    def _send_sounds(self, sid: str) -> None:
+        sounds = soundboard.list_sounds(self._soundboard_folder)
+        self.sio.emit("sounds", soundboard.sounds_payload(sounds), to=sid, namespace=SOUNDBOARD_NS)
+
+    def _soundboard_presence_changed(self) -> None:
+        self._on_soundboard_presence(self.soundboard_presence())
 
     # ---- lifecycle --------------------------------------------------------
     def serve(self, port: int, dist_dir: str) -> None:

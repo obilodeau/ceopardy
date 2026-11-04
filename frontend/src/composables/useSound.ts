@@ -34,6 +34,16 @@ export const audioUnlocked = ref(readUnlocked());
 // Long-lived handle for the only sound with duration.
 let thinkingAudio: HTMLAudioElement | null = null;
 
+// Remote soundboard sounds, oldest first. Kept apart from thinkingAudio so
+// Stop all can never cut the waiting music.
+const MAX_SOUNDBOARD = 8;
+const soundboardAudio: HTMLAudioElement[] = [];
+
+function dropSoundboard(audio: HTMLAudioElement): void {
+  const i = soundboardAudio.indexOf(audio);
+  if (i !== -1) soundboardAudio.splice(i, 1);
+}
+
 function makeAudio(url: string): HTMLAudioElement {
   const audio = new Audio(url);
   // Most sound files are gitignored (licensing), so a fresh clone 404s on
@@ -98,6 +108,29 @@ export function useSound() {
     thinkingAudio = null;
   }
 
+  function playSoundboard(url: string): void {
+    // Unlike the game's cues, nothing can replay a soundboard press, so wait
+    // for the enable-sound click rather than gamble on autoplay.
+    if (!isAudioSink() || !audioUnlocked.value) return;
+    while (soundboardAudio.length >= MAX_SOUNDBOARD) {
+      const oldest = soundboardAudio.shift();
+      oldest?.pause();
+    }
+    try {
+      const audio = makeAudio(url);
+      soundboardAudio.push(audio);
+      audio.addEventListener("ended", () => dropSoundboard(audio));
+      audio.addEventListener("error", () => dropSoundboard(audio));
+      audio.play().catch(() => dropSoundboard(audio));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function stopSoundboard(): void {
+    for (const audio of soundboardAudio.splice(0)) audio.pause();
+  }
+
   /**
    * Handle a one-shot `sound` broadcast from the server.
    *
@@ -141,6 +174,8 @@ export function useSound() {
     play,
     startThinking,
     stopThinking,
+    playSoundboard,
+    stopSoundboard,
     handle,
     unlock,
     isAudioSink,

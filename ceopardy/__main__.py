@@ -108,13 +108,13 @@ def _cmd_init(_args):
             shutil.copyfile(src_path, dst)
         created.append(rel)
 
-    # Always ensure game-media/ exists (per-game user content lives here).
-    media_dir = os.path.join(cwd, "game-media")
-    if not os.path.isdir(media_dir):
-        os.makedirs(media_dir)
-        created.append("game-media/")
-    else:
-        skipped.append("game-media/")
+    # Always ensure the per-game user content folders exist.
+    for folder in ("game-media", "soundboard"):
+        if not os.path.isdir(os.path.join(cwd, folder)):
+            os.makedirs(os.path.join(cwd, folder))
+            created.append(folder + "/")
+        else:
+            skipped.append(folder + "/")
 
     for f in created:
         print(f"  created  {f}")
@@ -163,7 +163,7 @@ def main(argv=None):
     )
     sub.add_parser(
         "init",
-        help="Scaffold data/ and game-media/ in the current directory.",
+        help="Scaffold data/, game-media/ and soundboard/ in the current directory.",
     )
 
     args = parser.parse_args(argv)

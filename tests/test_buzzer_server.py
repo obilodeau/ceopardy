@@ -17,16 +17,24 @@
 #
 """
 Tests for what the tunnelled buzzer port serves. Werkzeug's test client
-against the bare WSGI app: no Flask app, no database, no socket.
+against the bare WSGI app, and the Socket.IO handlers called directly with a
+recorder in place of the socket: no Flask app, no database, no socket.
 """
 
 import json
 
 import pytest
+import socketio
 from werkzeug.test import Client
 
 from ceopardy.buzzer import FairnessSettings
-from ceopardy.buzzer_server import BuzzerServer, entry_files, origin_allowed
+from ceopardy.buzzer_server import (
+    BUZZ_NS,
+    SOUNDBOARD_NS,
+    BuzzerServer,
+    entry_files,
+    origin_allowed,
+)
 
 MANIFEST = {
     "buzzer.html": {
@@ -37,6 +45,13 @@ MANIFEST = {
         "css": ["assets/buzzer-C1.css"],
     },
     "_vue-V1.js": {"file": "assets/vue-V1.js", "imports": ["_vue-V1.js"]},
+    "soundboard.html": {
+        "file": "assets/soundboard-S1.js",
+        "src": "soundboard.html",
+        "isEntry": True,
+        "imports": ["_vue-V1.js"],
+        "css": ["assets/soundboard-C3.css"],
+    },
     "index.html": {
         "file": "assets/main-M1.js",
         "src": "index.html",
@@ -60,9 +75,18 @@ def dist(tmp_path):
     (tmp_path / ".vite").mkdir()
     (tmp_path / ".vite" / "manifest.json").write_text(json.dumps(MANIFEST))
     (tmp_path / "assets").mkdir()
-    for name in ("buzzer-B1.js", "buzzer-C1.css", "vue-V1.js", "main-M1.js", "main-C2.css"):
+    for name in (
+        "buzzer-B1.js",
+        "buzzer-C1.css",
+        "vue-V1.js",
+        "main-M1.js",
+        "main-C2.css",
+        "soundboard-S1.js",
+        "soundboard-C3.css",
+    ):
         (tmp_path / "assets" / name).write_text("/* {} */".format(name))
     (tmp_path / "buzzer.html").write_text("<!doctype html><title>Buzzer</title>")
+    (tmp_path / "soundboard.html").write_text("<!doctype html><title>Soundboard</title>")
     (tmp_path / "index.html").write_text("<!doctype html><title>Host and viewer</title>")
     return tmp_path
 
@@ -95,6 +119,29 @@ def test_buzzer_page_files_are_served(dist, path):
     assert make_client(dist).get(path).status_code == 200
 
 
+def test_soundboard_page_is_served_with_security_headers(dist):
+    res = make_client(dist).get("/soundboard.html")
+    assert res.status_code == 200
+    assert b"Soundboard" in res.data
+    assert "frame-ancestors 'none'" in res.headers["Content-Security-Policy"]
+    assert res.headers["Referrer-Policy"] == "no-referrer"
+
+
+@pytest.mark.parametrize("path", ["/assets/soundboard-S1.js", "/assets/soundboard-C3.css"])
+def test_soundboard_page_files_are_served(dist, path):
+    res = make_client(dist).get(path)
+    assert res.status_code == 200
+    assert "Content-Security-Policy" in res.headers
+
+
+def test_buzzer_page_still_served_when_soundboard_is_not_built(dist):
+    (dist / "soundboard.html").unlink()
+    client = make_client(dist)
+    assert client.get("/").status_code == 200
+    assert client.get("/soundboard.html").status_code == 404
+    assert client.get("/assets/soundboard-S1.js").status_code == 404
+
+
 @pytest.mark.parametrize(
     "path",
     [
@@ -107,6 +154,11 @@ def test_buzzer_page_files_are_served(dist, path):
         "/api/v1/buzzers/links",
         "/socket.io/",
         "/static/sounds/buzzer1.wav",
+        "/static/soundboard/x.mp3",
+        "/soundboard/x.mp3",
+        "/soundboard",
+        "/static/game-media/x.png",
+        "/api/v1/soundboard/link",
         "/assets/main-M1.js",
         "/assets/main-C2.css",
         "/assets/",
@@ -154,3 +206,195 @@ NGROK_ENVIRON = {
 )
 def test_origin_allowed(origin, environ, public_url, allowed):
     assert origin_allowed(origin, environ, public_url) is allowed
+
+
+# ---------------------------------------------------------------------------
+# /soundboard namespace
+# ---------------------------------------------------------------------------
+TEAM_TOKEN = "team-secret-aaaaaaaaaa"
+SOUNDBOARD_TOKEN = "soundboard-secret-bbbb"
+
+
+class Recorder:
+    def __init__(self) -> None:
+        self.emitted: list[tuple[str, dict, str, str]] = []
+        self.disconnected: list[tuple[str, str]] = []
+        self.played: list[tuple[str, str | None]] = []
+        self.presence: list[int] = []
+
+
+@pytest.fixture
+def sounds(tmp_path):
+    folder = tmp_path / "soundboard"
+    folder.mkdir()
+    (folder / "airhorn.wav").write_bytes(b"x")
+    (folder / "applause.mp3").write_bytes(b"x")
+    return folder
+
+
+@pytest.fixture
+def board(sounds):
+    rec = Recorder()
+    server = BuzzerServer(
+        FairnessSettings(),
+        tokens=lambda: {"team1": TEAM_TOKEN},
+        team_names=lambda: {"team1": "Team 1"},
+        on_decision=lambda decision: None,
+        on_presence=lambda counts: None,
+        soundboard_token=lambda: SOUNDBOARD_TOKEN,
+        soundboard_folder=str(sounds),
+        on_soundboard=lambda action, sound_id: rec.played.append((action, sound_id)),
+        on_soundboard_presence=rec.presence.append,
+    )
+
+    def emit(event, data=None, to=None, namespace=None, **_kwargs):
+        rec.emitted.append((event, data, to, namespace))
+
+    def disconnect(sid, namespace=None):
+        rec.disconnected.append((sid, namespace))
+        server._soundboard_disconnect(sid)
+
+    server.sio.emit = emit
+    server.sio.disconnect = disconnect
+    server.sio.enter_room = lambda *args, **kwargs: None
+    return server, rec
+
+
+def connect(server: BuzzerServer, sid: str, token: object = SOUNDBOARD_TOKEN) -> None:
+    server._soundboard_connect(sid, {}, {"token": token})
+
+
+@pytest.mark.parametrize("auth", [{"token": TEAM_TOKEN}, {"token": ""}, {}, None, "x"])
+def test_soundboard_refuses_anything_but_its_token(board, auth):
+    server, rec = board
+    with pytest.raises(socketio.exceptions.ConnectionRefusedError):
+        server._soundboard_connect("s1", {}, auth)
+    assert rec.emitted == []
+    assert server.soundboard_presence() == 0
+
+
+def test_buzzer_refuses_the_soundboard_token(board):
+    server, rec = board
+    with pytest.raises(socketio.exceptions.ConnectionRefusedError):
+        server._connect("s1", {}, {"token": SOUNDBOARD_TOKEN})
+    assert server.arbiter.players() == []
+
+
+def test_buzzer_still_accepts_its_team_token(board):
+    server, rec = board
+    server._connect("s1", {}, {"token": TEAM_TOKEN})
+    assert server.arbiter.players() == [("s1", "team1")]
+    assert all(ns == BUZZ_NS for _e, _d, _to, ns in rec.emitted)
+
+
+def test_soundboard_connect_sends_only_the_sound_list(board):
+    server, rec = board
+    connect(server, "s1")
+    assert rec.emitted == [
+        (
+            "sounds",
+            {
+                "sounds": [
+                    {"id": "airhorn.wav", "label": "airhorn"},
+                    {"id": "applause.mp3", "label": "applause"},
+                ]
+            },
+            "s1",
+            SOUNDBOARD_NS,
+        )
+    ]
+    assert rec.presence == [1]
+
+
+def test_soundboard_connections_are_capped_at_four(board):
+    server, rec = board
+    for n in range(4):
+        connect(server, "s{}".format(n))
+    with pytest.raises(socketio.exceptions.ConnectionRefusedError, match="full"):
+        connect(server, "s4")
+    assert server.soundboard_presence() == 4
+
+
+def test_play_a_listed_sound(board):
+    server, rec = board
+    connect(server, "s1")
+    server._soundboard_play("s1", {"id": "airhorn.wav"})
+    assert rec.played == [("play", "airhorn.wav")]
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"id": "../data/Questions.cp"},
+        {"id": "/etc/passwd"},
+        {"id": "missing.mp3"},
+        {"id": None},
+        {},
+        "airhorn.wav",
+        None,
+    ],
+)
+def test_play_ignores_unlisted_sounds(board, data):
+    server, rec = board
+    connect(server, "s1")
+    server._soundboard_play("s1", data)
+    assert rec.played == []
+
+
+def test_play_from_an_unconnected_sid_is_ignored(board):
+    server, rec = board
+    server._soundboard_play("nobody", {"id": "airhorn.wav"})
+    server._soundboard_stop("nobody")
+    assert rec.played == []
+
+
+def test_a_sixth_play_within_a_second_is_dropped(board):
+    server, rec = board
+    connect(server, "s1")
+    for _ in range(50):
+        server._soundboard_play("s1", {"id": "airhorn.wav"})
+    assert len(rec.played) == 5
+
+
+def test_stop_always_goes_through(board):
+    server, rec = board
+    connect(server, "s1")
+    for _ in range(10):
+        server._soundboard_play("s1", {"id": "airhorn.wav"})
+    server._soundboard_stop("s1")
+    assert rec.played[-1] == ("stop", None)
+
+
+def test_refresh_resends_the_list(board, sounds):
+    server, rec = board
+    connect(server, "s1")
+    (sounds / "boo.ogg").write_bytes(b"x")
+    rec.emitted.clear()
+    server._soundboard_refresh("s1")
+    [(event, data, to, _ns)] = rec.emitted
+    assert event == "sounds" and to == "s1"
+    assert [s["id"] for s in data["sounds"]] == ["airhorn.wav", "applause.mp3", "boo.ogg"]
+
+
+def test_revoke_emits_revoked_then_disconnects(board):
+    server, rec = board
+    connect(server, "s1")
+    connect(server, "s2")
+    rec.emitted.clear()
+    server.revoke_soundboard()
+    assert rec.emitted == [
+        ("revoked", {}, "s1", SOUNDBOARD_NS),
+        ("revoked", {}, "s2", SOUNDBOARD_NS),
+    ]
+    assert rec.disconnected == [("s1", SOUNDBOARD_NS), ("s2", SOUNDBOARD_NS)]
+    assert server.soundboard_presence() == 0
+    assert rec.presence[-1] == 0
+
+
+def test_revoke_soundboard_leaves_buzzers_alone(board):
+    server, rec = board
+    server._connect("b1", {}, {"token": TEAM_TOKEN})
+    connect(server, "s1")
+    server.revoke_soundboard()
+    assert server.arbiter.players() == [("b1", "team1")]
+    assert rec.disconnected == [("s1", SOUNDBOARD_NS)]

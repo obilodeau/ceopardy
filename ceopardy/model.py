@@ -159,6 +159,22 @@ class BuzzerLink(db.Model):
         return "<BuzzerLink for {}>".format(self.tid)
 
 
+class SoundboardLink(db.Model):
+    """
+    The secret in the soundboard link. Kept out of BuzzerLink, whose every
+    row is a valid team buzzer, and out of State, which the viewer receives.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64))
+
+    def __init__(self, token: str) -> None:
+        self.token = token
+
+    def __repr__(self) -> str:
+        return "<SoundboardLink>"
+
+
 class State(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(10), unique=True)

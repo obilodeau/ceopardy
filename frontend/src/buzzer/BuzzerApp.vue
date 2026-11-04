@@ -3,6 +3,8 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { io, type Socket } from "socket.io-client";
 
+import { takeToken } from "@/links/token";
+
 type Phase =
   | "connecting"
   | "reconnecting"
@@ -48,25 +50,6 @@ let epoch = 0;
 let openedAt = 0;
 let earlyTimer: ReturnType<typeof setTimeout> | null = null;
 let phaseBeforeEarly: Phase = "locked";
-
-// The token rides in the URL fragment, which browsers never send to a
-// server. Move it to sessionStorage and out of the address bar, so it
-// doesn't show on a player's own screen share; a reload still finds it.
-function takeToken(): string {
-  const fromHash = window.location.hash.slice(1);
-  try {
-    if (fromHash) {
-      sessionStorage.setItem(TOKEN_KEY, fromHash);
-    } else {
-      return sessionStorage.getItem(TOKEN_KEY) ?? "";
-    }
-  } catch {
-    // Storage blocked: keep the token in the URL so a reload still works.
-    return fromHash;
-  }
-  history.replaceState(null, "", window.location.pathname);
-  return fromHash;
-}
 
 function press(): void {
   if (phase.value === "open") {
@@ -160,7 +143,7 @@ function connect(token: string): void {
 onMounted(() => {
   window.addEventListener("keydown", onKey);
   document.addEventListener("visibilitychange", keepAwake);
-  const token = takeToken();
+  const token = takeToken(TOKEN_KEY);
   if (!token) {
     phase.value = "invalid";
     return;
