@@ -19,7 +19,7 @@ The soundboard page SHALL receive only the sound list (labels and identifiers) a
 connection status. It SHALL NOT receive game state, scores, clues, team names, buzzer
 links or audio files. The guest port SHALL NOT serve the sound files.
 
-#### Scenario: What the guest port serves
+#### Scenario: What the buzzer port serves
 - **WHEN** anyone requests a sound file or the host or viewer pages from the guest port
 - **THEN** the response is 404
 
