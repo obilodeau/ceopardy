@@ -16,6 +16,7 @@
 # GNU General Public License for more details.
 #
 import os
+import threading
 from collections import OrderedDict
 from datetime import datetime
 
@@ -44,6 +45,10 @@ from ceopardy.utils import (
     parse_questions,
     question_to_html,
 )
+
+# The soundboard link is read on connect from the buzzer server's threads and
+# created or replaced from the host's; one at a time keeps it to one row.
+_soundboard_lock = threading.Lock()
 
 
 class Controller:
@@ -515,23 +520,25 @@ class Controller:
 
     @staticmethod
     def get_soundboard_token() -> str:
-        link = SoundboardLink.query.first()
-        if link is None:
-            link = SoundboardLink(new_buzzer_token())
-            db.session.add(link)
-            db.session.commit()
-        return link.token
+        with _soundboard_lock:
+            link = SoundboardLink.query.first()
+            if link is None:
+                link = SoundboardLink(new_buzzer_token())
+                db.session.add(link)
+                db.session.commit()
+            return link.token
 
     @staticmethod
     def rotate_soundboard_token() -> str:
-        token = new_buzzer_token()
-        link = SoundboardLink.query.first()
-        if link is None:
-            db.session.add(SoundboardLink(token))
-        else:
-            link.token = token
-        db.session.commit()
-        return token
+        with _soundboard_lock:
+            token = new_buzzer_token()
+            link = SoundboardLink.query.first()
+            if link is None:
+                db.session.add(SoundboardLink(token))
+            else:
+                link.token = token
+            db.session.commit()
+            return token
 
     @staticmethod
     def get_state(name):
