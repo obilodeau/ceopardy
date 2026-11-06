@@ -16,25 +16,23 @@
 # GNU General Public License for more details.
 #
 """
-Tests for what the tunnelled buzzer port serves. Werkzeug's test client
+Tests for what the tunnelled guest port serves. Werkzeug's test client
 against the bare WSGI app, and the Socket.IO handlers called directly with a
 recorder in place of the socket: no Flask app, no database, no socket.
 """
 
 import json
+import socket
+from collections.abc import Callable
 
 import pytest
 import socketio
 from werkzeug.test import Client
 
 from ceopardy.buzzer import FairnessSettings
-from ceopardy.buzzer_server import (
-    BUZZ_NS,
-    SOUNDBOARD_NS,
-    BuzzerServer,
-    entry_files,
-    origin_allowed,
-)
+from ceopardy.guest.buzzers import BUZZ_NS, BuzzersPage
+from ceopardy.guest.server import GuestServer, entry_files, origin_allowed
+from ceopardy.guest.soundboard import SOUNDBOARD_NS, SoundboardPage
 
 MANIFEST = {
     "buzzer.html": {
@@ -63,7 +61,7 @@ MANIFEST = {
 
 
 def test_entry_files_follows_imports_and_skips_other_entries():
-    assert entry_files(MANIFEST) == {
+    assert entry_files(MANIFEST, "buzzer.html") == {
         "assets/buzzer-B1.js",
         "assets/buzzer-C1.css",
         "assets/vue-V1.js",
@@ -91,15 +89,31 @@ def dist(tmp_path):
     return tmp_path
 
 
-def make_client(dist_dir) -> Client:
-    server = BuzzerServer(
+def make_server(
+    tokens: dict[str, str] | None = None,
+    soundboard_token: str = "",
+    folder: str = "",
+    relay: Callable[[str, str | None], None] = lambda action, sound_id: None,
+    on_soundboard_presence: Callable[[int], None] = lambda count: None,
+) -> GuestServer:
+    buzzers = BuzzersPage(
         FairnessSettings(),
-        tokens=lambda: {},
-        team_names=lambda: {},
+        tokens=lambda: tokens or {},
+        team_names=lambda: {tid: tid for tid in tokens or {}},
         on_decision=lambda decision: None,
         on_presence=lambda counts: None,
     )
-    return Client(server.wsgi_app(str(dist_dir)))
+    soundboard = SoundboardPage(
+        token=lambda: soundboard_token,
+        folder=folder,
+        relay=relay,
+        on_presence=on_soundboard_presence,
+    )
+    return GuestServer(buzzers, soundboard)
+
+
+def make_client(dist_dir) -> Client:
+    return Client(make_server().wsgi_app(str(dist_dir)))
 
 
 def test_root_serves_the_buzzer_page_with_security_headers(dist):
@@ -178,9 +192,17 @@ def test_only_get_and_head(dist):
     assert make_client(dist).post("/").status_code == 404
 
 
+def test_serve_on_a_busy_port_raises_for_the_caller_to_report(tmp_path):
+    with socket.create_server(("127.0.0.1", 0)) as taken:
+        with pytest.raises(OSError):
+            make_server().serve(taken.getsockname()[1], str(tmp_path))
+
+
 def test_unbuilt_front_end_says_so(tmp_path):
     client = make_client(tmp_path)
-    assert client.get("/").status_code == 503
+    res = client.get("/")
+    assert res.status_code == 503
+    assert b"guest pages" in res.data
     assert client.get("/assets/buzzer-B1.js").status_code == 404
 
 
@@ -209,7 +231,7 @@ def test_origin_allowed(origin, environ, public_url, allowed):
 
 
 # ---------------------------------------------------------------------------
-# /soundboard namespace
+# Namespaces
 # ---------------------------------------------------------------------------
 TEAM_TOKEN = "team-secret-aaaaaaaaaa"
 SOUNDBOARD_TOKEN = "soundboard-secret-bbbb"
@@ -235,24 +257,21 @@ def sounds(tmp_path):
 @pytest.fixture
 def board(sounds):
     rec = Recorder()
-    server = BuzzerServer(
-        FairnessSettings(),
-        tokens=lambda: {"team1": TEAM_TOKEN},
-        team_names=lambda: {"team1": "Team 1"},
-        on_decision=lambda decision: None,
-        on_presence=lambda counts: None,
-        soundboard_token=lambda: SOUNDBOARD_TOKEN,
-        soundboard_folder=str(sounds),
-        on_soundboard=lambda action, sound_id: rec.played.append((action, sound_id)),
+    server = make_server(
+        tokens={"team1": TEAM_TOKEN},
+        soundboard_token=SOUNDBOARD_TOKEN,
+        folder=str(sounds),
+        relay=lambda action, sound_id: rec.played.append((action, sound_id)),
         on_soundboard_presence=rec.presence.append,
     )
+    pages = {page.namespace: page for page in server.pages}
 
     def emit(event, data=None, to=None, namespace=None, **_kwargs):
         rec.emitted.append((event, data, to, namespace))
 
     def disconnect(sid, namespace=None):
         rec.disconnected.append((sid, namespace))
-        server._soundboard_disconnect(sid)
+        pages[namespace].on_disconnect(sid)
 
     server.sio.emit = emit
     server.sio.disconnect = disconnect
@@ -260,30 +279,30 @@ def board(sounds):
     return server, rec
 
 
-def connect(server: BuzzerServer, sid: str, token: object = SOUNDBOARD_TOKEN) -> None:
-    server._soundboard_connect(sid, {}, {"token": token})
+def connect(server: GuestServer, sid: str, token: object = SOUNDBOARD_TOKEN) -> None:
+    server.soundboard.on_connect(sid, {}, {"token": token})
 
 
 @pytest.mark.parametrize("auth", [{"token": TEAM_TOKEN}, {"token": ""}, {}, None, "x"])
 def test_soundboard_refuses_anything_but_its_token(board, auth):
     server, rec = board
     with pytest.raises(socketio.exceptions.ConnectionRefusedError):
-        server._soundboard_connect("s1", {}, auth)
+        server.soundboard.on_connect("s1", {}, auth)
     assert rec.emitted == []
-    assert server.soundboard_presence() == 0
+    assert server.soundboard.presence() == 0
 
 
 def test_buzzer_refuses_the_soundboard_token(board):
     server, rec = board
     with pytest.raises(socketio.exceptions.ConnectionRefusedError):
-        server._connect("s1", {}, {"token": SOUNDBOARD_TOKEN})
-    assert server.arbiter.players() == []
+        server.buzzers.on_connect("s1", {}, {"token": SOUNDBOARD_TOKEN})
+    assert server.buzzers.arbiter.players() == []
 
 
 def test_buzzer_still_accepts_its_team_token(board):
     server, rec = board
-    server._connect("s1", {}, {"token": TEAM_TOKEN})
-    assert server.arbiter.players() == [("s1", "team1")]
+    server.buzzers.on_connect("s1", {}, {"token": TEAM_TOKEN})
+    assert server.buzzers.arbiter.players() == [("s1", "team1")]
     assert all(ns == BUZZ_NS for _e, _d, _to, ns in rec.emitted)
 
 
@@ -312,13 +331,13 @@ def test_soundboard_connections_are_capped_at_four(board):
         connect(server, "s{}".format(n))
     with pytest.raises(socketio.exceptions.ConnectionRefusedError, match="full"):
         connect(server, "s4")
-    assert server.soundboard_presence() == 4
+    assert server.soundboard.presence() == 4
 
 
 def test_play_a_listed_sound(board):
     server, rec = board
     connect(server, "s1")
-    server._soundboard_play("s1", {"id": "airhorn.wav"})
+    server.soundboard.on_play("s1", {"id": "airhorn.wav"})
     assert rec.played == [("play", "airhorn.wav")]
 
 
@@ -337,14 +356,14 @@ def test_play_a_listed_sound(board):
 def test_play_ignores_unlisted_sounds(board, data):
     server, rec = board
     connect(server, "s1")
-    server._soundboard_play("s1", data)
+    server.soundboard.on_play("s1", data)
     assert rec.played == []
 
 
 def test_play_from_an_unconnected_sid_is_ignored(board):
     server, rec = board
-    server._soundboard_play("nobody", {"id": "airhorn.wav"})
-    server._soundboard_stop("nobody")
+    server.soundboard.on_play("nobody", {"id": "airhorn.wav"})
+    server.soundboard.on_stop("nobody")
     assert rec.played == []
 
 
@@ -352,7 +371,7 @@ def test_a_sixth_play_within_a_second_is_dropped(board):
     server, rec = board
     connect(server, "s1")
     for _ in range(50):
-        server._soundboard_play("s1", {"id": "airhorn.wav"})
+        server.soundboard.on_play("s1", {"id": "airhorn.wav"})
     assert len(rec.played) == 5
 
 
@@ -360,8 +379,8 @@ def test_stop_always_goes_through(board):
     server, rec = board
     connect(server, "s1")
     for _ in range(10):
-        server._soundboard_play("s1", {"id": "airhorn.wav"})
-    server._soundboard_stop("s1")
+        server.soundboard.on_play("s1", {"id": "airhorn.wav"})
+    server.soundboard.on_stop("s1")
     assert rec.played[-1] == ("stop", None)
 
 
@@ -370,7 +389,7 @@ def test_refresh_resends_the_list(board, sounds):
     connect(server, "s1")
     (sounds / "boo.ogg").write_bytes(b"x")
     rec.emitted.clear()
-    server._soundboard_refresh("s1")
+    server.soundboard.on_refresh("s1")
     [(event, data, to, _ns)] = rec.emitted
     assert event == "sounds" and to == "s1"
     assert [s["id"] for s in data["sounds"]] == ["airhorn.wav", "applause.mp3", "boo.ogg"]
@@ -381,20 +400,20 @@ def test_revoke_emits_revoked_then_disconnects(board):
     connect(server, "s1")
     connect(server, "s2")
     rec.emitted.clear()
-    server.revoke_soundboard()
+    server.soundboard.revoke()
     assert rec.emitted == [
         ("revoked", {}, "s1", SOUNDBOARD_NS),
         ("revoked", {}, "s2", SOUNDBOARD_NS),
     ]
     assert rec.disconnected == [("s1", SOUNDBOARD_NS), ("s2", SOUNDBOARD_NS)]
-    assert server.soundboard_presence() == 0
+    assert server.soundboard.presence() == 0
     assert rec.presence[-1] == 0
 
 
 def test_revoke_soundboard_leaves_buzzers_alone(board):
     server, rec = board
-    server._connect("b1", {}, {"token": TEAM_TOKEN})
+    server.buzzers.on_connect("b1", {}, {"token": TEAM_TOKEN})
     connect(server, "s1")
-    server.revoke_soundboard()
-    assert server.arbiter.players() == [("b1", "team1")]
+    server.soundboard.revoke()
+    assert server.buzzers.arbiter.players() == [("b1", "team1")]
     assert rec.disconnected == [("s1", SOUNDBOARD_NS)]

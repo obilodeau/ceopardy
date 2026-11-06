@@ -38,7 +38,7 @@ const message = computed(() => {
   if (sounds.value.length === 0) {
     return "No sounds. Ask the host to put audio files in the soundboard folder, then refresh.";
   }
-  return "Sounds play on the stream, after its delay.";
+  return "Sounds play on the stream. Expect the stream's usual lag.";
 });
 
 let socket: Socket | null = null;
@@ -76,7 +76,7 @@ function refresh(): void {
 
 function connect(token: string): void {
   const s = io("/soundboard", {
-    path: "/buzz-io",
+    path: "/guest-io",
     auth: { token },
     transports: ["websocket", "polling"],
   });

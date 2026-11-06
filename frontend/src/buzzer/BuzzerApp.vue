@@ -92,7 +92,7 @@ async function keepAwake(): Promise<void> {
 
 function connect(token: string): void {
   const s = io("/buzz", {
-    path: "/buzz-io",
+    path: "/guest-io",
     auth: { token },
     transports: ["websocket", "polling"],
   });

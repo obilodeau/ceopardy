@@ -57,8 +57,8 @@ def _controller():
     return app.controller
 
 
-def _buzzer_public_url() -> str:
-    return config["BUZZER_PUBLIC_URL"] or "http://127.0.0.1:{}/".format(config["BUZZER_PORT"])
+def _guest_public_url() -> str:
+    return config["GUEST_PUBLIC_URL"] or "http://127.0.0.1:{}/".format(config["GUEST_PORT"])
 
 
 def _public_config():
@@ -204,8 +204,8 @@ def _set_buzzers(
         is_open = False
     controller.set_state("buzzers", "open" if is_open else "")
     app.socketio.emit("buzzers", {"open": is_open, "locked_out": locked_out}, namespace=GAME_NS)
-    if app.buzzer is not None:
-        app.buzzer.set_open(is_open, locked_out, winner)
+    if app.guest is not None:
+        app.guest.buzzers.set_open(is_open, locked_out, winner)
 
 
 # Two buzzes landing together must not both see the buzzers open.
@@ -225,7 +225,7 @@ def _award_buzz(tid: str, result: dict | None = None) -> None:
 
 
 def award_race(decision: Decision) -> None:
-    """Called from the buzzer server once a web race is decided."""
+    """Called from the guest server once a web race is decided."""
     with _buzz_lock:
         # The host may have closed the buzzers while the race was being judged.
         if _controller().get_state("buzzers") != "open":
@@ -234,7 +234,7 @@ def award_race(decision: Decision) -> None:
 
 
 def relay_soundboard(action: str, sound_id: str | None) -> None:
-    """Called from the buzzer server when a soundboard page plays or stops."""
+    """Called from the guest server when a soundboard page plays or stops."""
     payload = {"action": action}
     if sound_id is not None:
         payload["url"] = "/static/soundboard/" + quote(sound_id)
@@ -360,8 +360,8 @@ def update_teams():
         return jsonify(result="failure", error="Team names must be unique"), 400
 
     controller.update_teams(data)
-    if app.buzzer is not None:
-        app.buzzer.rename(data)
+    if app.guest is not None:
+        app.guest.buzzers.rename(data)
 
     app.socketio.emit("team-names", {"names": data}, namespace=GAME_NS)
     _broadcast_state()
@@ -626,8 +626,8 @@ def buzz():
         if controller.get_state("buzzers") != "open" or tid in _locked_out():
             return jsonify(result="ignored")
         # Online, keyboard buzzers race the web ones through the arbiter.
-        if app.buzzer is not None:
-            app.buzzer.buzz_local(tid)
+        if app.guest is not None:
+            app.guest.buzzers.buzz_local(tid)
             return jsonify(result="pending")
         _award_buzz(tid)
     return jsonify(result="success", tid=tid)
@@ -638,13 +638,13 @@ def buzz():
 # the viewer is the tab being screen-shared.
 @api_bp.route("/buzzers/links", methods=["GET"])
 def buzzer_links():
-    public_url = _buzzer_public_url()
+    public_url = _guest_public_url()
     tokens = _controller().get_buzzer_tokens()
     links = {tid: utils.buzzer_link(public_url, token) for tid, token in tokens.items()}
-    presence = app.buzzer.presence(tokens) if app.buzzer is not None else {}
+    presence = app.guest.buzzers.presence(tokens) if app.guest is not None else {}
     return jsonify(
         public_url=public_url,
-        tunnel=config["BUZZER_TUNNEL"],
+        tunnel=config["GUEST_TUNNEL"],
         links=links,
         presence=presence,
     )
@@ -657,35 +657,35 @@ def rotate_buzzer_link(tid: str):
         token = _controller().rotate_buzzer_token(tid)
     except UnknownTeamError:
         return jsonify(result="failure", error="Unknown team"), 400
-    if app.buzzer is not None:
-        app.buzzer.revoke(tid)
+    if app.guest is not None:
+        app.guest.buzzers.revoke(tid)
     # Tells other host windows to fetch the links again; no data, since the
     # viewer gets this too.
     app.socketio.emit("buzzer-links", {}, namespace=GAME_NS)
-    return jsonify(result="success", link=utils.buzzer_link(_buzzer_public_url(), token))
+    return jsonify(result="success", link=utils.buzzer_link(_guest_public_url(), token))
 
 
 # The same rule as the buzzer links: the host's port only, never the viewer.
 @api_bp.route("/soundboard/link", methods=["GET"])
 def soundboard_link() -> ResponseReturnValue:
-    if app.buzzer is None:
+    if app.guest is None:
         return jsonify(result="failure", error="Not in online mode"), 400
     token = _controller().get_soundboard_token()
     return jsonify(
-        link=utils.soundboard_link(_buzzer_public_url(), token),
-        presence=app.buzzer.soundboard_presence(),
+        link=utils.soundboard_link(_guest_public_url(), token),
+        presence=app.guest.soundboard.presence(),
     )
 
 
 @api_bp.route("/soundboard/link", methods=["POST"])
 def rotate_soundboard_link() -> ResponseReturnValue:
     """Replace the soundboard link, disconnecting whoever holds the old one."""
-    if app.buzzer is None:
+    if app.guest is None:
         return jsonify(result="failure", error="Not in online mode"), 400
     token = _controller().rotate_soundboard_token()
-    app.buzzer.revoke_soundboard()
+    app.guest.soundboard.revoke()
     app.socketio.emit("soundboard-links", {}, namespace=GAME_NS)
-    return jsonify(result="success", link=utils.soundboard_link(_buzzer_public_url(), token))
+    return jsonify(result="success", link=utils.soundboard_link(_guest_public_url(), token))
 
 
 # ---------------------------------------------------------------------------

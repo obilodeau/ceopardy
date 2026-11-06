@@ -41,9 +41,10 @@ Ceopardy is designed for single-operator local-network use: the server binds
 to `127.0.0.1` and there is no authentication on the host UI. If you need to
 expose it on a LAN, put your own reverse proxy (and auth) in front.
 
-The one exception is the players' buzzer port, `5001`, in online mode. It is a
-separate server that serves only the buzzer and soundboard pages and is meant
-to be reachable from the internet; see [Remote buzzers](#remote-buzzers).
+The one exception is the guest port, `5001`, in online mode. It is a separate
+server for the people who are not the host: it serves only the guest pages
+(the buzzers and the soundboard) and is meant to be reachable from the
+internet; see [Remote buzzers](#remote-buzzers).
 
 
 ## Running Ceopardy (operators)
@@ -100,7 +101,7 @@ through ngrok:
    `ngrok config add-authtoken` if you have the ngrok agent). Optionally set
    `NGROK_DOMAIN` to the free static domain from your ngrok dashboard, so the
    links keep working across a restart.
-2. `ceopardy serve --online`. The banner shows the buzzer URL.
+2. `ceopardy serve --online`. The banner shows the guest pages' URL.
 3. On the host, open the top drawer and click the copy icon next to each team.
    Send each link **only to that team**: anyone with it plays as that team.
    The key icon replaces a leaked link; the person icon counts who has joined.
@@ -108,8 +109,9 @@ through ngrok:
 Players click through ngrok's "You are about to visit" page once.
 
 To use another tunnel (Cloudflare Tunnel, Tailscale Funnel...), point it at
-`http://127.0.0.1:5001` and pass its address with `--buzzer-url`;
-`--no-tunnel` keeps the links local. **Never tunnel port 5000**: it is the
+`http://127.0.0.1:5001`, the guest port, and pass its address with
+`--guest-url`; `--guest-port` moves the guest port, and `--no-tunnel` keeps
+the links local. **Never tunnel port 5000**: it is the
 host's interface.
 
 ### Soundboard
@@ -156,13 +158,13 @@ Then open <http://localhost:5173/> — Vite hot-reloads the UI and proxies
 `/api` and `/socket.io` to Flask on `:5000`. **In dev, always use the Vite
 URL** (`:5173`); the Flask port serves the *built* SPA which gets stale.
 
-For the web buzzers, build the team links on Vite too:
+For the guest pages (buzzers, soundboard), build their links on Vite too:
 
-    CEOPARDY_ONLINE=1 CEOPARDY_BUZZER_URL=http://localhost:5173/buzzer.html make run
+    CEOPARDY_ONLINE=1 CEOPARDY_GUEST_URL=http://localhost:5173/buzzer.html make run
 
 As with `ceopardy serve`, an ngrok authtoken in the environment opens a real
-tunnel to `:5001`, which serves the *built* buzzer page, unless
-`CEOPARDY_BUZZER_URL` is set. `CEOPARDY_TUNNEL=0` keeps the links local. Never
+tunnel to `:5001`, which serves the *built* guest pages, unless
+`CEOPARDY_GUEST_URL` is set. `CEOPARDY_TUNNEL=0` keeps the links local. Never
 tunnel `:5173`: Vite proxies `/api` to the host.
 
 ### Optional: dev container

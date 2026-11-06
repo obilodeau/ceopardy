@@ -11,7 +11,7 @@ import { fileURLToPath, URL } from 'node:url'
 // serves out of the package's static folder (and ships in the wheel).
 //
 // buzzer.html and soundboard.html are more entries: the players' and the
-// sound operator's pages, served from the buzzer port. The manifest tells that
+// sound operator's pages, served from the guest port. The manifest tells that
 // server exactly which files those pages load, and it serves nothing else.
 export default defineConfig({
   plugins: [vue()],
@@ -37,7 +37,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
-      '/buzz-io': {
+      '/guest-io': {
         target: 'http://127.0.0.1:5001',
         ws: true,
         changeOrigin: true,
