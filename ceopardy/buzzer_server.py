@@ -248,9 +248,9 @@ class BuzzerServer:
 
     def _soundboard_connect(self, sid: str, environ: dict, auth: object = None) -> None:
         token = auth.get("token") if isinstance(auth, dict) else None
-        if utils.match_buzzer_token(token, {"soundboard": self._soundboard_token()}) is None:
-            raise socketio.exceptions.ConnectionRefusedError("invalid link")
         with self._soundboards_lock:
+            if utils.match_buzzer_token(token, {"soundboard": self._soundboard_token()}) is None:
+                raise socketio.exceptions.ConnectionRefusedError("invalid link")
             if len(self._soundboards) >= MAX_SOUNDBOARDS:
                 raise socketio.exceptions.ConnectionRefusedError("full")
             self._soundboards[sid] = PlayLimiter()
