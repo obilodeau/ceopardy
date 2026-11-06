@@ -46,9 +46,9 @@ from ceopardy.utils import (
     question_to_html,
 )
 
-# The soundboard link is read on connect from the buzzer server's threads and
-# created or replaced from the host's; one at a time keeps it to one row.
-_soundboard_lock = threading.Lock()
+# Link secrets are read on connect from the buzzer server's threads and
+# created or replaced from the host's; one at a time keeps one per link.
+_links_lock = threading.Lock()
 
 
 class Controller:
@@ -496,31 +496,33 @@ class Controller:
     @staticmethod
     def get_buzzer_tokens() -> dict[str, str]:
         """{tid: token} for every team, creating the missing ones."""
-        tokens = {link.tid: link.token for link in BuzzerLink.query.all()}
-        missing = [team.tid for team in Team.query.all() if team.tid not in tokens]
-        for tid in missing:
-            tokens[tid] = new_buzzer_token()
-            db.session.add(BuzzerLink(tid, tokens[tid]))
-        if missing:
-            db.session.commit()
-        return tokens
+        with _links_lock:
+            tokens = {link.tid: link.token for link in BuzzerLink.query.all()}
+            missing = [team.tid for team in Team.query.all() if team.tid not in tokens]
+            for tid in missing:
+                tokens[tid] = new_buzzer_token()
+                db.session.add(BuzzerLink(tid, tokens[tid]))
+            if missing:
+                db.session.commit()
+            return tokens
 
     @staticmethod
     def rotate_buzzer_token(tid: str) -> str:
         if Team.query.filter_by(tid=tid).one_or_none() is None:
             raise UnknownTeamError(f"Unknown team {tid!r}")
-        token = new_buzzer_token()
-        link = BuzzerLink.query.filter_by(tid=tid).one_or_none()
-        if link is None:
-            db.session.add(BuzzerLink(tid, token))
-        else:
-            link.token = token
-        db.session.commit()
-        return token
+        with _links_lock:
+            token = new_buzzer_token()
+            link = BuzzerLink.query.filter_by(tid=tid).one_or_none()
+            if link is None:
+                db.session.add(BuzzerLink(tid, token))
+            else:
+                link.token = token
+            db.session.commit()
+            return token
 
     @staticmethod
     def get_soundboard_token() -> str:
-        with _soundboard_lock:
+        with _links_lock:
             link = SoundboardLink.query.first()
             if link is None:
                 link = SoundboardLink(new_buzzer_token())
@@ -530,7 +532,7 @@ class Controller:
 
     @staticmethod
     def rotate_soundboard_token() -> str:
-        with _soundboard_lock:
+        with _links_lock:
             token = new_buzzer_token()
             link = SoundboardLink.query.first()
             if link is None:
