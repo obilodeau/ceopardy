@@ -46,7 +46,7 @@ from ceopardy.utils import (
     question_to_html,
 )
 
-# Link secrets are read on connect from the buzzer server's threads and
+# Link secrets are read on connect from the guest server's threads and
 # created or replaced from the host's; one at a time keeps one per link.
 _links_lock = threading.Lock()
 
