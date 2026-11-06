@@ -39,8 +39,9 @@ venv:
 install-dev:
 	pip install -r requirements.txt -r requirements-dev.txt
 
-# Seed CWD with example data/ and game-media/. Same as `ceopardy init`,
-# but works without an editable install (dev workflow uses python run.py).
+# Seed CWD with example data/, game-media/ and soundboard/. Same as
+# `ceopardy init`, but works without an editable install (dev workflow uses
+# python run.py).
 init:
 	python -m ceopardy init
 

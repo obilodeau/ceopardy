@@ -27,6 +27,7 @@ __pycache__/
 ceopardy*db
 ceopardy.log
 /game-media/
+/soundboard/
 # Operator game content — seeded by `ceopardy init` from package templates.
 /data/
 

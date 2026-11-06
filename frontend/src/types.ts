@@ -165,6 +165,14 @@ export interface SoundEvent {
   action: "play" | "stop";
 }
 
+export type SoundboardEvent =
+  | { action: "play"; url: string }
+  | { action: "stop" };
+
+export interface SoundboardPresenceEvent {
+  count: number;
+}
+
 export interface SliderEvent {
   id: string;
   value: string | number;
@@ -197,6 +205,11 @@ export interface BuzzerLinksResponse {
   tunnel: "ngrok" | "manual" | "none";
   links: Record<string, string>;
   presence: BuzzerPresence;
+}
+
+export interface SoundboardLinkResponse {
+  link: string;
+  presence: number;
 }
 
 export interface ApiOk {

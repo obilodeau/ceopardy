@@ -81,6 +81,51 @@ async function rotateLink(team: Team): Promise<void> {
 
 const presence = (tid: string): number => game.buzzerPresence[tid] ?? 0;
 
+// ---- Soundboard link (online mode) ----
+const soundboardLink = ref("");
+const soundboardCopied = ref(false);
+
+async function fetchSoundboardLink(): Promise<void> {
+  try {
+    const res = await api.soundboardLink();
+    soundboardLink.value = res.link;
+    game.soundboardPresence = res.presence;
+  } catch (e) {
+    errors.form = e instanceof Error ? e.message : String(e);
+  }
+}
+
+watch(
+  () => [game.onlineMode, isOpen(), game.soundboardLinkVersion] as const,
+  ([online, open]) => {
+    if (online && open) fetchSoundboardLink();
+  },
+  { immediate: true },
+);
+
+async function copySoundboardLink(): Promise<void> {
+  const url = soundboardLink.value;
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    window.prompt("Copy the soundboard link:", url);
+    return;
+  }
+  soundboardCopied.value = true;
+  setTimeout(() => (soundboardCopied.value = false), 1500);
+}
+
+async function rotateSoundboardLink(): Promise<void> {
+  const ok = window.confirm(
+    "Give the soundboard a new link? Whoever has the old one is " +
+      "disconnected until you send them the new one.",
+  );
+  if (!ok) return;
+  await api.rotateSoundboardLink();
+  await fetchSoundboardLink();
+}
+
 async function save(): Promise<void> {
   for (const k of Object.keys(errors)) delete errors[k];
   try {
@@ -148,6 +193,39 @@ async function save(): Promise<void> {
                 <i class="fa-solid fa-user" />&nbsp;{{ presence(team.tid) }}
               </div>
             </template>
+          </div>
+          <div v-if="game.onlineMode" class="form-row form-color team-info">
+            <div class="form-text">Soundboard</div>
+            <div class="form-expand form-text">
+              Plays sounds from soundboard/ on the viewer
+            </div>
+            <div
+              class="form-icon form-click"
+              :class="{ disabled: !soundboardLink }"
+              title="Copy the soundboard link, to send only to the sound operator"
+              @click="copySoundboardLink"
+            >
+              <i
+                class="fa-2x fa-fw"
+                :class="
+                  soundboardCopied ? 'fa-solid fa-check' : 'fa-regular fa-copy'
+                "
+              />
+            </div>
+            <div
+              class="form-icon form-click"
+              title="Give the soundboard a new link"
+              @click="rotateSoundboardLink"
+            >
+              <i class="fa-solid fa-key fa-2x fa-fw" />
+            </div>
+            <div
+              class="form-icon form-text buzzer-presence"
+              :class="{ joined: game.soundboardPresence > 0 }"
+              :title="`${game.soundboardPresence} soundboard(s) connected`"
+            >
+              <i class="fa-solid fa-user" />&nbsp;{{ game.soundboardPresence }}
+            </div>
           </div>
           <div
             v-if="game.onlineMode && buzzerLinks"

@@ -34,7 +34,7 @@ import os
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
-from flask import Flask, g, jsonify, send_from_directory
+from flask import Flask, Response, g, jsonify, send_from_directory
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
@@ -54,6 +54,8 @@ FRONTEND_DIST = os.path.join(_PACKAGE_DIR, "static", "dist")
 # User-supplied media (referenced as /static/game-media/<file> from question
 # files) lives in the operator's working directory, not inside the package.
 GAME_MEDIA_DIR = os.path.join(config["BASE_DIR"], "game-media")
+# Sounds for the remote soundboard, played by the viewer from this port only.
+SOUNDBOARD_DIR = os.path.join(config["BASE_DIR"], "soundboard")
 
 
 app = Flask(
@@ -73,9 +75,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 try:
     from flask_cors import CORS
 
-    # Never on the buzzer links: any page the host visits could read every
-    # team's secret.
-    CORS(app, resources={r"/api/(?!v1/buzzers/links).*": {"origins": "*"}})
+    # Never on the buzzer or soundboard links: any page the host visits could
+    # read the secrets.
+    CORS(app, resources={r"/api/(?!v1/(buzzers/links|soundboard/link)).*": {"origins": "*"}})
 except ImportError:
     # flask-cors is optional; prod serves everything from the same origin.
     pass
@@ -130,6 +132,11 @@ def serve_spa_asset(filename):
 @app.route("/static/game-media/<path:filename>")
 def serve_game_media(filename):
     return send_from_directory(GAME_MEDIA_DIR, filename)
+
+
+@app.route("/static/soundboard/<path:filename>")
+def serve_soundboard(filename: str) -> Response:
+    return send_from_directory(SOUNDBOARD_DIR, filename)
 
 
 @app.route("/api/v1/version")
@@ -217,6 +224,12 @@ def start_buzzer_server():
         on_presence=lambda counts: socketio.emit("buzzer-presence", counts, namespace=GAME_NS),
         public_url=config["BUZZER_PUBLIC_URL"],
         max_players_per_team=config["BUZZER_MAX_PLAYERS_PER_TEAM"],
+        soundboard_token=in_app_context(app.controller.get_soundboard_token),
+        soundboard_folder=SOUNDBOARD_DIR,
+        on_soundboard=in_app_context(routes.relay_soundboard),
+        on_soundboard_presence=lambda count: socketio.emit(
+            "soundboard-presence", {"count": count}, namespace=GAME_NS
+        ),
     )
     server.serve(config["BUZZER_PORT"], FRONTEND_DIST)
     app.buzzer = server

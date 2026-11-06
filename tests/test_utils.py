@@ -37,6 +37,7 @@ from ceopardy.utils import (
     parse_locked_out,
     parse_question_id,
     question_to_html,
+    soundboard_link,
     split_locked_out,
     validate_sound_request,
 )
@@ -251,3 +252,25 @@ def test_match_buzzer_token_rejects_anything_else(token):
 )
 def test_buzzer_link_puts_the_token_in_the_fragment(public_url, expected):
     assert buzzer_link(public_url, "tok") == expected
+
+
+@pytest.mark.parametrize(
+    "public_url,expected",
+    [
+        (
+            "https://quiet-owl.ngrok-free.app",
+            "https://quiet-owl.ngrok-free.app/soundboard.html#tok",
+        ),
+        (
+            "https://quiet-owl.ngrok-free.app/",
+            "https://quiet-owl.ngrok-free.app/soundboard.html#tok",
+        ),
+        ("http://127.0.0.1:5001/", "http://127.0.0.1:5001/soundboard.html#tok"),
+        ("http://localhost:5173/buzzer.html", "http://localhost:5173/soundboard.html#tok"),
+        ("https://example.com/#old", "https://example.com/soundboard.html#tok"),
+    ],
+)
+def test_soundboard_link_swaps_the_page_and_puts_the_token_in_the_fragment(public_url, expected):
+    link = soundboard_link(public_url, "tok")
+    assert link == expected
+    assert link.endswith("#tok") and link.count("tok") == 1

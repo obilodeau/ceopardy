@@ -8,6 +8,7 @@ import type {
   InitPayload,
   SelectQuestionResponse,
   ServerState,
+  SoundboardLinkResponse,
   SubmitAnswerPayload,
 } from "@/types";
 
@@ -83,6 +84,9 @@ export const api = {
     request<ApiOk>(`/buzzers/links/${encodeURIComponent(tid)}`, {
       method: "POST",
     }),
+  soundboardLink: () => request<SoundboardLinkResponse>("/soundboard/link"),
+  rotateSoundboardLink: () =>
+    request<ApiOk>("/soundboard/link", { method: "POST" }),
   // A keyboard buzzer press. The server decides whether it counts.
   buzz: (tid: string) =>
     request<ApiOk>("/buzz", { method: "POST", body: { tid } }),

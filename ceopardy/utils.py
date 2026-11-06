@@ -271,3 +271,10 @@ def buzzer_link(public_url: str, token: str) -> str:
     """
     parts = urlsplit(public_url)
     return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", parts.query, token))
+
+
+def soundboard_link(public_url: str, token: str) -> str:
+    """The soundboard's link: the buzzer URL with soundboard.html as its page."""
+    parts = urlsplit(public_url)
+    path = parts.path.rsplit("/", 1)[0] + "/soundboard.html"
+    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, token))
