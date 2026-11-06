@@ -91,7 +91,8 @@ and imports alone.
 | `CEOPARDY_BUZZER_URL` | `CEOPARDY_GUEST_URL` |
 | Socket.IO path `/buzz-io` | `/guest-io` |
 | `start_buzzer_server()`, `app.buzzer` | `start_guest_server()`, `app.guest` |
-| banner `Buzzers: …`, drawer `Buzzers: …` | `Guest pages: …` |
+| banner `Buzzers: …` | `Guest pages: …` |
+| drawer `Buzzers: …` | removed; the copy icons give complete links |
 
 `BUZZER_MAX_PLAYERS_PER_TEAM` and the `BUZZER_*_MS` race settings keep their
 names: they are about buzzing, not about the port. `--no-tunnel`,

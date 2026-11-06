@@ -24,8 +24,9 @@ says what it is and gives later pages an obvious home.
 - **BREAKING** guest pages connect on the Socket.IO path `/guest-io` instead
   of `/buzz-io`. A buzzer or soundboard page left open from before the
   upgrade must be reloaded.
-- The start-up banner and the host's top drawer say "Guest pages" where they
-  said "Buzzers", and the 503 for an unbuilt front-end names the guest pages.
+- The start-up banner says "Guest pages" where it said "Buzzers". The host's
+  top drawer no longer shows the URL, only a warning when links are local
+  only. The 503 for an unbuilt front-end names the guest pages.
 - Internally, the server is split into a guest server (files, headers,
   origins, socket, lifecycle) and one module per guest page with its own
   namespace, so a new page is one module and one allow-list entry. The

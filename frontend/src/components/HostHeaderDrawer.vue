@@ -146,7 +146,7 @@ async function save(): Promise<void> {
     <div style="display: flex; width: 100%">
       <div class="container-header-control container-padding">
         <div class="form-row form-color">
-          <p class="form-header">Teams</p>
+          <p class="form-header">Setup</p>
         </div>
         <form @submit.prevent="save">
           <div
@@ -196,9 +196,7 @@ async function save(): Promise<void> {
           </div>
           <div v-if="game.onlineMode" class="form-row form-color team-info">
             <div class="form-text">Soundboard</div>
-            <div class="form-expand form-text">
-              Plays sounds from soundboard/ on the viewer
-            </div>
+            <div class="form-expand" />
             <div
               class="form-icon form-click"
               :class="{ disabled: !soundboardLink }"
@@ -228,13 +226,10 @@ async function save(): Promise<void> {
             </div>
           </div>
           <div
-            v-if="game.onlineMode && buzzerLinks"
+            v-if="game.onlineMode && buzzerLinks?.tunnel === 'none'"
             class="form-row form-color buzzer-status"
           >
-            <span v-if="buzzerLinks.tunnel !== 'none'">
-              Guest pages: {{ buzzerLinks.public_url }}
-            </span>
-            <span v-else class="form-error">
+            <span class="form-error">
               <i class="fa-solid fa-triangle-exclamation" /> Buzzer and
               soundboard links only work on this machine. Set NGROK_AUTHTOKEN
               and restart to share them.

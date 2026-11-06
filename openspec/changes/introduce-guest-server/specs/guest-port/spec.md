@@ -119,11 +119,11 @@ If the tunnel cannot be opened, or no authtoken is found, the game SHALL still s
 - **THEN** the game starts and the banner gives ngrok's reason
 
 ### Requirement: The guest URL is shown to the operator
-The start-up banner SHALL print the guest pages' URL and how it was obtained. The host's top drawer SHALL show the public URL when there is one, or a warning that links only work on this machine and how to fix it.
+The start-up banner SHALL print the guest pages' URL and how it was obtained. The host's top drawer SHALL NOT show the URL, since the host hands out complete links instead; when there is no public URL it SHALL warn that links only work on this machine and how to fix it.
 
 #### Scenario: Tunnel open
 - **WHEN** the tunnel opens
-- **THEN** the banner and the drawer show its public URL, labelled as the guest pages' URL
+- **THEN** the banner shows its public URL and the drawer shows no URL or warning
 
 #### Scenario: Local only
 - **WHEN** there is no public URL

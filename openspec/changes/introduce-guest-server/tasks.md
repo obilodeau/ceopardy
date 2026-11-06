@@ -10,7 +10,7 @@
 
 - [x] 2.1 Rename `BUZZER_PORT`, `BUZZER_PUBLIC_URL` and `BUZZER_TUNNEL` to `GUEST_*` in `config.py`, `tunnel.py`, `api/routes.py` and `tests/test_tunnel.py`. Replace `app.buzzer` with `app.guest` and route calls through `app.guest.buzzers` and `app.guest.soundboard`. `make test` passes.
 - [x] 2.2 Rename `start_buzzer_server` to `start_guest_server`, the flags to `--guest-port` and `--guest-url`, `CEOPARDY_BUZZER_URL` to `CEOPARDY_GUEST_URL` in `run.py`, and the banner line to `Guest pages:`. Verify that `ceopardy serve --help` lists the new flags and `--buzzer-port` is rejected.
-- [x] 2.3 Change the Socket.IO path to `guest-io` in the server, both pages and the Vite proxy, and the drawer's `Buzzers:` label to `Guest pages:`. `make frontend-lint` and `make frontend-type-check` pass.
+- [x] 2.3 Change the Socket.IO path to `guest-io` in the server, both pages and the Vite proxy, and remove the drawer's `Buzzers:` URL line, keeping the local-only warning. `make frontend-lint` and `make frontend-type-check` pass.
 
 ## 3. Documentation
 
@@ -18,7 +18,7 @@
 
 ## 4. Integration
 
-- [x] 4.1 With `CEOPARDY_ONLINE=1 CEOPARDY_GUEST_URL=http://localhost:5173/buzzer.html make run`, check in a browser that a team link buzzes and reconnects after a reload, the soundboard plays on the viewer and its link can be replaced, and the drawer shows `Guest pages:`. On the built pages at `:5001`, check there are no CSP errors and that a host path returns 404.
+- [x] 4.1 With `CEOPARDY_ONLINE=1 CEOPARDY_GUEST_URL=http://localhost:5173/buzzer.html make run`, check in a browser that a team link buzzes and reconnects after a reload, the soundboard plays on the viewer and its link can be replaced, and the drawer shows no URL line. On the built pages at `:5001`, check there are no CSP errors and that a host path returns 404.
 - [x] 4.2 Check that `ceopardy serve --online --no-tunnel --guest-port 6001` serves the buzzer page on `:6001`, and that with `:6001` already taken it exits with a message suggesting `--guest-port`.
 - [x] 4.3 Run `make format` and `make ci`; everything passes.
 
