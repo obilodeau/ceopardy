@@ -65,6 +65,7 @@ jobs:
       - name: Verify the SPA shipped in the wheel
         run: |
           unzip -l dist/ceopardy-*.whl | grep -q "ceopardy/static/dist/index.html"
-          # The buzzer server serves only what this manifest lists.
+          # The guest server serves only what this manifest lists.
           unzip -l dist/ceopardy-*.whl | grep -q "ceopardy/static/dist/buzzer.html"
+          unzip -l dist/ceopardy-*.whl | grep -q "ceopardy/static/dist/soundboard.html"
           unzip -l dist/ceopardy-*.whl | grep -q "ceopardy/static/dist/.vite/manifest.json"

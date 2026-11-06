@@ -57,9 +57,14 @@ ceopardy/guest/soundboard.py   SoundboardPage: /soundboard
 `GuestPage` subclasses python-socketio's class-based `socketio.Namespace`.
 Each page declares the URLs it serves (`{"/": "buzzer.html"}`,
 `{"/soundboard.html": "soundboard.html"}`) and may start background work
-from `start()`. `GuestServer(pages, public_url)` registers each namespace on
-one `socketio.Server`, builds the allow-list from the pages' entries and the
-Vite manifest, and starts each page when it serves.
+from `start()`. `GuestServer(buzzers, soundboard, public_url)` takes each
+page by name, registers each namespace on one `socketio.Server`, builds the
+allow-list from the pages' entries and the Vite manifest, and starts each
+page when it serves. A new page is one more parameter.
+
+Every `on_<event>` method of a page is an event any connected guest can
+send, so callbacks into the game are stored under other names (`relay`,
+not `on_play`).
 
 The main app keeps the server in `app.guest`, and the routes reach a page
 through it: `app.guest.buzzers.set_open(...)`,
@@ -95,6 +100,13 @@ buzzers.
 
 The old names are removed, not aliased, as the user decided. argparse
 rejects an old flag with an error naming it, which is enough of a pointer.
+
+### The guest server binds its own socket
+
+werkzeug's `make_server` catches a busy port itself, prints its own message
+and exits, so the "Try --buzzer-port" message never appeared. `serve()` now
+binds the socket and hands it to werkzeug, so the error reaches the caller,
+which names `--guest-port`.
 
 ### URLs and links stay the same
 

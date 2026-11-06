@@ -42,13 +42,13 @@ config = {
     # online event the viewer is the tab being screen-shared, so that's where
     # the crowd needs to hear the buzzers. Set by `ceopardy serve --online`.
     "ONLINE_MODE": False,
-    # Players' buzzer pages are served from their own port, the only one
-    # meant to be reachable from the internet. BUZZER_PUBLIC_URL is the address
-    # players use; empty means the local one.
-    "BUZZER_PORT": 5001,
-    "BUZZER_PUBLIC_URL": "",
-    # How BUZZER_PUBLIC_URL came about: "ngrok", "manual" or "none".
-    "BUZZER_TUNNEL": "none",
+    # Guest pages (buzzers, soundboard) are served from their own port, the
+    # only one meant to be reachable from the internet. GUEST_PUBLIC_URL is the
+    # address guests use; empty means the local one.
+    "GUEST_PORT": 5001,
+    "GUEST_PUBLIC_URL": "",
+    # How GUEST_PUBLIC_URL came about: "ngrok", "manual" or "none".
+    "GUEST_TUNNEL": "none",
     "BUZZER_MAX_PLAYERS_PER_TEAM": 16,
     # Web buzzer race judging, see ceopardy/buzzer.py. The RTT cap bounds both
     # how much latency a player is credited and how much a modified client can

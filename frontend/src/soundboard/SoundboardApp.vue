@@ -76,7 +76,7 @@ function refresh(): void {
 
 function connect(token: string): void {
   const s = io("/soundboard", {
-    path: "/buzz-io",
+    path: "/guest-io",
     auth: { token },
     transports: ["websocket", "polling"],
   });

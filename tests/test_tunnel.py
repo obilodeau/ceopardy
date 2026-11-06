@@ -60,12 +60,12 @@ def test_config_paths_honour_xdg():
 
 
 @pytest.mark.parametrize("port", [5001, 6001, "5002"])
-def test_forward_addr_is_always_local_buzzer_port(port):
+def test_forward_addr_is_always_local_guest_port(port):
     assert tunnel.forward_addr(port) == "127.0.0.1:{}".format(port)
 
 
 @pytest.mark.parametrize(
-    "buzzer_url,no_tunnel,token,expected",
+    "guest_url,no_tunnel,token,expected",
     [
         ("https://x.trycloudflare.com", False, "tok", "manual"),
         ("https://x.trycloudflare.com", True, None, "manual"),
@@ -74,8 +74,8 @@ def test_forward_addr_is_always_local_buzzer_port(port):
         ("", False, None, "no-token"),
     ],
 )
-def test_choose(buzzer_url, no_tunnel, token, expected):
-    assert tunnel.choose(buzzer_url, no_tunnel, token) == expected
+def test_choose(guest_url, no_tunnel, token, expected):
+    assert tunnel.choose(guest_url, no_tunnel, token) == expected
 
 
 @pytest.fixture
@@ -97,18 +97,18 @@ def fake_ngrok(monkeypatch):
 
 
 def config_for(port: int = 5001, public_url: str = "") -> dict:
-    return {"BUZZER_PORT": port, "BUZZER_PUBLIC_URL": public_url, "BUZZER_TUNNEL": "none"}
+    return {"GUEST_PORT": port, "GUEST_PUBLIC_URL": public_url, "GUEST_TUNNEL": "none"}
 
 
-def test_setup_opens_the_tunnel_to_the_buzzer_port(fake_ngrok, monkeypatch, tmp_path):
+def test_setup_opens_the_tunnel_to_the_guest_port(fake_ngrok, monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     config = config_for(port=6001)
     status = tunnel.setup(
         config, no_tunnel=False, domain="owl.ngrok.app", env={"NGROK_AUTHTOKEN": "t"}
     )
     assert fake_ngrok == [("127.0.0.1:6001", {"authtoken": "t", "domain": "owl.ngrok.app"})]
-    assert config["BUZZER_PUBLIC_URL"] == "https://quiet-owl.ngrok-free.app"
-    assert config["BUZZER_TUNNEL"] == "ngrok"
+    assert config["GUEST_PUBLIC_URL"] == "https://quiet-owl.ngrok-free.app"
+    assert config["GUEST_TUNNEL"] == "ngrok"
     assert "t" not in status.split()
 
 
@@ -116,8 +116,8 @@ def test_setup_survives_an_ngrok_failure(fake_ngrok, monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     config = config_for()
     status = tunnel.setup(config, no_tunnel=False, domain="", env={"NGROK_AUTHTOKEN": "bad"})
-    assert config["BUZZER_PUBLIC_URL"] == ""
-    assert config["BUZZER_TUNNEL"] == "none"
+    assert config["GUEST_PUBLIC_URL"] == ""
+    assert config["GUEST_TUNNEL"] == "none"
     assert "ERR_NGROK_4018" in status
     assert "bad" not in status
     assert "\n" not in status
@@ -136,4 +136,4 @@ def test_setup_with_a_manual_url_opens_nothing(fake_ngrok, monkeypatch, tmp_path
     config = config_for(public_url="https://x.trycloudflare.com")
     tunnel.setup(config, no_tunnel=False, domain="", env={"NGROK_AUTHTOKEN": "t"})
     assert fake_ngrok == []
-    assert config["BUZZER_TUNNEL"] == "manual"
+    assert config["GUEST_TUNNEL"] == "manual"

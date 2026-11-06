@@ -232,12 +232,12 @@ async function save(): Promise<void> {
             class="form-row form-color buzzer-status"
           >
             <span v-if="buzzerLinks.tunnel !== 'none'">
-              Buzzers: {{ buzzerLinks.public_url }}
+              Guest pages: {{ buzzerLinks.public_url }}
             </span>
             <span v-else class="form-error">
-              <i class="fa-solid fa-triangle-exclamation" /> Buzzer links only
-              work on this machine. Set NGROK_AUTHTOKEN and restart to share
-              them.
+              <i class="fa-solid fa-triangle-exclamation" /> Buzzer and
+              soundboard links only work on this machine. Set NGROK_AUTHTOKEN
+              and restart to share them.
             </span>
           </div>
           <div v-if="errors.form" class="form-error">{{ errors.form }}</div>

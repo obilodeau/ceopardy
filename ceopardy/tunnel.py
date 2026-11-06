@@ -16,12 +16,12 @@
 # GNU General Public License for more details.
 #
 """
-The public address of the buzzer port.
+The public address of the guest port.
 
 With an ngrok authtoken around, Ceopardy opens the tunnel itself through
 ngrok's Python SDK, so an online game needs no second terminal and no URL to
 paste. This is the only module that knows about ngrok; everything else just
-needs some public URL that reaches the buzzer port, which --buzzer-url
+needs some public URL that reaches the guest port, which --guest-url
 provides for any other tunnel.
 """
 
@@ -68,16 +68,16 @@ def find_authtoken(env: Mapping[str, str], config_paths: Iterable[str]) -> str |
 
 
 def forward_addr(port: int) -> str:
-    """What the tunnel reaches. Built here, from the buzzer port only."""
+    """What the tunnel reaches. Built here, from the guest port only."""
     return "127.0.0.1:{}".format(int(port))
 
 
-def choose(buzzer_url: str, no_tunnel: bool, authtoken: str | None) -> str:
+def choose(guest_url: str, no_tunnel: bool, authtoken: str | None) -> str:
     """
     "manual" when the operator brought their own public URL, "ngrok" when we
     should open one, "none" when told not to, "no-token" when we can't.
     """
-    if buzzer_url:
+    if guest_url:
         return "manual"
     if no_tunnel:
         return "none"
@@ -85,7 +85,7 @@ def choose(buzzer_url: str, no_tunnel: bool, authtoken: str | None) -> str:
 
 
 def open_tunnel(port: int, authtoken: str, domain: str = "") -> str:
-    """Open an ngrok tunnel to the buzzer port; returns its public URL."""
+    """Open an ngrok tunnel to the guest port; returns its public URL."""
     try:
         import ngrok  # A native extension: only loaded for online games.
 
@@ -105,23 +105,23 @@ def open_tunnel(port: int, authtoken: str, domain: str = "") -> str:
 
 def setup(config: dict, *, no_tunnel: bool, domain: str, env: Mapping[str, str]) -> str:
     """
-    Settle BUZZER_PUBLIC_URL and BUZZER_TUNNEL in `config`, opening the
+    Settle GUEST_PUBLIC_URL and GUEST_TUNNEL in `config`, opening the
     tunnel if that's the plan. Returns the banner line.
     """
-    local = "http://127.0.0.1:{}/".format(config["BUZZER_PORT"])
+    local = "http://127.0.0.1:{}/".format(config["GUEST_PORT"])
     token = find_authtoken(env, ngrok_config_paths(env, os.path.expanduser("~")))
-    kind = choose(config["BUZZER_PUBLIC_URL"], no_tunnel, token)
+    kind = choose(config["GUEST_PUBLIC_URL"], no_tunnel, token)
     if kind == "manual":
-        config["BUZZER_TUNNEL"] = "manual"
-        return "{} (-> {})".format(config["BUZZER_PUBLIC_URL"], local)
-    config["BUZZER_TUNNEL"] = "none"
+        config["GUEST_TUNNEL"] = "manual"
+        return "{} (-> {})".format(config["GUEST_PUBLIC_URL"], local)
+    config["GUEST_TUNNEL"] = "none"
     if kind == "none":
         return "{} (local only)".format(local)
     if kind == "no-token":
         return "{} (local only; set NGROK_AUTHTOKEN to open a tunnel: {})".format(local, TOKEN_PAGE)
     try:
-        config["BUZZER_PUBLIC_URL"] = open_tunnel(config["BUZZER_PORT"], token, domain)
+        config["GUEST_PUBLIC_URL"] = open_tunnel(config["GUEST_PORT"], token, domain)
     except TunnelError as e:
         return "{} (local only; ngrok failed: {})".format(local, e)
-    config["BUZZER_TUNNEL"] = "ngrok"
-    return "{} (ngrok -> {})".format(config["BUZZER_PUBLIC_URL"], local)
+    config["GUEST_TUNNEL"] = "ngrok"
+    return "{} (ngrok -> {})".format(config["GUEST_PUBLIC_URL"], local)

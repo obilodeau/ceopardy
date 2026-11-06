@@ -17,14 +17,14 @@
 #
 import os
 
-from ceopardy import app, create_app, socketio, start_buzzer_server, tunnel
+from ceopardy import app, create_app, socketio, start_guest_server, tunnel
 from ceopardy.config import config
 
 # Dev-only convenience: `make run` takes no arguments, so this is how you get
 # the equivalent of `ceopardy serve --online` while hacking.
 config["ONLINE_MODE"] = os.environ.get("CEOPARDY_ONLINE", "") not in ("", "0")
-# In dev the buzzer page comes from Vite: http://localhost:5173/buzzer.html
-config["BUZZER_PUBLIC_URL"] = os.environ.get("CEOPARDY_BUZZER_URL", "")
+# In dev the guest pages come from Vite: http://localhost:5173/buzzer.html
+config["GUEST_PUBLIC_URL"] = os.environ.get("CEOPARDY_GUEST_URL", "")
 
 create_app()
 
@@ -44,8 +44,8 @@ if __name__ == "__main__":
             domain=os.environ.get("NGROK_DOMAIN", ""),
             env=os.environ,
         )
-        start_buzzer_server()
-        print(f"Buzzers: {status}")
+        start_guest_server()
+        print(f"Guest pages: {status}")
     socketio.run(
         app,
         host="127.0.0.1",
