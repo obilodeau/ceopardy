@@ -128,8 +128,9 @@ their own, through the same tunnel as the buzzers:
 
 Sounds play on the viewer tab, the one you share, and only after its
 "Click to enable sound" screen. *Stop all* cuts every soundboard sound but not
-the game's own. Files added during the game appear when the operator clicks
-*Refresh*.
+the game's own. The *Volume* slider, at 85 % to start, sets the volume of
+soundboard sounds on the viewer, again not the game's own. Files added during
+the game appear when the operator clicks *Refresh*.
 
 `ceopardy init` never overwrites existing files; it's safe to re-run. The
 SQLite database, round files, and uploaded media all resolve relative to the

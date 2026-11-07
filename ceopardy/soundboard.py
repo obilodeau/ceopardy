@@ -33,6 +33,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 EXTENSIONS = frozenset({".mp3", ".wav", ".ogg", ".m4a", ".opus"})
+DEFAULT_VOLUME = 85
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,15 @@ def resolve(folder: str, sound_id: object) -> str | None:
     return None
 
 
+def parse_volume(value: object) -> int | None:
+    """`value` as a whole percent if it is a number from 0 to 100, None otherwise."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not 0 <= value <= 100:
+        return None
+    return round(value)
+
+
 class PlayLimiter:
     """At most `rate` plays in any `per_s` seconds. Thread-safe."""
 
@@ -97,6 +107,10 @@ class PlayLimiter:
 # ---------------------------------------------------------------------------
 def sounds_payload(sounds: list[Sound]) -> dict:
     return {"sounds": [{"id": s.id, "label": s.label} for s in sounds]}
+
+
+def volume_payload(volume: int) -> dict:
+    return {"volume": volume}
 
 
 def revoked_payload() -> dict:

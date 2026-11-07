@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { io, type Socket } from "socket.io-client";
 
 import { takeToken } from "@/links/token";
+import { throttle } from "@/throttle";
 
 type Phase =
   | "connecting"
@@ -32,6 +33,7 @@ const MESSAGES: Record<Exclude<Phase, "ready">, string> = {
 const phase = ref<Phase>("connecting");
 const sounds = ref<Sound[]>([]);
 const sent = reactive(new Set<string>());
+const volume = ref(85);
 const connected = computed(() => phase.value === "ready");
 const message = computed(() => {
   if (phase.value !== "ready") return MESSAGES[phase.value];
@@ -69,6 +71,15 @@ function stopAll(): void {
   flash("stop");
 }
 
+const sendVolume = throttle((value: number) => {
+  socket?.emit("volume", { volume: value });
+}, 100);
+
+function onVolume(event: Event): void {
+  volume.value = Number((event.target as HTMLInputElement).value);
+  if (connected.value) sendVolume(volume.value);
+}
+
 function refresh(): void {
   if (!connected.value) return;
   socket?.emit("refresh", {});
@@ -94,10 +105,16 @@ function connect(token: string): void {
     }
   });
   s.on("disconnect", () => {
+    // socket.io buffers emits while offline; a trailing value sent after
+    // reconnect would override the volume the server pushes on connect.
+    sendVolume.cancel();
     if (phase.value !== "revoked") phase.value = "reconnecting";
   });
   s.on("sounds", (data: { sounds: Sound[] }) => {
     sounds.value = data.sounds;
+  });
+  s.on("volume", (data: { volume: number }) => {
+    volume.value = data.volume;
   });
   s.on("revoked", () => {
     phase.value = "revoked";
@@ -116,6 +133,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   socket?.disconnect();
+  sendVolume.cancel();
   sentTimers.forEach((timer) => clearTimeout(timer));
 });
 </script>
@@ -150,6 +168,19 @@ onBeforeUnmount(() => {
       >
         {{ sent.has("stop") ? "Stop sent" : "Stop all" }}
       </button>
+      <label class="volume" :class="{ disabled: !connected }">
+        <span class="volume-label">Volume</span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          :value="volume"
+          :disabled="!connected"
+          @input="onVolume"
+        />
+        <span class="volume-value">{{ volume }}%</span>
+      </label>
       <button
         type="button"
         class="refresh"
@@ -267,10 +298,11 @@ button:disabled {
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .stop {
-  flex: 1;
+  flex: 1 1 140px;
   min-height: 64px;
   background: var(--stop);
   font-size: 20px;
@@ -278,9 +310,41 @@ button:disabled {
 .stop.sent {
   background: #8e1f1f;
 }
+.volume {
+  flex: 2 1 180px;
+  min-height: 64px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--idle);
+  border: 4px solid #000000;
+  border-radius: 12px;
+  font-weight: bold;
+}
+.volume.disabled {
+  opacity: 0.35;
+}
+.volume input {
+  flex: 1;
+  width: 0;
+  accent-color: var(--gold);
+}
+.volume-value {
+  min-width: 3.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 .refresh {
   min-height: 64px;
   padding: 0 20px;
   background: var(--idle);
+}
+@media (max-width: 640px) {
+  .volume {
+    order: 1;
+    flex-basis: 100%;
+  }
 }
 </style>

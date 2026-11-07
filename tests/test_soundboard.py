@@ -19,7 +19,15 @@
 
 import pytest
 
-from ceopardy.soundboard import PlayLimiter, Sound, list_sounds, resolve, sounds_payload
+from ceopardy.soundboard import (
+    PlayLimiter,
+    Sound,
+    list_sounds,
+    parse_volume,
+    resolve,
+    sounds_payload,
+    volume_payload,
+)
 
 
 @pytest.fixture
@@ -90,6 +98,24 @@ def test_resolve_rejects_a_removed_file(folder):
 
 def test_sounds_payload_has_only_ids_and_labels():
     assert sounds_payload([Sound("a.mp3", "a")]) == {"sounds": [{"id": "a.mp3", "label": "a"}]}
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"), [(0, 0), (85, 85), (100, 100), (42.4, 42), (42.6, 43)]
+)
+def test_parse_volume_accepts_percent_numbers(value, expected):
+    assert parse_volume(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value", [150, -1, 100.1, float("nan"), "loud", "50", True, False, None, [50], {"v": 50}]
+)
+def test_parse_volume_rejects_anything_else(value):
+    assert parse_volume(value) is None
+
+
+def test_volume_payload():
+    assert volume_payload(85) == {"volume": 85}
 
 
 class Clock:

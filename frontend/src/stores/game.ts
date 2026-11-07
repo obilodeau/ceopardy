@@ -272,7 +272,9 @@ export const useGameStore = defineStore("game", {
 
       s.on("soundboard", (data: SoundboardEvent) => {
         const sound = useSound();
-        if (data.action === "play") sound.playSoundboard(data.url);
+        if (data.action === "play") sound.playSoundboard(data.url, data.volume);
+        else if (data.action === "volume")
+          sound.setSoundboardVolume(data.volume);
         else sound.stopSoundboard();
       });
 

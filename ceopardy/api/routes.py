@@ -233,11 +233,13 @@ def award_race(decision: Decision) -> None:
         _award_buzz(decision.winner, result_payload(decision))
 
 
-def relay_soundboard(action: str, sound_id: str | None) -> None:
-    """Called from the guest server when a soundboard page plays or stops."""
-    payload = {"action": action}
+def relay_soundboard(action: str, sound_id: str | None, volume: int) -> None:
+    """Called from the guest server when a soundboard page plays, stops or sets the volume."""
+    payload: dict[str, object] = {"action": action}
     if sound_id is not None:
         payload["url"] = "/static/soundboard/" + quote(sound_id)
+    if action != "stop":
+        payload["volume"] = volume
     app.socketio.emit("soundboard", payload, namespace=GAME_NS)
 
 

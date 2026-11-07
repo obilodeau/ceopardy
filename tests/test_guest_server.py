@@ -241,7 +241,8 @@ class Recorder:
     def __init__(self) -> None:
         self.emitted: list[tuple[str, dict, str, str]] = []
         self.disconnected: list[tuple[str, str]] = []
-        self.played: list[tuple[str, str | None]] = []
+        self.played: list[tuple[str, str | None, int]] = []
+        self.skipped: list[tuple[str, dict, str]] = []
         self.presence: list[int] = []
 
 
@@ -261,13 +262,15 @@ def board(sounds):
         tokens={"team1": TEAM_TOKEN},
         soundboard_token=SOUNDBOARD_TOKEN,
         folder=str(sounds),
-        relay=lambda action, sound_id: rec.played.append((action, sound_id)),
+        relay=lambda action, sound_id, volume: rec.played.append((action, sound_id, volume)),
         on_soundboard_presence=rec.presence.append,
     )
     pages = {page.namespace: page for page in server.pages}
 
-    def emit(event, data=None, to=None, namespace=None, **_kwargs):
+    def emit(event, data=None, to=None, namespace=None, skip_sid=None, **_kwargs):
         rec.emitted.append((event, data, to, namespace))
+        if skip_sid is not None:
+            rec.skipped.append((event, data, skip_sid))
 
     def disconnect(sid, namespace=None):
         rec.disconnected.append((sid, namespace))
@@ -306,7 +309,7 @@ def test_buzzer_still_accepts_its_team_token(board):
     assert all(ns == BUZZ_NS for _e, _d, _to, ns in rec.emitted)
 
 
-def test_soundboard_connect_sends_only_the_sound_list(board):
+def test_soundboard_connect_sends_only_the_sound_list_and_volume(board):
     server, rec = board
     connect(server, "s1")
     assert rec.emitted == [
@@ -320,7 +323,8 @@ def test_soundboard_connect_sends_only_the_sound_list(board):
             },
             "s1",
             SOUNDBOARD_NS,
-        )
+        ),
+        ("volume", {"volume": 85}, "s1", SOUNDBOARD_NS),
     ]
     assert rec.presence == [1]
 
@@ -338,7 +342,7 @@ def test_play_a_listed_sound(board):
     server, rec = board
     connect(server, "s1")
     server.soundboard.on_play("s1", {"id": "airhorn.wav"})
-    assert rec.played == [("play", "airhorn.wav")]
+    assert rec.played == [("play", "airhorn.wav", 85)]
 
 
 @pytest.mark.parametrize(
@@ -381,7 +385,57 @@ def test_stop_always_goes_through(board):
     for _ in range(10):
         server.soundboard.on_play("s1", {"id": "airhorn.wav"})
     server.soundboard.on_stop("s1")
-    assert rec.played[-1] == ("stop", None)
+    assert rec.played[-1][:2] == ("stop", None)
+
+
+def test_volume_is_relayed_and_sent_to_the_other_pages(board):
+    server, rec = board
+    connect(server, "s1")
+    connect(server, "s2")
+    rec.emitted.clear()
+    server.soundboard.on_volume("s1", {"volume": 40})
+    assert rec.played == [("volume", None, 40)]
+    assert rec.skipped == [("volume", {"volume": 40}, "s1")]
+    assert [(e, to, ns) for e, _d, to, ns in rec.emitted] == [("volume", None, SOUNDBOARD_NS)]
+
+
+def test_a_later_page_and_play_get_the_new_volume(board):
+    server, rec = board
+    connect(server, "s1")
+    server.soundboard.on_volume("s1", {"volume": 40})
+    rec.emitted.clear()
+    connect(server, "s2")
+    assert rec.emitted[-1] == ("volume", {"volume": 40}, "s2", SOUNDBOARD_NS)
+    server.soundboard.on_play("s2", {"id": "airhorn.wav"})
+    assert rec.played[-1] == ("play", "airhorn.wav", 40)
+
+
+@pytest.mark.parametrize(
+    "data", [{"volume": 150}, {"volume": -1}, {"volume": "loud"}, {"volume": True}, {}, 50, None]
+)
+def test_invalid_volume_is_ignored(board, data):
+    server, rec = board
+    connect(server, "s1")
+    rec.emitted.clear()
+    server.soundboard.on_volume("s1", data)
+    server.soundboard.on_play("s1", {"id": "airhorn.wav"})
+    assert rec.played == [("play", "airhorn.wav", 85)]
+    assert rec.emitted == []
+
+
+def test_volume_from_an_unconnected_sid_is_ignored(board):
+    server, rec = board
+    server.soundboard.on_volume("nobody", {"volume": 40})
+    assert rec.played == []
+    assert rec.emitted == []
+
+
+def test_a_21st_volume_within_a_second_is_dropped(board):
+    server, rec = board
+    connect(server, "s1")
+    for n in range(100):
+        server.soundboard.on_volume("s1", {"volume": n})
+    assert [v for _a, _id, v in rec.played] == list(range(20))
 
 
 def test_refresh_resends_the_list(board, sounds):
