@@ -105,6 +105,9 @@ function connect(token: string): void {
     }
   });
   s.on("disconnect", () => {
+    // socket.io buffers emits while offline; a trailing value sent after
+    // reconnect would override the volume the server pushes on connect.
+    sendVolume.cancel();
     if (phase.value !== "revoked") phase.value = "reconnecting";
   });
   s.on("sounds", (data: { sounds: Sound[] }) => {
@@ -130,6 +133,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   socket?.disconnect();
+  sendVolume.cancel();
   sentTimers.forEach((timer) => clearTimeout(timer));
 });
 </script>
