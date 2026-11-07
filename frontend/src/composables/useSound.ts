@@ -38,6 +38,7 @@ let thinkingAudio: HTMLAudioElement | null = null;
 // Stop all can never cut the waiting music.
 const MAX_SOUNDBOARD = 8;
 const soundboardAudio: HTMLAudioElement[] = [];
+let soundboardVolume = 0.85;
 
 function dropSoundboard(audio: HTMLAudioElement): void {
   const i = soundboardAudio.indexOf(audio);
@@ -108,7 +109,7 @@ export function useSound() {
     thinkingAudio = null;
   }
 
-  function playSoundboard(url: string): void {
+  function playSoundboard(url: string, percent: number): void {
     // Unlike the game's cues, nothing can replay a soundboard press, so wait
     // for the enable-sound click rather than gamble on autoplay.
     if (!isAudioSink() || !audioUnlocked.value) return;
@@ -117,7 +118,9 @@ export function useSound() {
       oldest?.pause();
     }
     try {
+      soundboardVolume = percent / 100;
       const audio = makeAudio(url);
+      audio.volume = soundboardVolume;
       soundboardAudio.push(audio);
       audio.addEventListener("ended", () => dropSoundboard(audio));
       audio.addEventListener("error", () => dropSoundboard(audio));
@@ -129,6 +132,11 @@ export function useSound() {
 
   function stopSoundboard(): void {
     for (const audio of soundboardAudio.splice(0)) audio.pause();
+  }
+
+  function setSoundboardVolume(percent: number): void {
+    soundboardVolume = percent / 100;
+    for (const audio of soundboardAudio) audio.volume = soundboardVolume;
   }
 
   /**
@@ -176,6 +184,7 @@ export function useSound() {
     stopThinking,
     playSoundboard,
     stopSoundboard,
+    setSoundboardVolume,
     handle,
     unlock,
     isAudioSink,

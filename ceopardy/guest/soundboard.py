@@ -44,7 +44,7 @@ class SoundboardPage(GuestPage):
         self,
         token: Callable[[], str],
         folder: str,
-        relay: Callable[[str, str | None], None],
+        relay: Callable[[str, str | None, int], None],
         on_presence: Callable[[int], None],
     ) -> None:
         super().__init__(SOUNDBOARD_NS)
@@ -53,6 +53,8 @@ class SoundboardPage(GuestPage):
         self._relay = relay
         self._on_presence = on_presence
         self._limiters: dict[str, PlayLimiter] = {}
+        self._volume_limiters: dict[str, PlayLimiter] = {}
+        self._volume = soundboard.DEFAULT_VOLUME
         self._lock = threading.Lock()
 
     # ---- events from pages ------------------------------------------------
@@ -64,12 +66,16 @@ class SoundboardPage(GuestPage):
             if len(self._limiters) >= MAX_SOUNDBOARDS:
                 raise socketio.exceptions.ConnectionRefusedError("full")
             self._limiters[sid] = PlayLimiter()
+            self._volume_limiters[sid] = PlayLimiter(rate=20)
+            volume = self._volume
         self._send_sounds(sid)
+        self.emit("volume", soundboard.volume_payload(volume), to=sid)
         self._on_presence(self.presence())
 
     def on_disconnect(self, sid: str, *_args: object) -> None:
         with self._lock:
             self._limiters.pop(sid, None)
+            self._volume_limiters.pop(sid, None)
         self._on_presence(self.presence())
 
     def on_play(self, sid: str, data: object = None) -> None:
@@ -79,11 +85,28 @@ class SoundboardPage(GuestPage):
             return
         sound_id = soundboard.resolve(self._folder, data.get("id"))
         if sound_id is not None:
-            self._relay("play", sound_id)
+            with self._lock:
+                volume = self._volume
+            self._relay("play", sound_id, volume)
 
     def on_stop(self, sid: str, *_args: object) -> None:
         if sid in self._limiters:
-            self._relay("stop", None)
+            with self._lock:
+                volume = self._volume
+            self._relay("stop", None, volume)
+
+    def on_volume(self, sid: str, data: object = None) -> None:
+        with self._lock:
+            limiter = self._volume_limiters.get(sid)
+        if limiter is None or not isinstance(data, dict) or not limiter.allow():
+            return
+        volume = soundboard.parse_volume(data.get("volume"))
+        if volume is None:
+            return
+        with self._lock:
+            self._volume = volume
+        self._relay("volume", None, volume)
+        self.emit("volume", soundboard.volume_payload(volume), skip_sid=sid)
 
     def on_refresh(self, sid: str, *_args: object) -> None:
         if sid in self._limiters:

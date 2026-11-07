@@ -3,6 +3,7 @@
 import { computed } from "vue";
 import { useGameStore } from "@/stores/game";
 import { api } from "@/api";
+import { throttle } from "@/throttle";
 import type { Team } from "@/types";
 
 type AnswerMap = Record<string, number>;
@@ -42,23 +43,13 @@ function updateDouble(val: number): void {
 function updateWaiger(val: number): void {
   const key = `${tid.value}-waiger-dailydouble`;
   emit("update:answers", { ...props.answers, [key]: val });
-  // Live-broadcast the wager so the viewer can show it. Throttled so a slider
-  // drag doesn't flood Socket.IO; trailing edge is preserved.
-  scheduleWagerBroadcast(val);
+  // Live-broadcast the wager so the viewer can show it.
+  broadcastWager(val);
 }
 
-let wagerTimer: ReturnType<typeof setTimeout> | null = null;
-let wagerPending: number | null = null;
-function scheduleWagerBroadcast(val: number): void {
-  wagerPending = val;
-  if (wagerTimer) return;
-  api.setWager(wagerPending).catch(() => {});
-  wagerPending = null;
-  wagerTimer = setTimeout(() => {
-    wagerTimer = null;
-    if (wagerPending !== null) scheduleWagerBroadcast(wagerPending);
-  }, 100);
-}
+const broadcastWager = throttle((val: number) => {
+  api.setWager(val).catch(() => {});
+}, 100);
 
 function selectTeam(): void {
   api.selectTeam(tid.value);

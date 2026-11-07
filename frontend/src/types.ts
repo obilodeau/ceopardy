@@ -166,8 +166,9 @@ export interface SoundEvent {
 }
 
 export type SoundboardEvent =
-  | { action: "play"; url: string }
-  | { action: "stop" };
+  | { action: "play"; url: string; volume: number }
+  | { action: "stop" }
+  | { action: "volume"; volume: number };
 
 export interface SoundboardPresenceEvent {
   count: number;
