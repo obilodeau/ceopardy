@@ -71,7 +71,6 @@ def _public_config():
         "SCORE_TICK",
         "ONLINE_MODE",
         "DAILYDOUBLE_WAIGER_MIN",
-        "DAILYDOUBLE_WAIGER_MAX_MIN",
     )
     return {k: config[k] for k in keys if k in config}
 
@@ -154,7 +153,7 @@ def _full_state_payload():
         # before any team has been put in control.
         state = controller.get_complete_state()
         _min = config.get("DAILYDOUBLE_WAIGER_MIN", 0)
-        _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN", 0)
+        _max = controller.get_dailydouble_waiger_max_min()
         if state.get("dailydouble") in ("enabled", "revealed"):
             try:
                 ctrl_team = controller.get_team_in_control()
@@ -173,7 +172,7 @@ def _full_state_payload():
         data["active_question"] = {}
         data["dailydouble_range"] = {
             "min": config.get("DAILYDOUBLE_WAIGER_MIN", 0),
-            "max": config.get("DAILYDOUBLE_WAIGER_MAX_MIN", 0),
+            "max": controller.get_dailydouble_waiger_max_min(),
         }
         data["dailydouble_wager"] = None
 

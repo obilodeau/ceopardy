@@ -122,7 +122,7 @@ export const useGameStore = defineStore("game", {
     // having to guard against the brief window between mount and the first
     // /api/v1/state response.
     questionsPerCategory: (s): number => s.config.QUESTIONS_PER_CATEGORY ?? 5,
-    scoreTick: (s): number => s.config.SCORE_TICK ?? 100,
+    scoreTick: (s): number => s.config.SCORE_TICK ?? 200,
     // Online mode moves every sound from the host to the viewer, which is
     // the tab being screen-shared during an online event.
     onlineMode: (s): boolean => s.config.ONLINE_MODE ?? false,

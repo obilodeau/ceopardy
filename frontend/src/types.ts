@@ -23,7 +23,6 @@ export interface AppConfig {
   SCORE_TICK?: number;
   ONLINE_MODE?: boolean;
   DAILYDOUBLE_WAIGER_MIN?: number;
-  DAILYDOUBLE_WAIGER_MAX_MIN?: number;
 }
 
 export type GameState = "uninitialized" | "in_round" | "in_final" | "finished";
