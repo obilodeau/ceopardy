@@ -63,7 +63,9 @@ from `closed`: `"8 ms ahead"` when `won` and `margin_ms` is set,
 `` `${ordinal(place)} · +${margin_ms} ms` `` when lost with a place, `""`
 otherwise. It is cleared on `open`, `excluded` and a `closed` with no
 winner. It renders in a `<p class="margin">` under the status, smaller than
-the status text. The `early` phase leaves it alone, so the line survives a
+the status text. The `role="status"` live region moves from the status
+paragraph to a wrapper around both, so screen readers announce the margin
+with the result. The `early` phase leaves it alone, so the line survives a
 stray press after the race. `ordinal(n: number): string` lives in
 `frontend/src/ordinal.ts`, next to `throttle.ts`, since the host view uses it
 too; it handles 11th–13th.
