@@ -23,7 +23,7 @@ config = {
     "CATEGORIES_PER_GAME": 5,
     "QUESTIONS_PER_CATEGORY": 5,
     "QUESTIONS_FILENAME": "data/Questions.cp",
-    "SCORE_TICK": 100,
+    "SCORE_TICK": 200,
     "MESSAGES": [
         {"title": "Game not started", "text": "Please wait while the game is being set up..."},
         {
@@ -60,5 +60,4 @@ config = {
     "BUZZER_HUMAN_FLOOR_MS": 100,
     "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
     "DAILYDOUBLE_WAIGER_MIN": 5,
-    "DAILYDOUBLE_WAIGER_MAX_MIN": 500,
 }

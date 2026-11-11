@@ -296,9 +296,12 @@ class Controller:
             _max = scores[team_id]
         except KeyError as e:
             raise UnknownTeamError(f"Unknown team {team_id!r}") from e
-        if _max < config.get("DAILYDOUBLE_WAIGER_MAX_MIN"):
-            _max = config.get("DAILYDOUBLE_WAIGER_MAX_MIN")
-        return (_min, _max)
+        return (_min, max(_max, Controller.get_dailydouble_waiger_max_min()))
+
+    @staticmethod
+    def get_dailydouble_waiger_max_min() -> int:
+        """A team can always wager up to the board's top clue value."""
+        return config["QUESTIONS_PER_CATEGORY"] * config["SCORE_TICK"]
 
     @staticmethod
     def set_dailydouble_wager(tid: str, amount: int) -> tuple[str, int]:
