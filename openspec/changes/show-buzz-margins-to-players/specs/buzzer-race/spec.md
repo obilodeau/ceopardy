@@ -29,7 +29,7 @@ The first accepted buzz of a race SHALL start a window of the largest capped lat
 - **THEN** its team wins at once
 
 ### Requirement: Each opening is a separate race
-Each time buzzers open SHALL start a new numbered race, sent with the open cue and echoed by each web buzz. A buzz for an older race or while buzzers are closed SHALL NOT count. After the decision, a team's first buzz for that race, from a page or the keyboard, SHALL be judged as any other and count for its standing only, never for the win. Closing the buzzers SHALL cancel a race in progress.
+Each time buzzers open SHALL start a new numbered race, sent with the open cue and echoed by each web buzz. A buzz for an older race SHALL NOT count. A buzz while buzzers are closed SHALL NOT count, with one exception: after the decision, the first buzz for that race of a team not yet in it and not locked out, from a page or the keyboard, SHALL be judged as any other and count for its standing only, never for the win. Closing the buzzers SHALL cancel a race in progress.
 
 #### Scenario: Stale press
 - **WHEN** a buzz names a race that has since been closed and re-opened
@@ -44,7 +44,7 @@ Each time buzzers open SHALL start a new numbered race, sent with the open cue a
 - **THEN** team 2 keeps the buzz and team 3 is given a standing
 
 ### Requirement: The host sees the result line
-After a race, in either mode, the host view SHALL show a line naming each entrant in place order with its place, the winner with its reaction and each other entrant with its margin, for example `1st Team 2 212 ms · 2nd Team 1 +48 ms`, with a warning icon on flagged reactions. The place SHALL be set smaller and dimmer than the team and time. A team that buzzes after the decision SHALL be added at the end of the line. The line SHALL clear when a question is shown or hidden.
+After a race, in either mode, the host view SHALL show a line naming each entrant in place order with its place, the winner with its reaction and each other entrant with its margin, never below zero, for example `1st Team 2 212 ms · 2nd Team 1 +48 ms`, with a warning icon on flagged reactions. The place SHALL be set smaller and dimmer than the team and time. A team that buzzes after the decision SHALL be added at the end of the line. The line SHALL clear when a question is shown or hidden.
 
 #### Scenario: Result line
 - **WHEN** a race is decided
@@ -92,7 +92,7 @@ Each team that enters a race SHALL be given its place and its margin once, both 
 - **THEN** team 2's pages are told they were second, with their margin behind team 1
 
 ### Requirement: Teams that buzz after the decision are told their standing
-A team whose first buzz in a race, from a page or the keyboard, arrives after the decision SHALL be given its standing then, taking the next place; places already given SHALL NOT change. A winner that was alone SHALL be given its margin when the first team buzzes after it. Standings SHALL stop when buzzers open again or the host closes them without a winner.
+A team whose first buzz in a race, from a page or the keyboard, arrives after the decision SHALL be given its standing then, taking the next place; places already given SHALL NOT change. A winner that was alone SHALL be given its margin when the first team buzzes after it. Margins SHALL never be below zero. Nothing SHALL be reported for a late buzz once the next race opened or buzzers closed without a winner. Standings SHALL stop when buzzers open again or the host closes them without a winner.
 
 #### Scenario: Late buzz
 - **WHEN** team 2 won alone at 212 ms and team 1 then buzzes with a judged reaction of 900 ms
@@ -106,9 +106,17 @@ A team whose first buzz in a race, from a page or the keyboard, arrives after th
 - **WHEN** team 1 was given second place and team 3 then buzzes with a faster judged reaction than team 1's
 - **THEN** team 3 is given third place and team 1's standing does not change
 
+#### Scenario: Late entrant faster than a sole winner
+- **WHEN** team 2 won alone at 212 ms and team 1's late buzz is judged at 200 ms
+- **THEN** team 1 is second at `+0 ms` and team 2 is `0 ms ahead`, on the pages and the host's line
+
 #### Scenario: Host closes the buzzers
 - **WHEN** the host locks the buzzers without a winner
 - **THEN** no team is given a standing for that race
+
+#### Scenario: Correcting a slider after the award
+- **WHEN** team 2 was awarded the buzz and the host moves a locked-out team's slider back to *No Answer*
+- **THEN** standings already given stay and a later buzz from team 3 is still given one
 
 #### Scenario: Next race
 - **WHEN** buzzers open again and a team presses with the previous race's number

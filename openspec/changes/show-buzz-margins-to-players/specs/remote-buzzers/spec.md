@@ -32,7 +32,7 @@ When told its team's standing, the buzzer page SHALL show the margin in whole mi
 
 #### Scenario: Buzzing after the decision
 - **WHEN** the page shows "Another team was faster." with no margin and the player then buzzes
-- **THEN** the page adds its team's place and margin, such as `3rd · +640 ms`
+- **THEN** the page keeps reading "Another team was faster." without showing too early, sends the player's reaction measured from the race's open cue, and adds its team's place and margin, such as `3rd · +640 ms`
 
 #### Scenario: No margin to show
 - **WHEN** the player's team won alone with nobody buzzing after, or never buzzed

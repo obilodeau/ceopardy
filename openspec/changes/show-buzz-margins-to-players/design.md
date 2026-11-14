@@ -70,18 +70,25 @@ the cue, so they no longer stretch the window either.
 
 **The arbiter keeps the decided race until the next opening.** `decide()`
 stores the `Decision` it returns. While one is stored, a buzz carrying its
-epoch (web) or any keypress (keyboard) from a team not yet placed and not
-locked out is judged as usual and appended to the stored entries. It is not
+epoch (web, sent from the page's `lost` phase with the reaction it measured
+from the race's open cue) or any keypress (keyboard) from a team not yet
+placed and not locked out is judged as usual and appended to the stored
+entries. It is not
 an early press. Any other web press while closed stays an early press, as
 today; any other keypress is ignored. `buzz()` and `buzz_local()` return a
 `BuzzOutcome` with `delay` (start of a window, as today) or `late` (the
 updated `Decision`). The stored decision is dropped by `open()` and by
 `close(keep_result=False)`. `_set_buzzers(False, winner=...)` closes with
 `keep_result=winner is not None`, so the award's own close keeps it and a
-host close without a winner, such as hiding the question, drops it.
+host close without a winner, such as hiding the question, drops it. A
+lock-out-only update (`/buzzers` with no action, sent when the host corrects
+a slider) that leaves already-closed buzzers closed touches neither the
+arbiter nor the pages, so it doesn't drop the result or send a winnerless
+`closed`.
 
 **Late keypresses reach the server.** `HostView.onKeyPress` no longer returns
-early when buzzers are closed. The `/buzz` route lets the arbiter decide:
+early when buzzers are closed. It ignores keypresses from editable fields
+(inputs, textareas, `contenteditable`), so typing a team name can't buzz. The `/buzz` route lets the arbiter decide:
 open buzzers or a stored decision mean the press counts, otherwise it
 returns `ignored`. Two host windows forwarding one keypress still enter the
 team once.
@@ -91,7 +98,8 @@ team once.
 returns `(place, margin_ms)` for an entered team and `None` otherwise. Place
 is the 1-based index in `entries`. Margin is rounded to whole ms: for the
 winner, the second entry minus the winner, or `None` when it is alone; for
-others, their reaction minus the winner's, floored at 0. Ties keep the
+others, their reaction minus the winner's. Both are floored at 0, since a
+late entry can have a lower judged reaction than the winner. Ties keep the
 arbiter's order (earliest arrival first) and show `+0 ms`. Late entries are
 appended, never sorted in, so places already given stay true. The host
 rounds each side, so its line and a page may differ by 1 ms.
@@ -107,6 +115,20 @@ team's room. A web buzz goes `BuzzersPage.on_buzz` → `app.arbiter.buzz` →
 an `on_outcome` callback into `routes`, wired in an app context like
 `on_decision` is today. `closed` and `_award_buzz` are unchanged, so the
 `Decision` never travels through `_set_buzzers`.
+
+**One lock orders a race and everything said about it.** `_buzz_lock`
+becomes an `RLock`, and `_set_buzzers`, the decision and the outcome handler
+all run under it. The decision checks that buzzers are still open, calls
+`decide()`, awards and sends the first standings in one critical section, so
+a rejected award stores nothing and publishes nothing. A late outcome is
+published only if the arbiter still holds a decision with that epoch, so an
+`open` or a winnerless close that slipped in after `arbiter.buzz` returned
+wins and the late buzz is dropped. Every emit about a race thus follows the
+emits of the transitions before it, on `/game` and on `/buzz`, and a stale
+`buzz-result` or `standing` can't reach the next question. Tagging payloads
+with the race number and filtering on the page and in the store was
+considered, but the host store doesn't know the race number, and one lock is
+less code than two filters.
 
 **The page shows a second line.** `BuzzerApp.vue` keeps a `margin` ref set
 from `standing`: `"8 ms ahead"` when `place` is 1 and `margin_ms` is set,
@@ -126,7 +148,7 @@ template renders it as `<span class="buzz-place">` before the text. In
 right margin, and is excluded from the existing `span + span::before`
 separator so the ` · ` still sits only between entries. The place comes from
 the entries' order, which is the server's order now that late entries are
-appended. The store already replaces `lastBuzz` on every `buzz-result`, so a
+appended. Margins on the line are floored at 0, as in `standing()`. The store already replaces `lastBuzz` on every `buzz-result`, so a
 re-sent result just extends the line.
 
 ## Risks / Trade-offs
@@ -145,9 +167,8 @@ re-sent result just extends the line.
   and keeping places fixed is simpler than sending corrections. Its margin is
   floored at `+0 ms` in the unlikely case it beat the winner.
 - [Page and host line differ by 1 ms from rounding] → Accepted.
-- [A host close right after the award can race a standing still being sent]
-  → The page may show a stale line until the next question opens. Accepted:
-  the window is a few milliseconds.
+- [Emits now happen under `_buzz_lock`] → Socket.IO emits only queue the
+  message, so the lock is held for microseconds, not a network round trip.
 - [Teammates who did not buzz see the team's place] → Intended: the team is
   the unit that races.
 - [Web pages may now buzz after the decision] → A late buzz goes through the
