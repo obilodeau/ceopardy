@@ -64,7 +64,12 @@ winner's, rounded, floored at 0). A later result of the same race lists the
 same close teams and maybe one more, so replacing the map never changes a
 margin already shown. It is emptied on `question-hide` (back to the board, which
 also covers a daily double) and on a `buzzers` event with `open: true`. It
-never touches `ui_state.team`, so the team in control keeps its frame. A
+never touches `ui_state.team`, so the team in control keeps its frame. The
+store also empties it on every socket reconnect and on a state snapshot
+that shows the board or open buzzers: a viewer that was offline may have
+missed the events that end a race. The card hides the margin of the team
+in control, which can change hands after the race, for example when the
+host scores the runner-up *Good*. A
 `closeMarginOf(tid)` getter serves the cards, following the project's rule
 of putting getters in the store.
 
