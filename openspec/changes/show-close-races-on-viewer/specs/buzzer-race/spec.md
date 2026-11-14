@@ -58,11 +58,15 @@ In either mode, when a team is placed second or third in a race, at the decision
 - **THEN** team 1's card shows `+20 ms`
 
 ### Requirement: Close margins fade when the race is over
-The margins SHALL fade out when the host returns to the game board or the buzzers unlock again, whichever comes first. Clearing them SHALL NOT change which team is in control or its frame.
+The margins SHALL fade out when the host returns to the game board or the buzzers unlock again, whichever comes first. Returning to the board SHALL end the race, so no later buzz can bring a margin back. Clearing them SHALL NOT change which team is in control or its frame.
 
 #### Scenario: Back to the board
 - **WHEN** team 1's card shows `+8 ms`, team 2 is in control, and the host returns to the game board
 - **THEN** the margin fades out and team 2's card keeps its frame
+
+#### Scenario: Buzz after returning to the board
+- **WHEN** the host returns to the game board after a race and key `3` is pressed
+- **THEN** no card shows a margin and the host's result line is unchanged
 
 #### Scenario: Wrong answer
 - **WHEN** team 1's card shows `+8 ms` and the host marks team 2 *Bad*, which re-opens the buzzers
