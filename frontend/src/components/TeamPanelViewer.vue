@@ -1,8 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
+import { computed } from "vue";
+import { useGameStore } from "@/stores/game";
 import type { Team } from "@/types";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     team: Team;
     idx: number;
@@ -10,6 +12,9 @@ withDefaults(
   }>(),
   { selected: false },
 );
+
+const game = useGameStore();
+const margin = computed(() => game.closeMarginOf(props.team.tid));
 </script>
 
 <template>
@@ -32,6 +37,11 @@ withDefaults(
           :class="`team${idx + 1}-font`"
         >
           <p>{{ team.name }}</p>
+          <Transition name="close-margin">
+            <p v-if="margin !== undefined" class="close-margin">
+              +{{ margin }} ms
+            </p>
+          </Transition>
         </div>
       </div>
     </div>

@@ -28,6 +28,9 @@ from a web page in online mode. A team marked *Bad* can't buzz again on that
 clue and its panel turns red; move its slider back to undo. After each race,
 the host sees every team's place and margin in milliseconds, and online
 players see their own team's, even if they buzz after the winner was picked.
+On the crowd screen, the second and third teams that came within
+`BUZZER_CLOSE_RACE_MS` (500 ms) of the winner show their margin on their card
+until the host returns to the board or the buzzers unlock.
 
 
 ## Architecture
