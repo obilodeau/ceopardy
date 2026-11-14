@@ -200,7 +200,9 @@ export const useGameStore = defineStore("game", {
       this.socket = s;
 
       s.on("connect", () => {
-        // no-op, state is already loaded via REST
+        // State is loaded via REST. Margins can't be trusted after a
+        // reconnect: the race they came from may have ended meanwhile.
+        this.closeMargins = {};
       });
 
       s.on("state", (data: ServerState) => this.applyServerState(data));
