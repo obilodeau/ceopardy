@@ -34,7 +34,7 @@ from flask.typing import ResponseReturnValue
 from sqlalchemy.exc import NoResultFound
 
 from ceopardy import utils
-from ceopardy.buzzer import BuzzOutcome, Decision, result_payload
+from ceopardy.buzzer import BuzzOutcome, Decision, close_entries, result_payload
 from ceopardy.config import config
 from ceopardy.exceptions import (
     GamefileParsingError,
@@ -276,10 +276,14 @@ def _decide() -> Decision | None:
         decision = app.arbiter.decide()
         if decision is None:
             return None
-        _award_buzz(decision.winner, result_payload(decision))
+        _award_buzz(decision.winner, _result(decision))
         if app.guest is not None:
             app.guest.buzzers.send_standings(decision, [e.tid for e in decision.entries])
         return decision
+
+
+def _result(decision: Decision) -> dict:
+    return result_payload(decision, close_entries(decision, config["BUZZER_CLOSE_RACE_MS"]))
 
 
 def _publish_late(late: Decision) -> None:
@@ -288,7 +292,7 @@ def _publish_late(late: Decision) -> None:
         result = app.arbiter.result
         if result is None or result.epoch != late.epoch:
             return
-        app.socketio.emit("buzz-result", result_payload(result), namespace=GAME_NS)
+        app.socketio.emit("buzz-result", _result(result), namespace=GAME_NS)
         if app.guest is not None:
             tids = [late.entries[-1].tid]
             # A winner that raced alone only now has a margin.

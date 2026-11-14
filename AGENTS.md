@@ -31,6 +31,17 @@ make format
 make ci
 ```
 
+## Pull request titles
+
+A PR's title is its line in the release notes that CI generates when a
+release is tagged. Name the PR after what the change does for the people
+running or playing a game, e.g. "Show buzz margins to players and the
+host", not after a workflow step such as "Propose …", "Implement …" or
+"Archive …". An OpenSpec PR that starts with only the proposal and later
+gains the code keeps one title that describes the outcome. If a PR is
+merged with only the proposal, label it `ignore-for-release` so the release
+notes don't announce a feature that hasn't shipped.
+
 ## Running tests
 
 ```

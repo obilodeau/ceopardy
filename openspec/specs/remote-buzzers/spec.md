@@ -59,7 +59,7 @@ Any number of players up to a per-team limit (16 by default) SHALL be able to co
 - **THEN** the connection is refused
 
 ### Requirement: The buzzer page sees only its own team
-The buzzer page SHALL receive only: its team's name (on connect and on rename), buzzers opening with a race number, buzzers closing with whether its team won, being excluded as a locked-out team, latency pings, and link revocation. It SHALL NOT receive scores, other teams' names, questions, answers, the board or game broadcasts.
+The buzzer page SHALL receive only: its team's name (on connect and on rename), buzzers opening with a race number, buzzers closing with whether its team won, its team's place and margin in a race it entered, being excluded as a locked-out team, latency pings, and link revocation. It SHALL NOT receive scores, other teams' names or reactions, questions, answers, the board or game broadcasts.
 
 #### Scenario: Rename
 - **WHEN** the host renames team 1
@@ -68,6 +68,10 @@ The buzzer page SHALL receive only: its team's name (on connect and on rename), 
 #### Scenario: Question selected
 - **WHEN** the host selects a question
 - **THEN** the buzzer page learns only that buzzers are open, not the question text
+
+#### Scenario: Race decided
+- **WHEN** team 2 beats team 1 by 8 ms
+- **THEN** team 1's pages learn they were second by 8 ms, but not team 2's name or reaction
 
 ### Requirement: Buzzer page shows the game's buzzer state
 The buzzer page SHALL show the team name and one large button, with distinct states for connecting, waiting, open, buzzed, won, another team faster, too early, team already answered, invalid link, team full, revoked link and reconnecting. Pressing (pointer down, Space or Enter) while open SHALL buzz.
@@ -141,3 +145,26 @@ The buzzer page SHALL be served at `/` on the guest port, under the rules of the
 #### Scenario: Buzzer page
 - **WHEN** a client requests `/` on the guest port
 - **THEN** it receives the buzzer page
+
+### Requirement: Buzzer page shows how close the race was
+When told its team's standing, the buzzer page SHALL show the margin in whole milliseconds under the won or lost message: `8 ms ahead` for the first place, and the place with the margin behind the winner, such as `2nd · +8 ms`, for any other. The line SHALL clear when buzzers open again, when the team is excluded, or when the host closes the buzzers without a winner.
+
+#### Scenario: Winner
+- **WHEN** the player's team wins by 8 ms over the runner-up
+- **THEN** the page reads "You're in! Answer now." and `8 ms ahead`
+
+#### Scenario: Runner-up
+- **WHEN** the player's team finishes second, 8 ms behind the winner
+- **THEN** the page reads "Another team was faster." and `2nd · +8 ms`
+
+#### Scenario: Buzzing after the decision
+- **WHEN** the page shows "Another team was faster." with no margin and the player then buzzes
+- **THEN** the page keeps reading "Another team was faster." without showing too early, sends the player's reaction measured from the race's open cue, and adds its team's place and margin, such as `3rd · +640 ms`
+
+#### Scenario: No margin to show
+- **WHEN** the player's team won alone with nobody buzzing after, or never buzzed
+- **THEN** the page shows its won or lost message with no margin line
+
+#### Scenario: Next question
+- **WHEN** buzzers open for the next question
+- **THEN** the margin line is gone

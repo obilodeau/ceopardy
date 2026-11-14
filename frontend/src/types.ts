@@ -144,6 +144,8 @@ export interface BuzzResultEntry {
 export interface BuzzResultEvent {
   winner: string;
   entries: BuzzResultEntry[];
+  // Second and third teams close enough to the winner to show on the viewer.
+  close: string[];
 }
 
 export interface BuzzersEvent {

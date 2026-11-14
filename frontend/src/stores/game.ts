@@ -60,8 +60,11 @@ interface GameStoreState {
   // that might bounce during reconnects.
   dailydoubleTrigger: number;
   buzzerPresence: BuzzerPresence;
-  // The last web buzzer race, shown to the host until the next clue.
+  // The last buzzer race, shown to the host until the next clue.
   lastBuzz: BuzzResultEvent | null;
+  // tid -> ms behind the winner, for close teams on the viewer's cards. Kept
+  // apart from lastBuzz: it goes on question-hide and when buzzers unlock.
+  closeMargins: Record<string, number>;
   // Bumped when a team's link is replaced, so drawers fetch them again.
   buzzerLinksVersion: number;
   soundboardPresence: number;
@@ -108,6 +111,7 @@ export const useGameStore = defineStore("game", {
     dailydoubleTrigger: 0,
     buzzerPresence: {},
     lastBuzz: null,
+    closeMargins: {},
     buzzerLinksVersion: 0,
     soundboardPresence: 0,
     soundboardLinkVersion: 0,
@@ -146,6 +150,10 @@ export const useGameStore = defineStore("game", {
     // its on/off state and clients joining mid-break pick it up.
     isThinking: (s): boolean => !!s.ui_state.thinking,
     buzzersOpen: (s): boolean => s.ui_state.buzzers === "open",
+    closeMarginOf:
+      (s) =>
+      (tid: string): number | undefined =>
+        s.closeMargins[tid],
     lockedOut: (s): string[] =>
       (s.ui_state["locked-out"] || "").split(",").filter(Boolean),
     questionAnswered:
@@ -171,6 +179,10 @@ export const useGameStore = defineStore("game", {
         for (const [k, v] of Object.entries(data.state)) {
           if (v !== undefined) this.ui_state[k] = v;
         }
+        // A reconnect may have missed question-hide or the buzzers unlocking.
+        if (data.state.question === "" || data.state.buzzers === "open") {
+          this.closeMargins = {};
+        }
       }
       if (data.active_question !== undefined)
         this.active_question = data.active_question || {};
@@ -188,7 +200,9 @@ export const useGameStore = defineStore("game", {
       this.socket = s;
 
       s.on("connect", () => {
-        // no-op, state is already loaded via REST
+        // State is loaded via REST. Margins can't be trusted after a
+        // reconnect: the race they came from may have ended meanwhile.
+        this.closeMargins = {};
       });
 
       s.on("state", (data: ServerState) => this.applyServerState(data));
@@ -206,6 +220,7 @@ export const useGameStore = defineStore("game", {
 
       s.on("question-hide", () => {
         this.lastBuzz = null;
+        this.closeMargins = {};
         this.active_question = {};
         this.ui_state.question = "";
         this.ui_state.dailydouble = "";
@@ -255,11 +270,21 @@ export const useGameStore = defineStore("game", {
 
       s.on("buzzers", (data: BuzzersEvent) => {
         this.ui_state.buzzers = data.open ? "open" : "";
+        if (data.open) this.closeMargins = {};
         this.ui_state["locked-out"] = data.locked_out.join(",");
       });
 
       s.on("buzz-result", (data: BuzzResultEvent) => {
         this.lastBuzz = data;
+        const fastest = data.entries[0]?.reaction_ms ?? 0;
+        this.closeMargins = Object.fromEntries(
+          data.entries
+            .filter((e) => data.close.includes(e.tid))
+            .map((e) => [
+              e.tid,
+              Math.max(0, Math.round(e.reaction_ms - fastest)),
+            ]),
+        );
       });
 
       s.on("buzzer-presence", (data: BuzzerPresence) => {

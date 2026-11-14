@@ -58,6 +58,8 @@ config = {
     "BUZZER_EARLY_LOCKOUT_MS": 250,
     # Faster than this is flagged to the host, not rejected.
     "BUZZER_HUMAN_FLOOR_MS": 100,
+    # A runner-up this close behind the winner shows its margin on the viewer.
+    "BUZZER_CLOSE_RACE_MS": 500,
     "DAILYDOUBLE_HOST_TEXT": "<p>Daily Double!</br>Please input user bet.</p>",
     "DAILYDOUBLE_WAIGER_MIN": 5,
 }
