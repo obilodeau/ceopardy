@@ -372,12 +372,21 @@ def standing(decision: Decision, tid: str) -> tuple[int, int | None] | None:
     return place, max(0, round(other.reaction_ms - entries[0].reaction_ms))
 
 
-def result_payload(decision: Decision) -> dict:
-    """The race's numbers for the host (on /game, never on /buzz)."""
+def close_entries(decision: Decision, threshold_ms: float) -> list[str]:
+    """The second and third teams no more than `threshold_ms` behind the winner."""
+    first = decision.entries[0].reaction_ms
+    return [
+        e.tid for e in decision.entries[1:3] if max(0, round(e.reaction_ms - first)) <= threshold_ms
+    ]
+
+
+def result_payload(decision: Decision, close: list[str] | None = None) -> dict:
+    """The race's numbers for the host and the viewer (on /game, never on /buzz)."""
     return {
         "winner": decision.winner,
         "entries": [
             {"tid": e.tid, "reaction_ms": e.reaction_ms, "suspicious": e.suspicious}
             for e in decision.entries
         ],
+        "close": close or [],
     }

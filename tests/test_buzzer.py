@@ -467,3 +467,29 @@ def test_a_cued_player_without_samples_counts_at_the_cap(arb, clock):
     epoch = open_race(arb, "near", "new")  # "idle" was never sent the cue
     outcome = press(arb, clock, "near", epoch, rtt=10, reaction=200)
     assert outcome.delay == pytest.approx(0.3)
+
+
+# ---------------------------------------------------------------------------
+# Close races: who the viewer shows a margin for.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "entries,close",
+    [
+        ((("team2", 212), ("team1", 220), ("team3", 243)), ["team1", "team3"]),
+        ((("team2", 212), ("team1", 240), ("team3", 900)), ["team1"]),
+        ((("team2", 212), ("team1", 713), ("team3", 800)), []),
+        ((("team2", 212),), []),
+        ((("team2", 212), ("team1", 212)), ["team1"]),
+        ((("team2", 212), ("team1", 712)), ["team1"]),
+        ((("t1", 200), ("t2", 210), ("t3", 220), ("t4", 230)), ["t2", "t3"]),
+    ],
+    ids=["photo-finish", "runner-up-only", "not-close", "sole", "tie", "at-threshold", "fourth"],
+)
+def test_close_entries(entries, close):
+    assert buzzer.close_entries(decision_of(*entries), 500) == close
+
+
+def test_result_payload_carries_the_close_list():
+    decision = decision_of(("team2", 212), ("team1", 220))
+    assert buzzer.result_payload(decision)["close"] == []
+    assert buzzer.result_payload(decision, ["team1"])["close"] == ["team1"]

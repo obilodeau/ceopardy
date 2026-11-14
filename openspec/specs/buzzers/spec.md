@@ -45,33 +45,46 @@ Selecting a regular question SHALL open the buzzers and clear the lock-out list,
 - **THEN** buzzers close and no team is locked out
 
 ### Requirement: A keyboard buzz is judged by the server
-A keypress on the host for team N (keys 1 to the number of teams) SHALL be sent to the server, which accepts it only while buzzers are open and the team is not locked out. Otherwise it is ignored. An unknown team SHALL be rejected.
+A keypress on the host for team N (keys 1 to the number of teams) SHALL be sent to the server, whether or not the buzzers are open. The server SHALL accept it while buzzers are open and the team is not locked out. After a race is decided, it SHALL accept the first keypress of each team not yet in the race and not locked out, for the result only. A keypress typed into an editable field on the host SHALL NOT be sent. Otherwise it is ignored. An unknown team SHALL be rejected.
 
 #### Scenario: Buzz while open
 - **WHEN** buzzers are open and the host machine receives key `2`
 - **THEN** team 2 buzzes in
 
 #### Scenario: Buzz while closed
-- **WHEN** buzzers are closed and the host machine receives key `2`
+- **WHEN** buzzers are closed with no race decided since they last opened, and the host machine receives key `2`
 - **THEN** nothing happens
+
+#### Scenario: Buzz after the decision
+- **WHEN** team 1 was awarded the buzz and the host machine then receives key `2`
+- **THEN** team 1 keeps the buzz and team 2 is added to the race result
+
+#### Scenario: Locked-out team after the decision
+- **WHEN** team 1 is locked out, team 2 was awarded the buzz, and the host machine then receives key `1`
+- **THEN** nothing happens
+
+#### Scenario: Typing a team name
+- **WHEN** the host types `2` into a team name field after a race
+- **THEN** no buzz is sent
 
 #### Scenario: Two windows, one keypress
 - **WHEN** two host windows each forward the same keypress
 - **THEN** the buzz is awarded at most once
 
-### Requirement: A keyboard buzz in offline mode is awarded at once
-In offline mode, an accepted keyboard buzz SHALL be awarded immediately, without a collection window.
+### Requirement: Keyboard buzzes go through the race in both modes
+In both modes, an accepted keyboard buzz SHALL enter the buzzer race, judged on its arrival, so the race result and margins cover keyboard buzzers too. When no web player was sent the race's open cue, which is always the case offline, the race SHALL be decided on the first buzz, without a collection window. A web player sent the cue keeps the window open even if they never buzz.
 
 #### Scenario: Offline keypress
 - **WHEN** buzzers are open in offline mode and key `1` is pressed
 - **THEN** team 1 is awarded the buzz straight away
 
-### Requirement: A keyboard buzz in online mode races web buzzers
-In online mode, an accepted keyboard buzz SHALL enter the same race as web buzzes, judged on its arrival time, so keyboard and web buzzers can be mixed at one event.
+#### Scenario: Offline result
+- **WHEN** buzzers are open in offline mode, key `1` is pressed, then key `3`
+- **THEN** team 1 is awarded the buzz and the host's result line shows team 1 first and team 3 second with its margin
 
 #### Scenario: Hybrid event
 - **WHEN** buzzers are open in online mode and key `3` is pressed while remote players also buzz
-- **THEN** the winner is decided by the web buzzer race rules, with team 3 as one of the entrants
+- **THEN** the winner is decided by the buzzer race rules, with team 3 as one of the entrants
 
 ### Requirement: Awarding a buzz
 When a buzz is awarded, the server SHALL select the winning team, close the buzzers, and play that team's buzzer sound. Every host window and the viewer SHALL see the team selected; the host's keypress handler does not select the team or play the sound itself.

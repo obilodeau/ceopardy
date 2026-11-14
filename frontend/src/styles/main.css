@@ -581,10 +581,54 @@ svg:hover polygon {
   padding: var(--ceopardy-pad-small);
   height: 100%;
 }
+.box-team {
+  flex-direction: column;
+}
 .box-team p {
   color: #ffffff;
   font-size: calc(1.5vh + 1vw);
   line-height: 90%;
+  margin: 0;
+}
+/* How far behind the winner a close team was. Not in the team's own font:
+   it's a number from the race, like the scores. */
+.box-team .close-margin {
+  margin-top: 0.4em;
+  font-family: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  font-size: calc(1vh + 0.7vw);
+  color: var(--ceopardy-gold);
+  text-shadow: var(--ceopardy-text-shadow);
+}
+.close-margin-enter-active {
+  animation: close-margin-flash 1s ease-out;
+}
+.close-margin-leave-active {
+  transition: opacity 0.5s ease;
+}
+.close-margin-leave-to {
+  opacity: 0;
+}
+@keyframes close-margin-flash {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  45%,
+  80% {
+    opacity: 1;
+    color: #ffffff;
+    text-shadow:
+      0 0 0.3em #ffffff,
+      0 0 0.8em var(--ceopardy-gold);
+  }
+  28%,
+  62%,
+  100% {
+    opacity: 1;
+    color: var(--ceopardy-gold);
+    text-shadow: var(--ceopardy-text-shadow);
+  }
 }
 .box-team-host p {
   color: #ffffff;
@@ -851,6 +895,7 @@ input[type='range']::-moz-range-thumb {
   .box-category-viewer p { font-size: 30px; }
   .box-question-viewer p { font-size: 60px; }
   .box-team p { font-size: 28px; }
+  .box-team .close-margin { font-size: 20px; }
   .box-team-host p { font-size: 20px; }
   .box-score p { font-size: 30px; }
   .form-header { font-size: 40px; }
