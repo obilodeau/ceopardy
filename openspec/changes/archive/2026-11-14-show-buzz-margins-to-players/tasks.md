@@ -30,5 +30,5 @@
   - Selecting the next question clears the line; locking the buzzers without a winner shows none, and a web press after that shows "too early", not a standing.
   - A keyboard buzz that wins shows the web teams their place behind it; a keypress after a web win adds that team to the host's line.
   - With no buzzer page connected, a keypress is awarded with no noticeable wait.
-- [ ] 4.3 When archiving, update the `buzzer-race` Purpose: it covers every race, keyboard and web, with latency compensation for web players only.
+- [x] 4.3 When archiving, update the `buzzer-race` Purpose: it covers every race, keyboard and web, with latency compensation for web players only.
 - [x] 4.4 Run `make format` and `make ci`; everything passes.
