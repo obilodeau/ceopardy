@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { io, type Socket } from "socket.io-client";
 
 import { takeToken } from "@/links/token";
+import { ordinal } from "@/ordinal";
 
 type Phase =
   | "connecting"
@@ -42,6 +43,7 @@ const MESSAGES: Record<Phase, string> = {
 
 const phase = ref<Phase>("connecting");
 const teamName = ref("");
+const margin = ref("");
 const message = computed(() => MESSAGES[phase.value]);
 const live = computed(() => phase.value === "open");
 
@@ -60,7 +62,13 @@ function press(): void {
     });
     phase.value = "buzzed";
     navigator.vibrate?.(40);
-  } else if (["locked", "won", "lost", "early"].includes(phase.value)) {
+  } else if (phase.value === "lost") {
+    // Not too early but too late: the server still places the team.
+    socket?.emit("buzz", {
+      epoch,
+      reaction_ms: Math.round((performance.now() - openedAt) * 10) / 10,
+    });
+  } else if (["locked", "won", "early"].includes(phase.value)) {
     // Tell the server too: an early press costs the next race a lockout.
     socket?.emit("buzz", { epoch, reaction_ms: 0 });
     if (phase.value !== "early") phaseBeforeEarly = phase.value;
@@ -123,15 +131,25 @@ function connect(token: string): void {
     ack?.();
     openedAt = performance.now();
     epoch = data.epoch;
+    margin.value = "";
     phase.value = "open";
   });
   s.on("closed", (data: { won: boolean | null }) => {
     if (data.won === true) phase.value = "won";
     else if (data.won === false && phase.value !== "excluded")
       phase.value = "lost";
-    else phase.value = "locked";
+    else {
+      margin.value = "";
+      phase.value = "locked";
+    }
+  });
+  s.on("standing", (data: { place: number; margin_ms: number | null }) => {
+    if (data.margin_ms === null) margin.value = "";
+    else if (data.place === 1) margin.value = `${data.margin_ms} ms ahead`;
+    else margin.value = `${ordinal(data.place)} · +${data.margin_ms} ms`;
   });
   s.on("excluded", () => {
+    margin.value = "";
     phase.value = "excluded";
   });
   s.on("ping", (_data: unknown, ack?: Ack) => ack?.());
@@ -170,7 +188,10 @@ onBeforeUnmount(() => {
     >
       BUZZ
     </button>
-    <p class="status" role="status" aria-live="assertive">{{ message }}</p>
+    <div role="status" aria-live="assertive">
+      <p class="status">{{ message }}</p>
+      <p class="margin">{{ margin }}</p>
+    </div>
   </main>
 </template>
 
@@ -273,5 +294,12 @@ body {
   margin: 0;
   min-height: 2.6em;
   font-size: clamp(18px, 5vw, 28px);
+}
+
+.margin {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: clamp(14px, 4vw, 20px);
+  opacity: 0.8;
 }
 </style>

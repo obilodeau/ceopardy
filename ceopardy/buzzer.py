@@ -16,7 +16,7 @@
 # GNU General Public License for more details.
 #
 """
-Judging a buzzer race between remote players.
+Judging a buzzer race between remote players and keyboard buzzers.
 
 The race starts when a player's buzzer page receives "open", not when the
 clue shows up on the stream. The page measures the player's reaction from
@@ -29,7 +29,10 @@ capped by the RTT cap and shows up in the numbers the host sees.
 
 The first buzz of a race starts a collection window as long as the largest
 latency correction anyone could get, so a far player's faster press that
-arrives later can still win. Then the lowest reaction wins.
+arrives later can still win. Then the lowest reaction wins. With no remote
+player sent the cue, as offline, there is no window and the first buzz wins.
+After the decision, each other team's first buzz is still placed, behind the
+others, so every team can learn its margin.
 
 No Flask or Socket.IO in here, so the rules can be tested with a fake clock.
 """
@@ -75,8 +78,16 @@ class Entry:
 class Decision:
     epoch: int
     winner: str
-    # Fastest first.
+    # Fastest first, then teams that buzzed after the decision, in arrival order.
     entries: list[Entry]
+
+
+@dataclass(frozen=True)
+class BuzzOutcome:
+    """A counted buzz that needs follow-up: a window to wait out, or a late entry."""
+
+    delay: float | None = None
+    late: Decision | None = None
 
 
 @dataclass
@@ -112,6 +123,8 @@ class BuzzArbiter:
         self._deadline: float | None = None
         # tid -> (reaction_ms, arrival)
         self._buzzes: dict[str, tuple[float, float]] = {}
+        # Kept after the decision so late buzzes can still be placed.
+        self._result: Decision | None = None
 
     # ---- players ----------------------------------------------------------
     def join(self, pid: str, tid: str) -> None:
@@ -156,6 +169,11 @@ class BuzzArbiter:
     def is_open(self) -> bool:
         return self._open
 
+    @property
+    def result(self) -> Decision | None:
+        """The decided race still taking late buzzes, if any."""
+        return self._result
+
     def is_locked_out(self, tid: str) -> bool:
         return tid in self._locked_out
 
@@ -168,9 +186,15 @@ class BuzzArbiter:
             self._locked_out = frozenset(locked_out)
             self._deadline = None
             self._buzzes = {}
+            self._result = None
             for player in self._players.values():
                 player.open_sent = None
             return self._epoch
+
+    def set_locked_out(self, locked_out: Iterable[str]) -> None:
+        """Replace the lock-out list without starting a race or dropping its result."""
+        with self._lock:
+            self._locked_out = frozenset(locked_out)
 
     def open_sent(self, pid: str) -> None:
         """Record that "open" just went out to this player."""
@@ -185,39 +209,50 @@ class BuzzArbiter:
                 since_ms = (now - player.early_press) * 1000
                 player.floor_ms = max(0.0, self.settings.early_lockout_ms - since_ms)
 
-    def close(self) -> None:
+    def close(self, keep_result: bool = False) -> None:
         with self._lock:
             self._open = False
             self._deadline = None
             self._buzzes = {}
+            if not keep_result:
+                self._result = None
 
-    def buzz(self, pid: str, epoch: object, reaction_ms: object) -> float | None:
+    def buzz(self, pid: str, epoch: object, reaction_ms: object) -> BuzzOutcome | None:
         """
         A press from a buzzer page.
 
-        Returns the number of seconds after which `decide()` should be called
-        when this buzz started the race's collection window, None otherwise.
+        Returns a delay in seconds after which `decide()` should be called when
+        this buzz started the race's collection window, the updated decision
+        when it entered a decided race late, and None otherwise.
         """
         with self._lock:
             player = self._players.get(pid)
             if player is None:
                 return None
             now = self._now()
-            if not self._open or epoch != self._epoch or player.open_sent is None:
+            if epoch != self._epoch or player.open_sent is None:
                 player.early_press = now
                 return None
+            if not self._open:
+                if not self._can_enter_late(player.tid):
+                    player.early_press = now
+                    return None
+                return self._record_late(player.tid, self._judge(player, now, reaction_ms))
             if player.tid in self._locked_out:
                 return None
             reaction = self._judge(player, now, reaction_ms)
             return self._record(player.tid, reaction, now)
 
-    def buzz_local(self, tid: str) -> float | None:
+    def buzz_local(self, tid: str) -> BuzzOutcome | None:
         """A press on the host's keyboard: no network, judged on arrival."""
         with self._lock:
-            if not self._open or tid in self._locked_out:
-                return None
             now = self._now()
-            return self._record(tid, (now - self._opened_at) * 1000, now)
+            reaction = (now - self._opened_at) * 1000
+            if not self._open:
+                return self._record_late(tid, reaction) if self._can_enter_late(tid) else None
+            if tid in self._locked_out:
+                return None
+            return self._record(tid, reaction, now)
 
     def decide(self) -> Decision | None:
         """Close the race and name the winner, once the window has passed."""
@@ -225,14 +260,12 @@ class BuzzArbiter:
             if not self._open or self._deadline is None or self._now() < self._deadline:
                 return None
             ranked = sorted(self._buzzes.items(), key=lambda kv: kv[1])
-            entries = [
-                Entry(tid, round(r, 1), r < self.settings.human_floor_ms)
-                for tid, (r, _arrival) in ranked
-            ]
+            entries = [self._entry(tid, r) for tid, (r, _arrival) in ranked]
             self._open = False
             self._deadline = None
             self._buzzes = {}
-            return Decision(self._epoch, entries[0].tid, entries)
+            self._result = Decision(self._epoch, entries[0].tid, entries)
+            return self._result
 
     # ---- internals (lock held) --------------------------------------------
     def _rtt(self, player: _Player) -> float:
@@ -252,7 +285,7 @@ class BuzzArbiter:
         reaction = min(max(float(reported), bound, 0.0), elapsed)
         return max(reaction, player.floor_ms)
 
-    def _record(self, tid: str, reaction: float, now: float) -> float | None:
+    def _record(self, tid: str, reaction: float, now: float) -> BuzzOutcome | None:
         best = self._buzzes.get(tid)
         if best is None or reaction < best[0]:
             self._buzzes[tid] = (reaction, now)
@@ -260,11 +293,33 @@ class BuzzArbiter:
             return None
         window_s = self._window_ms() / 1000
         self._deadline = now + window_s
-        return window_s
+        return BuzzOutcome(delay=window_s)
+
+    def _can_enter_late(self, tid: str) -> bool:
+        return (
+            self._result is not None
+            and tid not in self._locked_out
+            and all(e.tid != tid for e in self._result.entries)
+        )
+
+    def _record_late(self, tid: str, reaction: float) -> BuzzOutcome:
+        result = self._result
+        assert result is not None
+        self._result = Decision(
+            result.epoch, result.winner, [*result.entries, self._entry(tid, reaction)]
+        )
+        return BuzzOutcome(late=self._result)
+
+    def _entry(self, tid: str, reaction: float) -> Entry:
+        return Entry(tid, round(reaction, 1), reaction < self.settings.human_floor_ms)
 
     def _window_ms(self) -> float:
-        rtts = [self._rtt(p) for p in self._players.values() if p.rtts]
-        widest = min(self.settings.rtt_cap_ms, max(rtts, default=0))
+        # Only web players who got the open cue can still be in flight.
+        cued = [p for p in self._players.values() if p.open_sent is not None]
+        if not cued:
+            return 0.0
+        # A player with no sample yet counts at the cap, as `_rtt` says.
+        widest = max(self._rtt(p) for p in cued)
         return widest + self.settings.jitter_tolerance_ms
 
 
@@ -284,6 +339,10 @@ def closed_payload(won: bool | None) -> dict:
     return {"won": won}
 
 
+def standing_payload(place: int, margin_ms: int | None) -> dict:
+    return {"place": place, "margin_ms": margin_ms}
+
+
 def excluded_payload() -> dict:
     return {}
 
@@ -294,6 +353,23 @@ def ping_payload(n: int) -> dict:
 
 def revoked_payload() -> dict:
     return {}
+
+
+def standing(decision: Decision, tid: str) -> tuple[int, int | None] | None:
+    """
+    A team's place and margin in whole ms: the winner's lead over the second
+    entry (None when alone), anyone else's lag behind the winner. Never
+    negative, since a late entry may have judged faster than the winner.
+    """
+    tids = [e.tid for e in decision.entries]
+    if tid not in tids:
+        return None
+    place = tids.index(tid) + 1
+    entries = decision.entries
+    if place == 1 and len(entries) == 1:
+        return 1, None
+    other = entries[1] if place == 1 else entries[place - 1]
+    return place, max(0, round(other.reaction_ms - entries[0].reaction_ms))
 
 
 def result_payload(decision: Decision) -> dict:

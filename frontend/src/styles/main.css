@@ -420,8 +420,13 @@ svg:hover polygon {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.buzz-result span + span::before {
+.buzz-result > span + span::before {
   content: " · ";
+}
+.buzz-result .buzz-place {
+  margin-right: 0.25em;
+  font-size: 0.8em;
+  opacity: 0.6;
 }
 .buzz-result .fa-triangle-exclamation {
   color: var(--ceopardy-gold);

@@ -25,7 +25,9 @@ to pause a game.
 
 Teams buzz in with keys `1`, `2`, `3`... (USB buzzers that type a digit), or
 from a web page in online mode. A team marked *Bad* can't buzz again on that
-clue and its panel turns red; move its slider back to undo.
+clue and its panel turns red; move its slider back to undo. After each race,
+the host sees every team's place and margin in milliseconds, and online
+players see their own team's, even if they buzz after the winner was picked.
 
 
 ## Architecture

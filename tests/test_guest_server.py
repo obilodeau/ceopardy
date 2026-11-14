@@ -29,7 +29,7 @@ import pytest
 import socketio
 from werkzeug.test import Client
 
-from ceopardy.buzzer import FairnessSettings
+from ceopardy.buzzer import BuzzArbiter, BuzzOutcome, Decision, Entry, FairnessSettings
 from ceopardy.guest.buzzers import BUZZ_NS, BuzzersPage
 from ceopardy.guest.server import GuestServer, entry_files, origin_allowed
 from ceopardy.guest.soundboard import SOUNDBOARD_NS, SoundboardPage
@@ -95,12 +95,13 @@ def make_server(
     folder: str = "",
     relay: Callable[[str, str | None], None] = lambda action, sound_id: None,
     on_soundboard_presence: Callable[[int], None] = lambda count: None,
+    on_outcome: Callable[[BuzzOutcome], None] = lambda outcome: None,
 ) -> GuestServer:
     buzzers = BuzzersPage(
-        FairnessSettings(),
+        BuzzArbiter(FairnessSettings()),
         tokens=lambda: tokens or {},
         team_names=lambda: {tid: tid for tid in tokens or {}},
-        on_decision=lambda decision: None,
+        on_outcome=on_outcome,
         on_presence=lambda counts: None,
     )
     soundboard = SoundboardPage(
@@ -267,8 +268,8 @@ def board(sounds):
     )
     pages = {page.namespace: page for page in server.pages}
 
-    def emit(event, data=None, to=None, namespace=None, skip_sid=None, **_kwargs):
-        rec.emitted.append((event, data, to, namespace))
+    def emit(event, data=None, to=None, room=None, namespace=None, skip_sid=None, **_kwargs):
+        rec.emitted.append((event, data, to or room, namespace))
         if skip_sid is not None:
             rec.skipped.append((event, data, skip_sid))
 
@@ -471,3 +472,70 @@ def test_revoke_soundboard_leaves_buzzers_alone(board):
     server.soundboard.revoke()
     assert server.buzzers.arbiter.players() == [("b1", "team1")]
     assert rec.disconnected == [("s1", SOUNDBOARD_NS)]
+
+
+# ---------------------------------------------------------------------------
+# Buzzer page relays: the game owns the race, the page only talks to players.
+# ---------------------------------------------------------------------------
+TEAM_TOKENS = {
+    "team1": "t1-secret-aaaaaaaaaa",
+    "team2": "t2-secret-aaaaaaaaaa",
+    "team3": "t3-secret-aaaaaaaaaa",
+}
+
+
+@pytest.fixture
+def race():
+    rec = Recorder()
+    outcomes: list[BuzzOutcome] = []
+    server = make_server(tokens=TEAM_TOKENS, on_outcome=outcomes.append)
+
+    def emit(event, data=None, to=None, room=None, namespace=None, **_kwargs):
+        rec.emitted.append((event, data, to or room, namespace))
+
+    server.sio.emit = emit
+    server.sio.enter_room = lambda *args, **kwargs: None
+    page = server.buzzers
+    for n, (tid, token) in enumerate(TEAM_TOKENS.items(), 1):
+        page.on_connect(f"p{n}", {}, {"token": token})
+    rec.emitted.clear()
+    return page, rec, outcomes
+
+
+def test_send_standings_tells_each_team_only_its_own(race):
+    page, rec, _ = race
+    decision = Decision(1, "team2", [Entry("team2", 212, False), Entry("team1", 220, False)])
+    page.send_standings(decision, ["team2", "team1", "team3"])
+    assert rec.emitted == [
+        ("standing", {"place": 1, "margin_ms": 8}, "team2", BUZZ_NS),
+        ("standing", {"place": 2, "margin_ms": 8}, "team1", BUZZ_NS),
+    ]
+
+
+def test_a_counted_buzz_is_handed_to_the_game(race):
+    page, _, outcomes = race
+    epoch = page.arbiter.open()
+    page.arbiter.open_sent("p1")
+    page.on_buzz("p1", {"epoch": epoch, "reaction_ms": 200})
+    page.on_buzz("p1", {"epoch": epoch, "reaction_ms": 150})
+    assert len(outcomes) == 1 and outcomes[0].delay is not None
+
+
+def test_set_open_sends_cues_without_touching_the_race(race):
+    page, rec, _ = race
+    epoch = page.arbiter.open(["team3"])
+    page.set_open(True)
+    assert page.arbiter.epoch == epoch and page.arbiter.is_open
+    assert [(event, to) for event, _data, to, _ns in rec.emitted] == [
+        ("open", "p1"),
+        ("open", "p2"),
+        ("excluded", "p3"),
+    ]
+    rec.emitted.clear()
+    page.set_open(False, winner="team1")
+    assert page.arbiter.is_open
+    assert [(event, data["won"]) for event, data, _to, _ns in rec.emitted] == [
+        ("closed", True),
+        ("closed", False),
+        ("closed", False),
+    ]

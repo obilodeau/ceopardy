@@ -73,8 +73,8 @@ def test_far_faster_player_beats_near_slower_one(arb, clock):
     add_player(arb, "far", "team2", 200)
     epoch = open_race(arb, "near", "far")
 
-    window = press(arb, clock, "near", epoch, rtt=10, reaction=260)
-    assert window == pytest.approx(0.25)  # the far player's RTT + tolerance
+    outcome = press(arb, clock, "near", epoch, rtt=10, reaction=260)
+    assert outcome.delay == pytest.approx(0.25)  # the far player's RTT + tolerance
     assert press(arb, clock, "far", epoch, rtt=200, reaction=210) is None
 
     clock.at(270 + 250)
@@ -163,14 +163,15 @@ def test_buzz_while_closed_or_for_a_stale_epoch_is_ignored(arb, clock):
     assert arb.decide() is None
 
 
-def test_nothing_counts_after_the_decision(arb, clock):
+def test_a_buzz_after_the_decision_cannot_win(arb, clock):
     add_player(arb, "a", "team1", 10)
     add_player(arb, "b", "team2", 10)
     epoch = open_race(arb, "a", "b")
     press(arb, clock, "a", epoch, rtt=10, reaction=200)
     clock.at(10_000)
     assert arb.decide().winner == "team1"
-    assert arb.buzz("b", epoch, 1) is None
+    late = arb.buzz("b", epoch, 1).late
+    assert late.winner == "team1"
     assert arb.decide() is None
     assert not arb.is_open
 
@@ -178,8 +179,8 @@ def test_nothing_counts_after_the_decision(arb, clock):
 def test_no_decision_before_the_window_ends(arb, clock):
     add_player(arb, "a", "team1", 100)
     epoch = open_race(arb, "a")
-    window = press(arb, clock, "a", epoch, rtt=100, reaction=200)
-    assert window == pytest.approx(0.15)
+    outcome = press(arb, clock, "a", epoch, rtt=100, reaction=200)
+    assert outcome.delay == pytest.approx(0.15)
     clock.at(300 + 149)
     assert arb.decide() is None
     clock.at(300 + 150)
@@ -216,7 +217,7 @@ def test_local_buzz_is_judged_on_arrival_and_races_web_buzzes(arb, clock):
     add_player(arb, "web", "team1", 200)
     epoch = open_race(arb, "web")
     clock.at(190)
-    assert arb.buzz_local("team3") == pytest.approx(0.25)
+    assert arb.buzz_local("team3").delay == pytest.approx(0.25)
     press(arb, clock, "web", epoch, rtt=200, reaction=170)
     clock.at(10_000)
     decision = arb.decide()
@@ -263,6 +264,176 @@ def test_presence_counts_players_per_team(arb):
 
 
 # ---------------------------------------------------------------------------
+# No web player cued: no window.
+# ---------------------------------------------------------------------------
+def test_keyboard_only_race_is_decided_on_the_first_buzz(arb, clock):
+    arb.open()
+    clock.at(400)
+    assert arb.buzz_local("team2").delay == 0
+    assert arb.decide().winner == "team2"
+
+
+def test_a_cued_web_player_keeps_the_window_open(arb, clock):
+    add_player(arb, "web", "team1", 100)
+    open_race(arb, "web")
+    clock.at(400)
+    assert arb.buzz_local("team2").delay == pytest.approx(0.15)
+    assert arb.decide() is None
+
+
+def test_a_locked_out_web_player_does_not_stretch_the_window(arb, clock):
+    add_player(arb, "near", "team1", 10)
+    add_player(arb, "far", "team2", 200)
+    # A locked-out player is sent "excluded", never the open cue.
+    epoch = open_race(arb, "near", locked_out=("team2",))
+    outcome = press(arb, clock, "near", epoch, rtt=10, reaction=200)
+    assert outcome.delay == pytest.approx(0.06)
+
+
+# ---------------------------------------------------------------------------
+# Standings: place and margin from a decision.
+# ---------------------------------------------------------------------------
+def decision_of(*entries: tuple[str, float]) -> buzzer.Decision:
+    return buzzer.Decision(1, entries[0][0], [buzzer.Entry(tid, r, False) for tid, r in entries])
+
+
+def test_standing_of_each_entrant():
+    decision = decision_of(("team2", 212), ("team1", 220), ("team3", 412))
+    assert buzzer.standing(decision, "team2") == (1, 8)
+    assert buzzer.standing(decision, "team1") == (2, 8)
+    assert buzzer.standing(decision, "team3") == (3, 200)
+
+
+def test_standing_of_a_sole_entrant_has_no_margin():
+    assert buzzer.standing(decision_of(("team2", 212)), "team2") == (1, None)
+
+
+def test_standing_of_a_tie_is_plus_zero():
+    decision = decision_of(("team1", 200), ("team2", 200))
+    assert buzzer.standing(decision, "team1") == (1, 0)
+    assert buzzer.standing(decision, "team2") == (2, 0)
+
+
+def test_standing_of_a_team_not_entered_is_none():
+    assert buzzer.standing(decision_of(("team1", 200)), "team3") is None
+
+
+def test_standing_behind_a_keyboard_winner(arb, clock):
+    add_player(arb, "web", "team2", 10)
+    epoch = open_race(arb, "web")
+    clock.at(190)
+    arb.buzz_local("team1")
+    press(arb, clock, "web", epoch, rtt=10, reaction=230)
+    clock.at(10_000)
+    decision = arb.decide()
+    assert buzzer.standing(decision, "team1") == (1, 40)
+    assert buzzer.standing(decision, "team2") == (2, 40)
+
+
+# ---------------------------------------------------------------------------
+# Buzzes after the decision: placed, never winning.
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def decided(arb, clock) -> int:
+    """team1 won alone at 200 ms; team2 and team3 have web players that didn't buzz."""
+    add_player(arb, "a", "team1", 10)
+    add_player(arb, "b", "team2", 10)
+    add_player(arb, "b2", "team2", 10)
+    add_player(arb, "c", "team3", 10)
+    epoch = open_race(arb, "a", "b", "b2", "c")
+    press(arb, clock, "a", epoch, rtt=10, reaction=200)
+    clock.at(300)
+    arb.decide()
+    arb.close(keep_result=True)
+    return epoch
+
+
+def test_late_buzzes_take_the_next_places(arb, clock, decided):
+    clock.at(910)
+    late = arb.buzz("b", decided, 900).late
+    assert buzzer.standing(late, "team2") == (2, 700)
+    assert buzzer.standing(late, "team1") == (1, 700)
+    late = arb.buzz_local("team3").late
+    assert [e.tid for e in late.entries] == ["team1", "team2", "team3"]
+    assert late.winner == "team1"
+
+
+def test_a_team_enters_late_only_once(arb, clock, decided):
+    assert arb.buzz("b", decided, 900).late is not None
+    assert arb.buzz("b", decided, 800) is None
+    assert arb.buzz("b2", decided, 700) is None
+    assert arb.buzz_local("team2") is None
+    assert arb.buzz_local("team1") is None
+
+
+def reaction_in_next_race(arb: BuzzArbiter, clock: Clock, pid: str) -> float:
+    """Open a race 100 ms from now and press 20 ms into it."""
+    clock.at(clock.ms + 100)
+    epoch = open_race(arb, pid)
+    clock.at(clock.ms + 30)
+    arb.buzz(pid, epoch, 20)
+    clock.at(clock.ms + 1000)
+    return arb.decide().entries[0].reaction_ms
+
+
+def test_a_late_buzz_is_not_an_early_press(arb, clock, decided):
+    arb.buzz("b", decided, 900)
+    assert reaction_in_next_race(arb, clock, "b") == 20
+
+
+def test_a_repeated_late_press_is_an_early_press(arb, clock, decided):
+    arb.buzz("b", decided, 900)
+    arb.buzz("b2", decided, 900)
+    assert reaction_in_next_race(arb, clock, "b2") == 150
+
+
+def test_no_late_buzz_after_a_new_race_or_a_winnerless_close(arb, clock, decided):
+    arb.close()
+    assert arb.result is None
+    assert arb.buzz("b", decided, 900) is None
+    assert arb.buzz_local("team3") is None
+
+
+def test_the_next_race_ends_late_buzzes(arb, clock, decided):
+    open_race(arb, "a", "b", "c")
+    assert arb.result is None
+    assert arb.buzz("b", decided, 900) is None
+
+
+def test_close_keeping_the_result_keeps_taking_late_buzzes(arb, clock, decided):
+    assert arb.result.epoch == decided
+    arb.close(keep_result=True)
+    assert arb.buzz_local("team3").late is not None
+
+
+def test_late_buzz_faster_than_the_winner_shows_zero_margins(arb, clock):
+    add_player(arb, "b", "team2", 10)
+    arb.open()
+    clock.at(150)
+    arb.open_sent("b")  # joined mid-race
+    clock.at(200)
+    arb.buzz_local("team1")
+    clock.at(300)
+    arb.decide()
+    clock.at(310)
+    late = arb.buzz("b", arb.epoch, 100).late
+    assert [(e.tid, e.reaction_ms) for e in late.entries] == [("team1", 200), ("team2", 100)]
+    assert buzzer.standing(late, "team1") == (1, 0)
+    assert buzzer.standing(late, "team2") == (2, 0)
+
+
+def test_locked_out_team_cannot_enter_late(arb, clock):
+    add_player(arb, "a", "team1", 10)
+    add_player(arb, "c", "team3", 10)
+    epoch = open_race(arb, "a", locked_out=("team3",))
+    press(arb, clock, "a", epoch, rtt=10, reaction=200)
+    clock.at(10_000)
+    arb.decide()
+    assert arb.buzz_local("team3") is None
+    assert arb.buzz("c", epoch, 900) is None
+
+
+# ---------------------------------------------------------------------------
 # The /buzz protocol: these keys are all a buzzer page ever learns.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
@@ -271,6 +442,7 @@ def test_presence_counts_players_per_team(arb):
         (buzzer.team_payload("The Hackers"), {"name"}),
         (buzzer.open_payload(3), {"epoch"}),
         (buzzer.closed_payload(True), {"won"}),
+        (buzzer.standing_payload(2, 8), {"place", "margin_ms"}),
         (buzzer.excluded_payload(), set()),
         (buzzer.ping_payload(7), {"n"}),
         (buzzer.revoked_payload(), set()),
@@ -278,3 +450,20 @@ def test_presence_counts_players_per_team(arb):
 )
 def test_buzzer_page_payloads_carry_nothing_else(payload, keys):
     assert set(payload) == keys
+
+
+def test_a_lock_out_after_the_decision_blocks_a_late_entry(arb, clock, decided):
+    arb.set_locked_out(["team3"])
+    assert arb.buzz_local("team3") is None
+    assert arb.result.epoch == decided
+    arb.set_locked_out([])
+    assert arb.buzz_local("team3").late is not None
+
+
+def test_a_cued_player_without_samples_counts_at_the_cap(arb, clock):
+    add_player(arb, "near", "team1", 10)
+    add_player(arb, "new", "team2", None)
+    add_player(arb, "idle", "team3", None)
+    epoch = open_race(arb, "near", "new")  # "idle" was never sent the cue
+    outcome = press(arb, clock, "near", epoch, rtt=10, reaction=200)
+    assert outcome.delay == pytest.approx(0.3)
