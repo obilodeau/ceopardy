@@ -179,6 +179,10 @@ export const useGameStore = defineStore("game", {
         for (const [k, v] of Object.entries(data.state)) {
           if (v !== undefined) this.ui_state[k] = v;
         }
+        // A reconnect may have missed question-hide or the buzzers unlocking.
+        if (data.state.question === "" || data.state.buzzers === "open") {
+          this.closeMargins = {};
+        }
       }
       if (data.active_question !== undefined)
         this.active_question = data.active_question || {};

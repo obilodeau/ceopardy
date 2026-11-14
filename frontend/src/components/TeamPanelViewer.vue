@@ -38,7 +38,7 @@ const margin = computed(() => game.closeMarginOf(props.team.tid));
         >
           <p>{{ team.name }}</p>
           <Transition name="close-margin">
-            <p v-if="margin !== undefined" class="close-margin">
+            <p v-if="margin !== undefined && !selected" class="close-margin">
               +{{ margin }} ms
             </p>
           </Transition>
