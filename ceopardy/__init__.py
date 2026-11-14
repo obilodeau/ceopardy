@@ -183,6 +183,11 @@ def create_app():
         # Set by start_guest_server() in online mode.
         app.guest = None
 
+        from ceopardy.buzzer import BuzzArbiter, FairnessSettings
+
+        # Keyboard buzzers race through it in both modes, web buzzers online.
+        app.arbiter = BuzzArbiter(FairnessSettings.from_config(config))
+
         from ceopardy.controller import Controller
 
         db.create_all()
@@ -205,7 +210,6 @@ def create_app():
 def start_guest_server():
     """Serve the guest pages on GUEST_PORT (online mode only)."""
     from ceopardy.api import routes
-    from ceopardy.buzzer import FairnessSettings
     from ceopardy.guest.buzzers import BuzzersPage
     from ceopardy.guest.server import GuestServer
     from ceopardy.guest.soundboard import SoundboardPage
@@ -219,10 +223,10 @@ def start_guest_server():
         return wrapped
 
     buzzers = BuzzersPage(
-        FairnessSettings.from_config(config),
+        app.arbiter,
         tokens=in_app_context(app.controller.get_buzzer_tokens),
         team_names=in_app_context(app.controller.get_teams_for_form),
-        on_decision=in_app_context(routes.award_race),
+        on_outcome=in_app_context(routes.handle_buzz_outcome),
         on_presence=lambda counts: socketio.emit("buzzer-presence", counts, namespace=GAME_NS),
         max_players_per_team=config["BUZZER_MAX_PLAYERS_PER_TEAM"],
     )

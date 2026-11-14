@@ -34,7 +34,7 @@ from flask.typing import ResponseReturnValue
 from sqlalchemy.exc import NoResultFound
 
 from ceopardy import utils
-from ceopardy.buzzer import Decision, result_payload
+from ceopardy.buzzer import BuzzOutcome, Decision, result_payload
 from ceopardy.config import config
 from ceopardy.exceptions import (
     GamefileParsingError,
@@ -190,26 +190,43 @@ def _locked_out() -> list[str]:
     return utils.split_locked_out(_controller().get_state("locked-out"))
 
 
+# Two buzzes landing together must not both see the buzzers open, and
+# everything said about a race must go out before the next one opens.
+_buzz_lock = threading.RLock()
+
+
 def _set_buzzers(
-    is_open: bool, locked_out: list[str] | None = None, winner: str | None = None
+    is_open: bool,
+    locked_out: list[str] | None = None,
+    winner: str | None = None,
+    update_race: bool = True,
 ) -> None:
-    """Open or close the buzzers; `locked_out` replaces the lock-out list."""
-    controller = _controller()
-    if locked_out is not None:
-        controller.set_state("locked-out", ",".join(locked_out))
-    else:
-        locked_out = _locked_out()
-    # Nobody left to race when every team has already answered wrong.
-    if len(locked_out) >= controller.get_nb_teams():
-        is_open = False
-    controller.set_state("buzzers", "open" if is_open else "")
-    app.socketio.emit("buzzers", {"open": is_open, "locked_out": locked_out}, namespace=GAME_NS)
-    if app.guest is not None:
-        app.guest.buzzers.set_open(is_open, locked_out, winner)
+    """
+    Open or close the buzzers; `locked_out` replaces the lock-out list.
 
-
-# Two buzzes landing together must not both see the buzzers open.
-_buzz_lock = threading.Lock()
+    With `update_race` False only the lock state changes: the race, its
+    result and the buzzer pages are left alone.
+    """
+    with _buzz_lock:
+        controller = _controller()
+        if locked_out is not None:
+            controller.set_state("locked-out", ",".join(locked_out))
+        else:
+            locked_out = _locked_out()
+        # Nobody left to race when every team has already answered wrong.
+        if len(locked_out) >= controller.get_nb_teams():
+            is_open = False
+        controller.set_state("buzzers", "open" if is_open else "")
+        app.socketio.emit("buzzers", {"open": is_open, "locked_out": locked_out}, namespace=GAME_NS)
+        if not update_race:
+            app.arbiter.set_locked_out(locked_out)
+            return
+        if is_open:
+            app.arbiter.open(locked_out)
+        else:
+            app.arbiter.close(keep_result=winner is not None)
+        if app.guest is not None:
+            app.guest.buzzers.set_open(is_open, winner)
 
 
 def _award_buzz(tid: str, result: dict | None = None) -> None:
@@ -224,13 +241,61 @@ def _award_buzz(tid: str, result: dict | None = None) -> None:
         app.socketio.emit("buzz-result", result, namespace=GAME_NS)
 
 
-def award_race(decision: Decision) -> None:
-    """Called from the guest server once a web race is decided."""
+def handle_buzz_outcome(outcome: BuzzOutcome) -> Decision | None:
+    """
+    Follow up a buzz the arbiter counted, from a page or the keyboard.
+
+    Returns the decision when the buzz was awarded at once.
+    """
+    with _buzz_lock:
+        if outcome.late is not None:
+            _publish_late(outcome.late)
+            return None
+        if outcome.delay:
+            _schedule_decision(outcome.delay)
+            return None
+        return _decide()
+
+
+def _schedule_decision(delay: float) -> None:
+    flask_app = app._get_current_object()
+
+    def fire() -> None:
+        with flask_app.app_context():
+            _decide()
+
+    timer = threading.Timer(delay, fire)
+    timer.daemon = True
+    timer.start()
+
+
+def _decide() -> Decision | None:
     with _buzz_lock:
         # The host may have closed the buzzers while the race was being judged.
         if _controller().get_state("buzzers") != "open":
-            return
+            return None
+        decision = app.arbiter.decide()
+        if decision is None:
+            return None
         _award_buzz(decision.winner, result_payload(decision))
+        if app.guest is not None:
+            app.guest.buzzers.send_standings(decision, [e.tid for e in decision.entries])
+        return decision
+
+
+def _publish_late(late: Decision) -> None:
+    with _buzz_lock:
+        # Another late buzz may have been added since; publish the latest.
+        result = app.arbiter.result
+        if result is None or result.epoch != late.epoch:
+            return
+        app.socketio.emit("buzz-result", result_payload(result), namespace=GAME_NS)
+        if app.guest is not None:
+            tids = [late.entries[-1].tid]
+            # A winner that raced alone only now has a margin.
+            if len(late.entries) == 2:
+                tids.append(late.winner)
+            app.guest.buzzers.send_standings(result, tids)
 
 
 def relay_soundboard(action: str, sound_id: str | None, volume: int) -> None:
@@ -337,7 +402,9 @@ def finish():
         controller.set_state("overlay-big", text)
         controller.finish_game()
         app.socketio.emit("dailydouble-wager", {"team": None, "amount": None}, namespace=GAME_NS)
-        app.socketio.emit("question-hide", {}, namespace=GAME_NS)
+        with _buzz_lock:
+            _set_buzzers(False, locked_out=[])
+            app.socketio.emit("question-hide", {}, namespace=GAME_NS)
         app.socketio.emit("overlay-big", {"id": "final", "html": text}, namespace=GAME_NS)
     _broadcast_state()
     return jsonify(result="success")
@@ -471,17 +538,19 @@ def question_select():
 
     controller.set_state("question", qid)
     controller.end_dailydouble()
-    _set_buzzers(True, locked_out=[])
-    app.socketio.emit(
-        "question-show",
-        {
-            "qid": qid,
-            "text": question["text"],
-            "category": question["category"],
-            "dailydouble": False,
-        },
-        namespace=GAME_NS,
-    )
+    # The clue must reach the host before any result of the race it opens.
+    with _buzz_lock:
+        _set_buzzers(True, locked_out=[])
+        app.socketio.emit(
+            "question-show",
+            {
+                "qid": qid,
+                "text": question["text"],
+                "category": question["category"],
+                "dailydouble": False,
+            },
+            namespace=GAME_NS,
+        )
     return jsonify(
         result="success",
         dailydouble=False,
@@ -611,8 +680,10 @@ def buzzers():
         except GameProblem as e:
             return jsonify(result="failure", error=str(e)), 400
     with _buzz_lock:
-        is_open = controller.get_state("buzzers") == "open" if action is None else action == "open"
-        _set_buzzers(is_open, locked_out)
+        was_open = controller.get_state("buzzers") == "open"
+        is_open = was_open if action is None else action == "open"
+        # Correcting a slider after a buzz must not end the decided race.
+        _set_buzzers(is_open, locked_out, update_race=action is not None or was_open)
     return jsonify(result="success")
 
 
@@ -625,14 +696,14 @@ def buzz():
     if tid not in controller.get_teams_for_form():
         return jsonify(result="failure", error="Unknown team"), 400
     with _buzz_lock:
-        if controller.get_state("buzzers") != "open" or tid in _locked_out():
-            return jsonify(result="ignored")
-        # Online, keyboard buzzers race the web ones through the arbiter.
-        if app.guest is not None:
-            app.guest.buzzers.buzz_local(tid)
-            return jsonify(result="pending")
-        _award_buzz(tid)
-    return jsonify(result="success", tid=tid)
+        outcome = app.arbiter.buzz_local(tid)
+        if outcome is None:
+            racing = app.arbiter.is_open and not app.arbiter.is_locked_out(tid)
+            return jsonify(result="pending" if racing else "ignored")
+        decision = handle_buzz_outcome(outcome)
+    if decision is not None:
+        return jsonify(result="success", tid=decision.winner)
+    return jsonify(result="late" if outcome.late is not None else "pending")
 
 
 # Links carry the team's secret, so they are served here, on the host's port,

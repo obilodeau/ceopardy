@@ -108,7 +108,7 @@ A team whose first buzz in a race, from a page or the keyboard, arrives after th
 
 #### Scenario: Late entrant faster than a sole winner
 - **WHEN** team 2 won alone at 212 ms and team 1's late buzz is judged at 200 ms
-- **THEN** team 1 is second at `+0 ms` and team 2 is `0 ms ahead`, on the pages and the host's line
+- **THEN** team 1 is second at `+0 ms` on its pages and the host's line, and team 2's pages read `0 ms ahead`
 
 #### Scenario: Host closes the buzzers
 - **WHEN** the host locks the buzzers without a winner
@@ -117,6 +117,14 @@ A team whose first buzz in a race, from a page or the keyboard, arrives after th
 #### Scenario: Correcting a slider after the award
 - **WHEN** team 2 was awarded the buzz and the host moves a locked-out team's slider back to *No Answer*
 - **THEN** standings already given stay and a later buzz from team 3 is still given one
+
+#### Scenario: Locked out after the award
+- **WHEN** team 2 was awarded the buzz and the host then marks team 3 locked out while buzzers stay closed
+- **THEN** a later buzz from team 3 is given no standing
+
+#### Scenario: Game finished
+- **WHEN** the host finishes the game after a race
+- **THEN** no team is given a standing for that race afterwards
 
 #### Scenario: Next race
 - **WHEN** buzzers open again and a team presses with the previous race's number

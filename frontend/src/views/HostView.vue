@@ -3,6 +3,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/api";
+import { ordinal } from "@/ordinal";
 import { useGameStore } from "@/stores/game";
 
 import HostBoard from "@/components/HostBoard.vue";
@@ -48,15 +49,18 @@ watch(
 );
 
 // ---- Buzzer handling ----
-// The server owns the lock: it opens on question select, closes on a buzz or
-// a deselect, and awards the buzz (team select + sound) itself.
+// The server owns the lock and the race: it opens on question select, closes
+// on a buzz or a deselect, awards the buzz (team select + sound) itself, and
+// still places teams that buzz after the winner.
 function toggleBuzzers(): void {
   api.setBuzzers(game.buzzersOpen ? "close" : "open");
 }
 
-// Keyboard events from the emulated-keyboard buzzers.
+// Keyboard events from the emulated-keyboard buzzers, sent even while closed
+// so a late press is still placed. Typing a team name is not a buzz.
 function onKeyPress(e: KeyboardEvent): void {
-  if (!game.buzzersOpen) return;
+  const target = e.target as HTMLElement | null;
+  if (target?.closest("input, textarea, [contenteditable]")) return;
   // Only numeric keys 1..N.
   const num = parseInt(e.key, 10);
   if (!Number.isInteger(num)) return;
@@ -139,18 +143,21 @@ const activeHtml = computed(() => {
   return game.active_question?.text ?? "";
 });
 
-// "Team 2 212 ms · Team 1 +48 ms" after a web buzzer race, for settling
-// disputes. Reactions under the human floor are flagged.
+// "1st Team 2 212 ms · 2nd Team 1 +48 ms" after a buzzer race, keyboard or
+// web, for settling disputes. Teams that buzz after the winner are appended,
+// so a late one can judge faster than the winner: margins stop at +0.
+// Reactions under the human floor are flagged.
 const buzzResult = computed(() => {
   const entries = game.lastBuzz?.entries ?? [];
   const fastest = entries[0]?.reaction_ms ?? 0;
   return entries.map((e, i) => ({
     tid: e.tid,
+    place: ordinal(i + 1),
     text:
       `${game.teamByTid(e.tid)?.name ?? e.tid} ` +
       (i === 0
         ? `${Math.round(e.reaction_ms)} ms`
-        : `+${Math.round(e.reaction_ms - fastest)} ms`),
+        : `+${Math.max(0, Math.round(e.reaction_ms - fastest))} ms`),
     suspicious: e.suspicious,
   }));
 });
@@ -204,6 +211,7 @@ async function onRevealDailyDouble(): Promise<void> {
             <div class="box-ceopardy box-question-host" v-html="activeHtml" />
             <div v-if="buzzResult.length" class="buzz-result">
               <span v-for="e in buzzResult" :key="e.tid">
+                <span class="buzz-place">{{ e.place }}</span>
                 {{ e.text }}
                 <i
                   v-if="e.suspicious"

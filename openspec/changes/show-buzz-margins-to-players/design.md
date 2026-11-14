@@ -82,9 +82,9 @@ updated `Decision`). The stored decision is dropped by `open()` and by
 `keep_result=winner is not None`, so the award's own close keeps it and a
 host close without a winner, such as hiding the question, drops it. A
 lock-out-only update (`/buzzers` with no action, sent when the host corrects
-a slider) that leaves already-closed buzzers closed touches neither the
-arbiter nor the pages, so it doesn't drop the result or send a winnerless
-`closed`.
+a slider) that leaves already-closed buzzers closed doesn't start a race,
+drop the result or send a winnerless `closed`; it only replaces the arbiter's
+lock-out list (`set_locked_out`), so late entries follow the current list.
 
 **Late keypresses reach the server.** `HostView.onKeyPress` no longer returns
 early when buzzers are closed. It ignores keypresses from editable fields
@@ -125,7 +125,11 @@ published only if the arbiter still holds a decision with that epoch, so an
 `open` or a winnerless close that slipped in after `arbiter.buzz` returned
 wins and the late buzz is dropped. Every emit about a race thus follows the
 emits of the transitions before it, on `/game` and on `/buzz`, and a stale
-`buzz-result` or `standing` can't reach the next question. Tagging payloads
+`buzz-result` or `standing` can't reach the next question. Selecting a
+question holds the lock across opening the buzzers and emitting
+`question-show`, so an inline award can't land before the clue and be
+cleared by it. Finishing the game closes the buzzers without a winner before
+`question-hide`, like deselecting does, so no late buzz outlives the game. Tagging payloads
 with the race number and filtering on the page and in the store was
 considered, but the host store doesn't know the race number, and one lock is
 less code than two filters.

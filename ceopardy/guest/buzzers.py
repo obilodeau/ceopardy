@@ -17,14 +17,13 @@
 #
 """The players' buzzer page and its /buzz namespace."""
 
-import threading
 import time
 from collections.abc import Callable, Iterable
 
 import socketio
 
 from ceopardy import buzzer, utils
-from ceopardy.buzzer import BuzzArbiter, Decision, FairnessSettings
+from ceopardy.buzzer import BuzzArbiter, BuzzOutcome, Decision
 from ceopardy.guest import GuestPage
 
 BUZZ_NS = "/buzz"
@@ -33,9 +32,10 @@ PING_INTERVAL_S = 2
 
 class BuzzersPage(GuestPage):
     """
-    Glue between buzzer pages, the arbiter, and the game.
+    Glue between buzzer pages and the game's arbiter. The game opens, closes
+    and decides the race; this page relays cues, buzzes and standings.
 
-    `tokens()`, `team_names()` and `on_decision()` are called from the guest
+    `tokens()`, `team_names()` and `on_outcome()` are called from the guest
     server's threads and must set up their own Flask app context.
     """
 
@@ -43,18 +43,18 @@ class BuzzersPage(GuestPage):
 
     def __init__(
         self,
-        settings: FairnessSettings,
+        arbiter: BuzzArbiter,
         tokens: Callable[[], dict[str, str]],
         team_names: Callable[[], dict[str, str]],
-        on_decision: Callable[[Decision], None],
+        on_outcome: Callable[[BuzzOutcome], None],
         on_presence: Callable[[dict[str, int]], None],
         max_players_per_team: int = 16,
     ) -> None:
         super().__init__(BUZZ_NS)
-        self.arbiter = BuzzArbiter(settings)
+        self.arbiter = arbiter
         self._tokens = tokens
         self._team_names = team_names
-        self._on_decision = on_decision
+        self._on_outcome = on_outcome
         self._on_presence = on_presence
         self._max_players = max_players_per_team
         self._ping_n = 0
@@ -82,23 +82,25 @@ class BuzzersPage(GuestPage):
     def on_buzz(self, sid: str, data: object) -> None:
         if not isinstance(data, dict):
             return
-        delay = self.arbiter.buzz(sid, data.get("epoch"), data.get("reaction_ms"))
-        self._schedule(delay)
+        outcome = self.arbiter.buzz(sid, data.get("epoch"), data.get("reaction_ms"))
+        if outcome is not None:
+            self._on_outcome(outcome)
 
     # ---- driven by the game -----------------------------------------------
-    def buzz_local(self, tid: str) -> None:
-        self._schedule(self.arbiter.buzz_local(tid))
-
-    def set_open(self, is_open: bool, locked_out: list[str], winner: str | None = None) -> None:
-        if is_open:
-            self.arbiter.open(locked_out)
-            for sid, tid in self.arbiter.players():
+    def set_open(self, is_open: bool, winner: str | None = None) -> None:
+        """Tell every page the arbiter's new state; the game has already set it."""
+        for sid, tid in self.arbiter.players():
+            if is_open:
                 self._send_open(sid, tid)
-        else:
-            self.arbiter.close()
-            for sid, tid in self.arbiter.players():
+            else:
                 won = None if winner is None else tid == winner
                 self.emit("closed", buzzer.closed_payload(won), to=sid)
+
+    def send_standings(self, decision: Decision, tids: Iterable[str]) -> None:
+        for tid in tids:
+            standing = buzzer.standing(decision, tid)
+            if standing is not None:
+                self.emit("standing", buzzer.standing_payload(*standing), room=tid)
 
     def rename(self, names: dict[str, str]) -> None:
         for tid, name in names.items():
@@ -149,18 +151,6 @@ class BuzzersPage(GuestPage):
                     to=sid,
                     callback=self._rtt_callback(sid),
                 )
-
-    def _schedule(self, delay: float | None) -> None:
-        if delay is None:
-            return
-        timer = threading.Timer(delay, self._decide)
-        timer.daemon = True
-        timer.start()
-
-    def _decide(self) -> None:
-        decision = self.arbiter.decide()
-        if decision is not None:
-            self._on_decision(decision)
 
     def _presence_changed(self) -> None:
         self._on_presence(self.arbiter.presence(self._team_names()))
