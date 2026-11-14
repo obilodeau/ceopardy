@@ -23,8 +23,10 @@ daily double, before its own `dailydouble` event.
 
 **Goals:**
 
-- One decision, on the server, about which entries were close, so the viewer
+- One decision, on the server, about which entries are close, so the viewer
   needs no threshold and can't disagree with the server.
+- Offline keyboard races show margins even though they are decided on the
+  first keypress.
 - Margins that last while the clue is on screen and go away when the host
   returns to the board or the next race can start.
 
@@ -41,22 +43,26 @@ daily double, before its own `dailydouble` event.
 `close_entries(decision: Decision, threshold_ms: float) -> list[str]` in
 `ceopardy/buzzer.py` returns the tids of the second and third entries whose
 margin behind the winner, rounded to whole ms like the host's line, is at
-most the threshold. `result_payload` gains a `close` list: `_decide` fills
-it from `BUZZER_CLOSE_RACE_MS`, and `_publish_late` always sends `[]`. A
-late entry is appended after the decided ones, so it can't be second or
-third at the decision anyway. Sending `[]` also keeps a re-sent result from
-setting margins again. Having the viewer compare `reaction_ms` against a
-threshold sent in the game state was considered. It would need the setting
-in `/api/v1/state`, and the viewer would have to tell a decision from a
-re-sent result by itself.
+most the threshold. `result_payload` gains a `close` list, filled from
+`BUZZER_CLOSE_RACE_MS` by both `_decide` and `_publish_late`. Late entries
+must count: offline, a race with no web player cued has no window and is
+decided on the first keypress, so the runner-up's keypress, even 20 ms
+later, is always a late entry. Late entries are appended and places never
+change, so an entry's place and margin are final once it is in the result,
+and publishing the close list again after a late entry can only add a team.
+Holding the offline decision open for the threshold to collect presses was
+considered and rejected: it would delay every award by up to 500 ms, against
+the point of deciding at once. Having the viewer compare `reaction_ms`
+against a threshold sent in the game state was considered too. It would need
+the setting in `/api/v1/state`, and both sides would have to agree on it.
 
 **The store keeps the margins apart from `lastBuzz`.** `lastBuzz` also
-clears on `question-show`, and must keep following the host's line when late
-teams grow it, while the cards' margins must not. The store gets
-`closeMargins: Record<string, number>`, set from a `buzz-result` whose
-`close` is non-empty (each close tid's reaction minus the winner's, rounded,
-floored at 0). A result with an empty `close` leaves it alone, so late teams
-change nothing. It is emptied on `question-hide` (back to the board, which
+clears on `question-show`, while the cards' margins follow their own
+lifetime. The store gets `closeMargins: Record<string, number>`, replaced
+from each `buzz-result`'s `close` (each close tid's reaction minus the
+winner's, rounded, floored at 0). A later result of the same race lists the
+same close teams and maybe one more, so replacing the map never changes a
+margin already shown. It is emptied on `question-hide` (back to the board, which
 also covers a daily double) and on a `buzzers` event with `open: true`. It
 never touches `ui_state.team`, so the team in control keeps its frame. A
 `closeMarginOf(tid)` getter serves the cards, following the project's rule
