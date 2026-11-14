@@ -10,7 +10,7 @@ The RTT cap, jitter tolerance, early lockout, human floor, close-race threshold 
 - **THEN** races use a 250 ms RTT cap, 50 ms tolerance, 250 ms early lockout, 100 ms human floor and 500 ms close-race threshold
 
 ### Requirement: Each opening is a separate race
-Each time buzzers open SHALL start a new numbered race, sent with the open cue and echoed by each web buzz. A buzz for an older race, or while buzzers are closed, SHALL NOT count, except a team's first buzz after the decision: from the keyboard, or from a page sent that race's open cue, by a team not yet in the race and not locked out. It SHALL be judged as any other and count for its standing only. Closing the buzzers SHALL cancel a race in progress.
+Each time buzzers open SHALL start a new numbered race, sent with the open cue and echoed by each web buzz. A buzz for an older race, or while buzzers are closed, SHALL NOT count, except a team's first buzz for the race just decided, while its result is kept: from the keyboard, or from a page sent that race's open cue, by a team not yet in the race and not locked out. It SHALL be judged as any other and count for its standing only. Closing the buzzers SHALL cancel a race in progress.
 
 #### Scenario: Stale press
 - **WHEN** a buzz names a race that has since been closed and re-opened
