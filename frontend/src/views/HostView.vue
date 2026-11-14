@@ -57,10 +57,12 @@ function toggleBuzzers(): void {
 }
 
 // Keyboard events from the emulated-keyboard buzzers, sent even while closed
-// so a late press is still placed. Typing a team name is not a buzz.
+// so a late press is still placed. Typing a team name is not a buzz, but a
+// scoring slider keeps focus after use and must not swallow the next buzz.
 function onKeyPress(e: KeyboardEvent): void {
   const target = e.target as HTMLElement | null;
-  if (target?.closest("input, textarea, [contenteditable]")) return;
+  if (target?.closest("input:not([type=range]), textarea, [contenteditable]"))
+    return;
   // Only numeric keys 1..N.
   const num = parseInt(e.key, 10);
   if (!Number.isInteger(num)) return;

@@ -458,3 +458,12 @@ def test_a_lock_out_after_the_decision_blocks_a_late_entry(arb, clock, decided):
     assert arb.result.epoch == decided
     arb.set_locked_out([])
     assert arb.buzz_local("team3").late is not None
+
+
+def test_a_cued_player_without_samples_counts_at_the_cap(arb, clock):
+    add_player(arb, "near", "team1", 10)
+    add_player(arb, "new", "team2", None)
+    add_player(arb, "idle", "team3", None)
+    epoch = open_race(arb, "near", "new")  # "idle" was never sent the cue
+    outcome = press(arb, clock, "near", epoch, rtt=10, reaction=200)
+    assert outcome.delay == pytest.approx(0.3)

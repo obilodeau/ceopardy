@@ -318,8 +318,8 @@ class BuzzArbiter:
         cued = [p for p in self._players.values() if p.open_sent is not None]
         if not cued:
             return 0.0
-        rtts = [self._rtt(p) for p in cued if p.rtts]
-        widest = min(self.settings.rtt_cap_ms, max(rtts, default=0))
+        # A player with no sample yet counts at the cap, as `_rtt` says.
+        widest = max(self._rtt(p) for p in cued)
         return widest + self.settings.jitter_tolerance_ms
 
 
